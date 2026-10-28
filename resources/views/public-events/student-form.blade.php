@@ -17,9 +17,13 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <!-- Select2 Searchable Dropdown Assets -->
+    <link rel="stylesheet" href="{{ asset('vendor/select2/select2.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('vendor/select2/select2-tailwind.css') }}">
+    <script src="{{ asset('vendor/jquery/jquery.min.js') }}"></script>
+    <script src="{{ asset('vendor/select2/select2.min.js') }}"></script>
 </head>
 <body class="font-sans antialiased text-slate-800 bg-slate-100 min-h-screen py-6 px-4 sm:px-6">
 
@@ -129,34 +133,27 @@
                     </div>
 
                     <!-- Asal Sekolah -->
-                    <div x-data="{ 
-                        selectedSchool: '{{ old('school_id', $selectedSchoolId ?? '') }}',
-                        isOther: '{{ old('school_id', $selectedSchoolId ?? '') }}' === 'other' || '{{ old('school_name') ? 'true' : 'false' }}' === 'true',
-                        init() {
-                            if (!this.selectedSchool && '{{ old('school_name') }}') {
-                                this.selectedSchool = 'other';
-                                this.isOther = true;
-                            }
-                        }
-                    }">
+                    <div>
                         <label for="school_id" class="block font-bold text-slate-700 mb-1">
                             Asal Sekolah <span class="text-rose-500">*</span>
                         </label>
-                        <select id="school_id" name="school_id" x-model="selectedSchool" @change="isOther = (selectedSchool === 'other')" required
-                            class="w-full px-3.5 py-3 rounded-xl border border-slate-300 font-semibold focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20">
-                            <option value="">-- Pilih Asal Sekolah --</option>
+                        <select id="school_id" name="school_id" class="w-full px-3.5 py-3 rounded-xl border border-slate-300 font-semibold focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20">
+                            <option value="">-- Ketik / Cari Asal Sekolah --</option>
                             @foreach($schools as $sch)
                                 <option value="{{ $sch->id }}" {{ (string)old('school_id', $selectedSchoolId ?? '') === (string)$sch->id ? 'selected' : '' }}>
                                     {{ $sch->name }} {{ $sch->district ? '(' . $sch->district->name . ')' : '' }}
                                 </option>
                             @endforeach
-                            <option value="other" {{ old('school_id') === 'other' || old('school_name') ? 'selected' : '' }}>-- Sekolah Lainnya (Tulis Manual) --</option>
+                            <option value="other" {{ old('school_id', $selectedSchoolId ?? '') === 'other' || old('school_name') ? 'selected' : '' }}>-- Sekolah Lainnya (Tulis Manual) --</option>
                         </select>
+                        @error('school_id')<p class="mt-1 text-rose-600">{{ $message }}</p>@enderror
 
-                        <div x-show="isOther" x-transition class="mt-2" style="display: none;">
+                        <div id="manual_school_box" class="mt-2" style="{{ (old('school_id', $selectedSchoolId ?? '') === 'other' || old('school_name')) ? 'display: block;' : 'display: none;' }}">
                             <input id="school_name" name="school_name" value="{{ old('school_name') }}" maxlength="150"
                                 placeholder="Ketik nama lengkap sekolah Anda di sini..."
-                                class="w-full px-3.5 py-2.5 rounded-xl border border-amber-300 bg-amber-50/40 text-xs font-semibold focus:border-brand-500">
+                                class="w-full px-3.5 py-2.5 rounded-xl border border-amber-300 bg-amber-50/40 text-xs font-semibold focus:border-brand-500"
+                                {{ (old('school_id', $selectedSchoolId ?? '') === 'other' || old('school_name')) ? 'required' : '' }}>
+                            @error('school_name')<p class="mt-1 text-rose-600">{{ $message }}</p>@enderror
                         </div>
                     </div>
 
@@ -312,6 +309,78 @@
         document.addEventListener('DOMContentLoaded', function() {
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
+            }
+
+            const $schoolSelect = $('#school_id');
+            const manualBox = document.getElementById('manual_school_box');
+            const manualInput = document.getElementById('school_name');
+
+            if ($schoolSelect.length && typeof $.fn.select2 !== 'undefined') {
+                $schoolSelect.select2({
+                    placeholder: '-- Ketik / Cari Asal Sekolah --',
+                    allowClear: true,
+                    width: '100%',
+                    language: {
+                        noResults: function () {
+                            return 'Sekolah tidak ditemukan. Silakan pilih opsi \"-- Sekolah Lainnya (Tulis Manual) --\"';
+                        },
+                        searching: function () {
+                            return 'Mencari sekolah...';
+                        }
+                    }
+                });
+
+                function syncSchoolVisibility() {
+                    const val = $schoolSelect.val();
+                    const isOther = (val === 'other');
+                    if (manualBox) {
+                        if (isOther) {
+                            $(manualBox).slideDown(150);
+                            if (manualInput) {
+                                manualInput.required = true;
+                                setTimeout(() => manualInput.focus(), 150);
+                            }
+                        } else {
+                            $(manualBox).slideUp(150);
+                            if (manualInput) {
+                                manualInput.required = false;
+                            }
+                        }
+                    }
+
+                    const container = $schoolSelect.next('.select2-container');
+                    if (val) {
+                        container.find('.select2-selection').removeClass('select2-invalid');
+                    }
+                }
+
+                $schoolSelect.on('change', syncSchoolVisibility);
+
+                // Form submit validation handler
+                const form = $schoolSelect.closest('form')[0];
+                if (form) {
+                    form.addEventListener('submit', function (e) {
+                        const val = $schoolSelect.val();
+                        const manualVal = manualInput ? manualInput.value.trim() : '';
+
+                        if (!val) {
+                            e.preventDefault();
+                            const container = $schoolSelect.next('.select2-container');
+                            container.find('.select2-selection').addClass('select2-invalid');
+                            $schoolSelect.select2('open');
+                            return false;
+                        }
+
+                        if (val === 'other' && !manualVal) {
+                            e.preventDefault();
+                            if (manualInput) {
+                                manualInput.focus();
+                                manualInput.classList.add('border-red-500');
+                            }
+                            return false;
+                        }
+                    });
+                }
             }
         });
     </script>
