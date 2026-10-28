@@ -1,0 +1,31 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class Province extends Model
+{
+    public $timestamps = false;
+
+    protected $fillable = [
+        'name',
+    ];
+
+    /**
+     * Province memiliki banyak Regency (Kabupaten/Kota).
+     */
+    public function regencies(): HasMany
+    {
+        return $this->hasMany(Regency::class);
+    }
+
+    /**
+     * Province memiliki banyak School.
+     */
+    public function schools(): HasMany
+    {
+        return $this->hasMany(School::class);
+    }
+}

@@ -1,0 +1,4082 @@
+{
+    "3215": [
+        {
+            "code": "321501",
+            "name": "Karawang Barat"
+        },
+        {
+            "code": "321502",
+            "name": "Pangkalan"
+        },
+        {
+            "code": "321503",
+            "name": "Telukjambe Timur"
+        },
+        {
+            "code": "321504",
+            "name": "Ciampel"
+        },
+        {
+            "code": "321505",
+            "name": "Klari"
+        },
+        {
+            "code": "321506",
+            "name": "Rengasdengklok"
+        },
+        {
+            "code": "321507",
+            "name": "Kutawaluya"
+        },
+        {
+            "code": "321508",
+            "name": "Batujaya"
+        },
+        {
+            "code": "321509",
+            "name": "Tirtajaya"
+        },
+        {
+            "code": "321510",
+            "name": "Pedes"
+        },
+        {
+            "code": "321511",
+            "name": "Cibuaya"
+        },
+        {
+            "code": "321512",
+            "name": "Pakisjaya"
+        },
+        {
+            "code": "321513",
+            "name": "Cikampek"
+        },
+        {
+            "code": "321514",
+            "name": "Jatisari"
+        },
+        {
+            "code": "321515",
+            "name": "Cilamaya Wetan"
+        },
+        {
+            "code": "321516",
+            "name": "Tirtamulya"
+        },
+        {
+            "code": "321517",
+            "name": "Telagasari"
+        },
+        {
+            "code": "321518",
+            "name": "Rawamerta"
+        },
+        {
+            "code": "321519",
+            "name": "Lemahabang"
+        },
+        {
+            "code": "321520",
+            "name": "Tempuran"
+        },
+        {
+            "code": "321521",
+            "name": "Majalaya"
+        },
+        {
+            "code": "321522",
+            "name": "Jayakerta"
+        },
+        {
+            "code": "321523",
+            "name": "Cilamaya Kulon"
+        },
+        {
+            "code": "321524",
+            "name": "Banyusari"
+        },
+        {
+            "code": "321525",
+            "name": "Kota Baru"
+        },
+        {
+            "code": "321526",
+            "name": "Karawang Timur"
+        },
+        {
+            "code": "321527",
+            "name": "Telukjambe Barat"
+        },
+        {
+            "code": "321528",
+            "name": "Tegalwaru"
+        },
+        {
+            "code": "321529",
+            "name": "Purwasari"
+        },
+        {
+            "code": "321530",
+            "name": "Cilebar"
+        }
+    ],
+    "3216": [
+        {
+            "code": "321601",
+            "name": "Tarumajaya"
+        },
+        {
+            "code": "321602",
+            "name": "Babelan"
+        },
+        {
+            "code": "321603",
+            "name": "Sukawangi"
+        },
+        {
+            "code": "321604",
+            "name": "Tambelang"
+        },
+        {
+            "code": "321605",
+            "name": "Tambun Utara"
+        },
+        {
+            "code": "321606",
+            "name": "Tambun Selatan"
+        },
+        {
+            "code": "321607",
+            "name": "Cibitung"
+        },
+        {
+            "code": "321608",
+            "name": "Cikarang Barat"
+        },
+        {
+            "code": "321609",
+            "name": "Cikarang Utara"
+        },
+        {
+            "code": "321610",
+            "name": "Karang Bahagia"
+        },
+        {
+            "code": "321611",
+            "name": "Cikarang Timur"
+        },
+        {
+            "code": "321612",
+            "name": "Kedung Waringin"
+        },
+        {
+            "code": "321613",
+            "name": "Pebayuran"
+        },
+        {
+            "code": "321614",
+            "name": "Sukakarya"
+        },
+        {
+            "code": "321615",
+            "name": "Sukatani"
+        },
+        {
+            "code": "321616",
+            "name": "Cabangbungin"
+        },
+        {
+            "code": "321617",
+            "name": "Muaragembong"
+        },
+        {
+            "code": "321618",
+            "name": "Setu"
+        },
+        {
+            "code": "321619",
+            "name": "Cikarang Selatan"
+        },
+        {
+            "code": "321620",
+            "name": "Cikarang Pusat"
+        },
+        {
+            "code": "321621",
+            "name": "Serang Baru"
+        },
+        {
+            "code": "321622",
+            "name": "Cibarusah"
+        },
+        {
+            "code": "321623",
+            "name": "Bojongmangu"
+        }
+    ],
+    "3275": [
+        {
+            "code": "327501",
+            "name": "Bekasi Timur"
+        },
+        {
+            "code": "327502",
+            "name": "Bekasi Barat"
+        },
+        {
+            "code": "327503",
+            "name": "Bekasi Utara"
+        },
+        {
+            "code": "327504",
+            "name": "Bekasi Selatan"
+        },
+        {
+            "code": "327505",
+            "name": "Rawalumbu"
+        },
+        {
+            "code": "327506",
+            "name": "Medansatria"
+        },
+        {
+            "code": "327507",
+            "name": "Bantargebang"
+        },
+        {
+            "code": "327508",
+            "name": "Pondokgede"
+        },
+        {
+            "code": "327509",
+            "name": "Jatiasih"
+        },
+        {
+            "code": "327510",
+            "name": "Jatisampurna"
+        },
+        {
+            "code": "327511",
+            "name": "Mustikajaya"
+        },
+        {
+            "code": "327512",
+            "name": "Pondokmelati"
+        }
+    ],
+    "3213": [
+        {
+            "code": "321301",
+            "name": "Sagalaherang"
+        },
+        {
+            "code": "321302",
+            "name": "Cisalak"
+        },
+        {
+            "code": "321303",
+            "name": "Subang"
+        },
+        {
+            "code": "321304",
+            "name": "Kalijati"
+        },
+        {
+            "code": "321305",
+            "name": "Pabuaran"
+        },
+        {
+            "code": "321306",
+            "name": "Purwadadi"
+        },
+        {
+            "code": "321307",
+            "name": "Pagaden"
+        },
+        {
+            "code": "321308",
+            "name": "Binong"
+        },
+        {
+            "code": "321309",
+            "name": "Ciasem"
+        },
+        {
+            "code": "321310",
+            "name": "Pusakanagara"
+        },
+        {
+            "code": "321311",
+            "name": "Pamanukan"
+        },
+        {
+            "code": "321312",
+            "name": "Jalancagak"
+        },
+        {
+            "code": "321313",
+            "name": "Blanakan"
+        },
+        {
+            "code": "321314",
+            "name": "Tanjungsiang"
+        },
+        {
+            "code": "321315",
+            "name": "Compreng"
+        },
+        {
+            "code": "321316",
+            "name": "Patokbeusi"
+        },
+        {
+            "code": "321317",
+            "name": "Cibogo"
+        },
+        {
+            "code": "321318",
+            "name": "Cipunagara"
+        },
+        {
+            "code": "321319",
+            "name": "Cijambe"
+        },
+        {
+            "code": "321320",
+            "name": "Cipeundeuy"
+        },
+        {
+            "code": "321321",
+            "name": "Legonkulon"
+        },
+        {
+            "code": "321322",
+            "name": "Cikaum"
+        },
+        {
+            "code": "321323",
+            "name": "Serangpanjang"
+        },
+        {
+            "code": "321324",
+            "name": "Sukasari"
+        },
+        {
+            "code": "321325",
+            "name": "Tambakdahan"
+        },
+        {
+            "code": "321326",
+            "name": "Kasomalang"
+        },
+        {
+            "code": "321327",
+            "name": "Dawuan"
+        },
+        {
+            "code": "321328",
+            "name": "Pagaden Barat"
+        },
+        {
+            "code": "321329",
+            "name": "Ciater"
+        },
+        {
+            "code": "321330",
+            "name": "Pusakajaya"
+        }
+    ],
+    "3214": [
+        {
+            "code": "321401",
+            "name": "Purwakarta"
+        },
+        {
+            "code": "321402",
+            "name": "Campaka"
+        },
+        {
+            "code": "321403",
+            "name": "Jatiluhur"
+        },
+        {
+            "code": "321404",
+            "name": "Plered"
+        },
+        {
+            "code": "321405",
+            "name": "Sukatani"
+        },
+        {
+            "code": "321406",
+            "name": "Darangdan"
+        },
+        {
+            "code": "321407",
+            "name": "Maniis"
+        },
+        {
+            "code": "321408",
+            "name": "Tegalwaru"
+        },
+        {
+            "code": "321409",
+            "name": "Wanayasa"
+        },
+        {
+            "code": "321410",
+            "name": "Pasawahan"
+        },
+        {
+            "code": "321411",
+            "name": "Bojong"
+        },
+        {
+            "code": "321412",
+            "name": "Babakancikao"
+        },
+        {
+            "code": "321413",
+            "name": "Bungursari"
+        },
+        {
+            "code": "321414",
+            "name": "Cibatu"
+        },
+        {
+            "code": "321415",
+            "name": "Sukasari"
+        },
+        {
+            "code": "321416",
+            "name": "Pondoksalam"
+        },
+        {
+            "code": "321417",
+            "name": "Kiarapedes"
+        }
+    ],
+    "3201": [
+        {
+            "code": "320101",
+            "name": "Cibinong"
+        },
+        {
+            "code": "320102",
+            "name": "Gunungputri"
+        },
+        {
+            "code": "320103",
+            "name": "Citeureup"
+        },
+        {
+            "code": "320104",
+            "name": "Sukaraja"
+        },
+        {
+            "code": "320105",
+            "name": "Babakan Madang"
+        },
+        {
+            "code": "320106",
+            "name": "Jonggol"
+        },
+        {
+            "code": "320107",
+            "name": "Cileungsi"
+        },
+        {
+            "code": "320108",
+            "name": "Cariu"
+        },
+        {
+            "code": "320109",
+            "name": "Sukamakmur"
+        },
+        {
+            "code": "320110",
+            "name": "Parung"
+        },
+        {
+            "code": "320111",
+            "name": "Gunungsindur"
+        },
+        {
+            "code": "320112",
+            "name": "Kemang"
+        },
+        {
+            "code": "320113",
+            "name": "Bojonggede"
+        },
+        {
+            "code": "320114",
+            "name": "Leuwiliang"
+        },
+        {
+            "code": "320115",
+            "name": "Ciampea"
+        },
+        {
+            "code": "320116",
+            "name": "Cibungbulang"
+        },
+        {
+            "code": "320117",
+            "name": "Pamijahan"
+        },
+        {
+            "code": "320118",
+            "name": "Rumpin"
+        },
+        {
+            "code": "320119",
+            "name": "Jasinga"
+        },
+        {
+            "code": "320120",
+            "name": "Parungpanjang"
+        },
+        {
+            "code": "320121",
+            "name": "Nanggung"
+        },
+        {
+            "code": "320122",
+            "name": "Cigudeg"
+        },
+        {
+            "code": "320123",
+            "name": "Tenjo"
+        },
+        {
+            "code": "320124",
+            "name": "Ciawi"
+        },
+        {
+            "code": "320125",
+            "name": "Cisarua"
+        },
+        {
+            "code": "320126",
+            "name": "Megamendung"
+        },
+        {
+            "code": "320127",
+            "name": "Caringin"
+        },
+        {
+            "code": "320128",
+            "name": "Cijeruk"
+        },
+        {
+            "code": "320129",
+            "name": "Ciomas"
+        },
+        {
+            "code": "320130",
+            "name": "Dramaga"
+        },
+        {
+            "code": "320131",
+            "name": "Tamansari"
+        },
+        {
+            "code": "320132",
+            "name": "Klapanunggal"
+        },
+        {
+            "code": "320133",
+            "name": "Ciseeng"
+        },
+        {
+            "code": "320134",
+            "name": "Rancabungur"
+        },
+        {
+            "code": "320135",
+            "name": "Sukajaya"
+        },
+        {
+            "code": "320136",
+            "name": "Tanjungsari"
+        },
+        {
+            "code": "320137",
+            "name": "Tajurhalang"
+        },
+        {
+            "code": "320138",
+            "name": "Cigombong"
+        },
+        {
+            "code": "320139",
+            "name": "Leuwisadeng"
+        },
+        {
+            "code": "320140",
+            "name": "Tenjolaya"
+        }
+    ],
+    "3271": [
+        {
+            "code": "327101",
+            "name": "Bogor Selatan"
+        },
+        {
+            "code": "327102",
+            "name": "Bogor Timur"
+        },
+        {
+            "code": "327103",
+            "name": "Bogor Tengah"
+        },
+        {
+            "code": "327104",
+            "name": "Bogor Barat"
+        },
+        {
+            "code": "327105",
+            "name": "Bogor Utara"
+        },
+        {
+            "code": "327106",
+            "name": "Tanah Sareal"
+        }
+    ],
+    "3276": [
+        {
+            "code": "327601",
+            "name": "Pancoran Mas"
+        },
+        {
+            "code": "327602",
+            "name": "Cimanggis"
+        },
+        {
+            "code": "327603",
+            "name": "Sawangan"
+        },
+        {
+            "code": "327604",
+            "name": "Limo"
+        },
+        {
+            "code": "327605",
+            "name": "Sukmajaya"
+        },
+        {
+            "code": "327606",
+            "name": "Beji"
+        },
+        {
+            "code": "327607",
+            "name": "Cipayung"
+        },
+        {
+            "code": "327608",
+            "name": "Cilodong"
+        },
+        {
+            "code": "327609",
+            "name": "Cinere"
+        },
+        {
+            "code": "327610",
+            "name": "Tapos"
+        },
+        {
+            "code": "327611",
+            "name": "Bojongsari"
+        }
+    ],
+    "3204": [
+        {
+            "code": "320405",
+            "name": "Cileunyi"
+        },
+        {
+            "code": "320406",
+            "name": "Cimenyan"
+        },
+        {
+            "code": "320407",
+            "name": "Cilengkrang"
+        },
+        {
+            "code": "320408",
+            "name": "Bojongsoang"
+        },
+        {
+            "code": "320409",
+            "name": "Margahayu"
+        },
+        {
+            "code": "320410",
+            "name": "Margaasih"
+        },
+        {
+            "code": "320411",
+            "name": "Katapang"
+        },
+        {
+            "code": "320412",
+            "name": "Dayeuhkolot"
+        },
+        {
+            "code": "320413",
+            "name": "Banjaran"
+        },
+        {
+            "code": "320414",
+            "name": "Pameungpeuk"
+        },
+        {
+            "code": "320415",
+            "name": "Pangalengan"
+        },
+        {
+            "code": "320416",
+            "name": "Arjasari"
+        },
+        {
+            "code": "320417",
+            "name": "Cimaung"
+        },
+        {
+            "code": "320425",
+            "name": "Cicalengka"
+        },
+        {
+            "code": "320426",
+            "name": "Nagreg"
+        },
+        {
+            "code": "320427",
+            "name": "Cikancung"
+        },
+        {
+            "code": "320428",
+            "name": "Rancaekek"
+        },
+        {
+            "code": "320429",
+            "name": "Ciparay"
+        },
+        {
+            "code": "320430",
+            "name": "Pacet"
+        },
+        {
+            "code": "320431",
+            "name": "Kertasari"
+        },
+        {
+            "code": "320432",
+            "name": "Baleendah"
+        },
+        {
+            "code": "320433",
+            "name": "Majalaya"
+        },
+        {
+            "code": "320434",
+            "name": "Solokanjeruk"
+        },
+        {
+            "code": "320435",
+            "name": "Paseh"
+        },
+        {
+            "code": "320436",
+            "name": "Ibun"
+        },
+        {
+            "code": "320437",
+            "name": "Soreang"
+        },
+        {
+            "code": "320438",
+            "name": "Pasirjambu"
+        },
+        {
+            "code": "320439",
+            "name": "Ciwidey"
+        },
+        {
+            "code": "320440",
+            "name": "Rancabali"
+        },
+        {
+            "code": "320444",
+            "name": "Cangkuang"
+        },
+        {
+            "code": "320446",
+            "name": "Kutawaringin"
+        }
+    ],
+    "3273": [
+        {
+            "code": "327301",
+            "name": "Sukasari"
+        },
+        {
+            "code": "327302",
+            "name": "Coblong"
+        },
+        {
+            "code": "327303",
+            "name": "Babakan Ciparay"
+        },
+        {
+            "code": "327304",
+            "name": "Bojongloa Kaler"
+        },
+        {
+            "code": "327305",
+            "name": "Andir"
+        },
+        {
+            "code": "327306",
+            "name": "Cicendo"
+        },
+        {
+            "code": "327307",
+            "name": "Sukajadi"
+        },
+        {
+            "code": "327308",
+            "name": "Cidadap"
+        },
+        {
+            "code": "327309",
+            "name": "Bandung Wetan"
+        },
+        {
+            "code": "327310",
+            "name": "Astanaanyar"
+        },
+        {
+            "code": "327311",
+            "name": "Regol"
+        },
+        {
+            "code": "327312",
+            "name": "Batununggal"
+        },
+        {
+            "code": "327313",
+            "name": "Lengkong"
+        },
+        {
+            "code": "327314",
+            "name": "Cibeunying Kidul"
+        },
+        {
+            "code": "327315",
+            "name": "Bandung Kulon"
+        },
+        {
+            "code": "327316",
+            "name": "Kiaracondong"
+        },
+        {
+            "code": "327317",
+            "name": "Bojongloa Kidul"
+        },
+        {
+            "code": "327318",
+            "name": "Cibeunying Kaler"
+        },
+        {
+            "code": "327319",
+            "name": "Sumur Bandung"
+        },
+        {
+            "code": "327320",
+            "name": "Antapani"
+        },
+        {
+            "code": "327321",
+            "name": "Bandung Kidul"
+        },
+        {
+            "code": "327322",
+            "name": "Buahbatu"
+        },
+        {
+            "code": "327323",
+            "name": "Rancasari"
+        },
+        {
+            "code": "327324",
+            "name": "Arcamanik"
+        },
+        {
+            "code": "327325",
+            "name": "Cibiru"
+        },
+        {
+            "code": "327326",
+            "name": "Ujungberung"
+        },
+        {
+            "code": "327327",
+            "name": "Gedebage"
+        },
+        {
+            "code": "327328",
+            "name": "Panyileukan"
+        },
+        {
+            "code": "327329",
+            "name": "Cinambo"
+        },
+        {
+            "code": "327330",
+            "name": "Mandalajati"
+        }
+    ],
+    "3217": [
+        {
+            "code": "321701",
+            "name": "Lembang"
+        },
+        {
+            "code": "321702",
+            "name": "Parongpong"
+        },
+        {
+            "code": "321703",
+            "name": "Cisarua"
+        },
+        {
+            "code": "321704",
+            "name": "Cikalongwetan"
+        },
+        {
+            "code": "321705",
+            "name": "Cipeundeuy"
+        },
+        {
+            "code": "321706",
+            "name": "Ngamprah"
+        },
+        {
+            "code": "321707",
+            "name": "Cipatat"
+        },
+        {
+            "code": "321708",
+            "name": "Padalarang"
+        },
+        {
+            "code": "321709",
+            "name": "Batujajar"
+        },
+        {
+            "code": "321710",
+            "name": "Cihampelas"
+        },
+        {
+            "code": "321711",
+            "name": "Cililin"
+        },
+        {
+            "code": "321712",
+            "name": "Cipongkor"
+        },
+        {
+            "code": "321713",
+            "name": "Rongga"
+        },
+        {
+            "code": "321714",
+            "name": "Sindangkerta"
+        },
+        {
+            "code": "321715",
+            "name": "Gununghalu"
+        },
+        {
+            "code": "321716",
+            "name": "Saguling"
+        }
+    ],
+    "3277": [
+        {
+            "code": "327701",
+            "name": "Cimahi Selatan"
+        },
+        {
+            "code": "327702",
+            "name": "Cimahi Tengah"
+        },
+        {
+            "code": "327703",
+            "name": "Cimahi Utara"
+        }
+    ],
+    "3203": [
+        {
+            "code": "320301",
+            "name": "Cianjur"
+        },
+        {
+            "code": "320302",
+            "name": "Warungkondang"
+        },
+        {
+            "code": "320303",
+            "name": "Cibeber"
+        },
+        {
+            "code": "320304",
+            "name": "Cilaku"
+        },
+        {
+            "code": "320305",
+            "name": "Ciranjang"
+        },
+        {
+            "code": "320306",
+            "name": "Bonjogpicung"
+        },
+        {
+            "code": "320307",
+            "name": "Karangtengah"
+        },
+        {
+            "code": "320308",
+            "name": "Mande"
+        },
+        {
+            "code": "320309",
+            "name": "Sukaluyu"
+        },
+        {
+            "code": "320310",
+            "name": "Pacet"
+        },
+        {
+            "code": "320311",
+            "name": "Cugenang"
+        },
+        {
+            "code": "320312",
+            "name": "Cikalongkulon"
+        },
+        {
+            "code": "320313",
+            "name": "Sukaresmi"
+        },
+        {
+            "code": "320314",
+            "name": "Sukanagara"
+        },
+        {
+            "code": "320315",
+            "name": "Campaka"
+        },
+        {
+            "code": "320316",
+            "name": "Takokak"
+        },
+        {
+            "code": "320317",
+            "name": "Kadupandak"
+        },
+        {
+            "code": "320318",
+            "name": "Pagelarang"
+        },
+        {
+            "code": "320319",
+            "name": "Tanggeung"
+        },
+        {
+            "code": "320320",
+            "name": "Cubinong"
+        },
+        {
+            "code": "320321",
+            "name": "Sindangbarang"
+        },
+        {
+            "code": "320322",
+            "name": "Agrabinta"
+        },
+        {
+            "code": "320323",
+            "name": "Cidaun"
+        },
+        {
+            "code": "320324",
+            "name": "Naringgul"
+        },
+        {
+            "code": "320325",
+            "name": "Campakamulya"
+        },
+        {
+            "code": "320326",
+            "name": "Cikadu"
+        },
+        {
+            "code": "320327",
+            "name": "Gekbrong"
+        },
+        {
+            "code": "320328",
+            "name": "Cipanas"
+        },
+        {
+            "code": "320329",
+            "name": "Cijati"
+        },
+        {
+            "code": "320330",
+            "name": "Leles"
+        },
+        {
+            "code": "320331",
+            "name": "Haurwangi"
+        },
+        {
+            "code": "320332",
+            "name": "Pasirkuda"
+        }
+    ],
+    "3202": [
+        {
+            "code": "320201",
+            "name": "Palabuhanratu"
+        },
+        {
+            "code": "320202",
+            "name": "Simpenan"
+        },
+        {
+            "code": "320203",
+            "name": "Cikakak"
+        },
+        {
+            "code": "320204",
+            "name": "Bantargadung"
+        },
+        {
+            "code": "320205",
+            "name": "Cisolok"
+        },
+        {
+            "code": "320206",
+            "name": "Cikidang"
+        },
+        {
+            "code": "320207",
+            "name": "Lengkong"
+        },
+        {
+            "code": "320208",
+            "name": "Jampangtengah"
+        },
+        {
+            "code": "320209",
+            "name": "Warungkiara"
+        },
+        {
+            "code": "320210",
+            "name": "Cikembar"
+        },
+        {
+            "code": "320211",
+            "name": "Cibadak"
+        },
+        {
+            "code": "320212",
+            "name": "Nagrak"
+        },
+        {
+            "code": "320213",
+            "name": "Parungkuda"
+        },
+        {
+            "code": "320214",
+            "name": "Bojonggenteng"
+        },
+        {
+            "code": "320215",
+            "name": "Parakansalak"
+        },
+        {
+            "code": "320216",
+            "name": "Cicurug"
+        },
+        {
+            "code": "320217",
+            "name": "Cidahu"
+        },
+        {
+            "code": "320218",
+            "name": "Kalapanunggal"
+        },
+        {
+            "code": "320219",
+            "name": "Kabandungan"
+        },
+        {
+            "code": "320220",
+            "name": "Waluran"
+        },
+        {
+            "code": "320221",
+            "name": "Jampangkulon"
+        },
+        {
+            "code": "320222",
+            "name": "Ciemas"
+        },
+        {
+            "code": "320223",
+            "name": "Kalibunder"
+        },
+        {
+            "code": "320224",
+            "name": "Surade"
+        },
+        {
+            "code": "320225",
+            "name": "Cibitung"
+        },
+        {
+            "code": "320226",
+            "name": "Ciracap"
+        },
+        {
+            "code": "320227",
+            "name": "Gunungguruh"
+        },
+        {
+            "code": "320228",
+            "name": "Cicantayan"
+        },
+        {
+            "code": "320229",
+            "name": "Cisaat"
+        },
+        {
+            "code": "320230",
+            "name": "Kadudampit"
+        },
+        {
+            "code": "320231",
+            "name": "Caringin"
+        },
+        {
+            "code": "320232",
+            "name": "Sukabumi"
+        },
+        {
+            "code": "320233",
+            "name": "Sukaraja"
+        },
+        {
+            "code": "320234",
+            "name": "Kebonpedes"
+        },
+        {
+            "code": "320235",
+            "name": "Cireunghas"
+        },
+        {
+            "code": "320236",
+            "name": "Sukalarang"
+        },
+        {
+            "code": "320237",
+            "name": "Pabuaran"
+        },
+        {
+            "code": "320238",
+            "name": "Purabaya"
+        },
+        {
+            "code": "320239",
+            "name": "Nyalindung"
+        },
+        {
+            "code": "320240",
+            "name": "Gegerbitung"
+        },
+        {
+            "code": "320241",
+            "name": "Sagaranten"
+        },
+        {
+            "code": "320242",
+            "name": "Curugkembar"
+        },
+        {
+            "code": "320243",
+            "name": "Cidolog"
+        },
+        {
+            "code": "320244",
+            "name": "Cidadap"
+        },
+        {
+            "code": "320245",
+            "name": "Tegalbuleud"
+        },
+        {
+            "code": "320246",
+            "name": "Cimanggu"
+        },
+        {
+            "code": "320247",
+            "name": "Ciambar"
+        }
+    ],
+    "3272": [
+        {
+            "code": "327201",
+            "name": "Gunung Puyuh"
+        },
+        {
+            "code": "327202",
+            "name": "Cikole"
+        },
+        {
+            "code": "327203",
+            "name": "Citamiang"
+        },
+        {
+            "code": "327204",
+            "name": "Warudoyong"
+        },
+        {
+            "code": "327205",
+            "name": "Baros"
+        },
+        {
+            "code": "327206",
+            "name": "Lembursitu"
+        },
+        {
+            "code": "327207",
+            "name": "Cibeureum"
+        }
+    ],
+    "3212": [
+        {
+            "code": "321201",
+            "name": "Haurgeulis"
+        },
+        {
+            "code": "321202",
+            "name": "Kroya"
+        },
+        {
+            "code": "321203",
+            "name": "Gabuswetan"
+        },
+        {
+            "code": "321204",
+            "name": "Cikedung"
+        },
+        {
+            "code": "321205",
+            "name": "Lelea"
+        },
+        {
+            "code": "321206",
+            "name": "Bangodua"
+        },
+        {
+            "code": "321207",
+            "name": "Widasari"
+        },
+        {
+            "code": "321208",
+            "name": "Kertasemaya"
+        },
+        {
+            "code": "321209",
+            "name": "Krangkeng"
+        },
+        {
+            "code": "321210",
+            "name": "Karangampel"
+        },
+        {
+            "code": "321211",
+            "name": "Juntinyuat"
+        },
+        {
+            "code": "321212",
+            "name": "Sliyeg"
+        },
+        {
+            "code": "321213",
+            "name": "Jatibarang"
+        },
+        {
+            "code": "321214",
+            "name": "Balongan"
+        },
+        {
+            "code": "321215",
+            "name": "Indramayu"
+        },
+        {
+            "code": "321216",
+            "name": "Sindang"
+        },
+        {
+            "code": "321217",
+            "name": "Cantigi"
+        },
+        {
+            "code": "321218",
+            "name": "Lohbener"
+        },
+        {
+            "code": "321219",
+            "name": "Arahan"
+        },
+        {
+            "code": "321220",
+            "name": "Losarang"
+        },
+        {
+            "code": "321221",
+            "name": "Kandanghaur"
+        },
+        {
+            "code": "321222",
+            "name": "Bongas"
+        },
+        {
+            "code": "321223",
+            "name": "Anjatan"
+        },
+        {
+            "code": "321224",
+            "name": "Sukra"
+        },
+        {
+            "code": "321225",
+            "name": "Gantar"
+        },
+        {
+            "code": "321226",
+            "name": "Terisi"
+        },
+        {
+            "code": "321227",
+            "name": "Sukagumiwang"
+        },
+        {
+            "code": "321228",
+            "name": "Kedokan Bunder"
+        },
+        {
+            "code": "321229",
+            "name": "Pasekan"
+        },
+        {
+            "code": "321230",
+            "name": "Tukdana"
+        },
+        {
+            "code": "321231",
+            "name": "Patrol"
+        }
+    ],
+    "3209": [
+        {
+            "code": "320901",
+            "name": "Waled"
+        },
+        {
+            "code": "320902",
+            "name": "Ciledug"
+        },
+        {
+            "code": "320903",
+            "name": "Losari"
+        },
+        {
+            "code": "320904",
+            "name": "Pabedilan"
+        },
+        {
+            "code": "320905",
+            "name": "Babakan"
+        },
+        {
+            "code": "320906",
+            "name": "Karangsembung"
+        },
+        {
+            "code": "320907",
+            "name": "Lemahabang"
+        },
+        {
+            "code": "320908",
+            "name": "Susukan Lebak"
+        },
+        {
+            "code": "320909",
+            "name": "Sedong"
+        },
+        {
+            "code": "320910",
+            "name": "Astanajapura"
+        },
+        {
+            "code": "320911",
+            "name": "Pangenan"
+        },
+        {
+            "code": "320912",
+            "name": "Mundu"
+        },
+        {
+            "code": "320913",
+            "name": "Beber"
+        },
+        {
+            "code": "320914",
+            "name": "Talun"
+        },
+        {
+            "code": "320915",
+            "name": "Sumber"
+        },
+        {
+            "code": "320916",
+            "name": "Dukupuntang"
+        },
+        {
+            "code": "320917",
+            "name": "Palimanan"
+        },
+        {
+            "code": "320918",
+            "name": "Plumbon"
+        },
+        {
+            "code": "320919",
+            "name": "Weru"
+        },
+        {
+            "code": "320920",
+            "name": "Kedawung"
+        },
+        {
+            "code": "320921",
+            "name": "Gunung Jati"
+        },
+        {
+            "code": "320922",
+            "name": "Kepetakan"
+        },
+        {
+            "code": "320923",
+            "name": "Klangenan"
+        },
+        {
+            "code": "320924",
+            "name": "Arjawinangun"
+        },
+        {
+            "code": "320925",
+            "name": "Panguragan"
+        },
+        {
+            "code": "320926",
+            "name": "Ciwaringin"
+        },
+        {
+            "code": "320927",
+            "name": "Susukan"
+        },
+        {
+            "code": "320928",
+            "name": "Gegesik"
+        },
+        {
+            "code": "320929",
+            "name": "Kaliwedi"
+        },
+        {
+            "code": "320930",
+            "name": "Gebang"
+        },
+        {
+            "code": "320931",
+            "name": "Depok"
+        },
+        {
+            "code": "320932",
+            "name": "Pasaleman"
+        },
+        {
+            "code": "320933",
+            "name": "Pabuaran"
+        },
+        {
+            "code": "320934",
+            "name": "Karangwareng"
+        },
+        {
+            "code": "320935",
+            "name": "Tengah Tani"
+        },
+        {
+            "code": "320936",
+            "name": "Plered"
+        },
+        {
+            "code": "320937",
+            "name": "Gempol"
+        },
+        {
+            "code": "320938",
+            "name": "Greged"
+        },
+        {
+            "code": "320939",
+            "name": "Suranenggala"
+        },
+        {
+            "code": "320940",
+            "name": "Jamblang"
+        }
+    ],
+    "3274": [
+        {
+            "code": "327401",
+            "name": "Kejaksan"
+        },
+        {
+            "code": "327402",
+            "name": "Lemahwungkuk"
+        },
+        {
+            "code": "327403",
+            "name": "Harjamukti"
+        },
+        {
+            "code": "327404",
+            "name": "Pekalipan"
+        },
+        {
+            "code": "327405",
+            "name": "Kesambi"
+        }
+    ],
+    "3210": [
+        {
+            "code": "321001",
+            "name": "Lemahsugih"
+        },
+        {
+            "code": "321002",
+            "name": "Bantarujeg"
+        },
+        {
+            "code": "321003",
+            "name": "Cikijing"
+        },
+        {
+            "code": "321004",
+            "name": "Talaga"
+        },
+        {
+            "code": "321005",
+            "name": "Argapura"
+        },
+        {
+            "code": "321006",
+            "name": "Maja"
+        },
+        {
+            "code": "321007",
+            "name": "Majalengka"
+        },
+        {
+            "code": "321008",
+            "name": "Sukahaji"
+        },
+        {
+            "code": "321009",
+            "name": "Rajagaluh"
+        },
+        {
+            "code": "321010",
+            "name": "Leuwimunding"
+        },
+        {
+            "code": "321011",
+            "name": "Jatiwangi"
+        },
+        {
+            "code": "321012",
+            "name": "Dawuan"
+        },
+        {
+            "code": "321013",
+            "name": "Kadipaten"
+        },
+        {
+            "code": "321014",
+            "name": "Kertajati"
+        },
+        {
+            "code": "321015",
+            "name": "Jatitujuh"
+        },
+        {
+            "code": "321016",
+            "name": "Ligung"
+        },
+        {
+            "code": "321017",
+            "name": "Sumberjaya"
+        },
+        {
+            "code": "321018",
+            "name": "Panyingkiran"
+        },
+        {
+            "code": "321019",
+            "name": "Palasah"
+        },
+        {
+            "code": "321020",
+            "name": "Cigasong"
+        },
+        {
+            "code": "321021",
+            "name": "Sindangwangi"
+        },
+        {
+            "code": "321022",
+            "name": "Banjaran"
+        },
+        {
+            "code": "321023",
+            "name": "Cingambul"
+        },
+        {
+            "code": "321024",
+            "name": "Kasokandel"
+        },
+        {
+            "code": "321025",
+            "name": "Sindang"
+        },
+        {
+            "code": "321026",
+            "name": "Malausma"
+        }
+    ],
+    "3208": [
+        {
+            "code": "320801",
+            "name": "Kadugede"
+        },
+        {
+            "code": "320802",
+            "name": "Ciniru"
+        },
+        {
+            "code": "320803",
+            "name": "Subang"
+        },
+        {
+            "code": "320804",
+            "name": "Ciwaru"
+        },
+        {
+            "code": "320805",
+            "name": "Cibingbin"
+        },
+        {
+            "code": "320806",
+            "name": "Luragung"
+        },
+        {
+            "code": "320807",
+            "name": "Lebakwangi"
+        },
+        {
+            "code": "320808",
+            "name": "Garawangi"
+        },
+        {
+            "code": "320809",
+            "name": "Kuningan"
+        },
+        {
+            "code": "320810",
+            "name": "Ciawigebang"
+        },
+        {
+            "code": "320811",
+            "name": "Cidahu"
+        },
+        {
+            "code": "320812",
+            "name": "Jalaksana"
+        },
+        {
+            "code": "320813",
+            "name": "Cilimus"
+        },
+        {
+            "code": "320814",
+            "name": "Mandirancan"
+        },
+        {
+            "code": "320815",
+            "name": "Selajambe"
+        },
+        {
+            "code": "320816",
+            "name": "Kramatmulya"
+        },
+        {
+            "code": "320817",
+            "name": "Darma"
+        },
+        {
+            "code": "320818",
+            "name": "Cigugur"
+        },
+        {
+            "code": "320819",
+            "name": "Pasawahan"
+        },
+        {
+            "code": "320820",
+            "name": "Nusaherang"
+        },
+        {
+            "code": "320821",
+            "name": "Cipicung"
+        },
+        {
+            "code": "320822",
+            "name": "Pancalang"
+        },
+        {
+            "code": "320823",
+            "name": "Japara"
+        },
+        {
+            "code": "320824",
+            "name": "Cimahi"
+        },
+        {
+            "code": "320825",
+            "name": "Cilebak"
+        },
+        {
+            "code": "320826",
+            "name": "Hantara"
+        },
+        {
+            "code": "320827",
+            "name": "Kalimanggis"
+        },
+        {
+            "code": "320828",
+            "name": "Cibeureum"
+        },
+        {
+            "code": "320829",
+            "name": "Karangkancana"
+        },
+        {
+            "code": "320830",
+            "name": "Maleber"
+        },
+        {
+            "code": "320831",
+            "name": "Sindangagung"
+        },
+        {
+            "code": "320832",
+            "name": "Cigandamekar"
+        }
+    ],
+    "3211": [
+        {
+            "code": "321101",
+            "name": "Wado"
+        },
+        {
+            "code": "321102",
+            "name": "Jatinunggal"
+        },
+        {
+            "code": "321103",
+            "name": "Darmaraja"
+        },
+        {
+            "code": "321104",
+            "name": "Cibugel"
+        },
+        {
+            "code": "321105",
+            "name": "Cisitu"
+        },
+        {
+            "code": "321106",
+            "name": "Situraja"
+        },
+        {
+            "code": "321107",
+            "name": "Conggeang"
+        },
+        {
+            "code": "321108",
+            "name": "Paseh"
+        },
+        {
+            "code": "321109",
+            "name": "Surian"
+        },
+        {
+            "code": "321110",
+            "name": "Buahdua"
+        },
+        {
+            "code": "321111",
+            "name": "Tanjungsari"
+        },
+        {
+            "code": "321112",
+            "name": "Sukasari"
+        },
+        {
+            "code": "321113",
+            "name": "Pamulihan"
+        },
+        {
+            "code": "321114",
+            "name": "Cimanggung"
+        },
+        {
+            "code": "321115",
+            "name": "Jatinangor"
+        },
+        {
+            "code": "321116",
+            "name": "Rancakalong"
+        },
+        {
+            "code": "321117",
+            "name": "Sumedang Selatan"
+        },
+        {
+            "code": "321118",
+            "name": "Sumedang Utara"
+        },
+        {
+            "code": "321119",
+            "name": "Ganeas"
+        },
+        {
+            "code": "321120",
+            "name": "Tanjungkerta"
+        },
+        {
+            "code": "321121",
+            "name": "Tanjungmedar"
+        },
+        {
+            "code": "321122",
+            "name": "Cimalaka"
+        },
+        {
+            "code": "321123",
+            "name": "Cisarua"
+        },
+        {
+            "code": "321124",
+            "name": "Tomo"
+        },
+        {
+            "code": "321125",
+            "name": "Ujungjaya"
+        },
+        {
+            "code": "321126",
+            "name": "Jatigede"
+        }
+    ],
+    "3205": [
+        {
+            "code": "320501",
+            "name": "Garut Kota"
+        },
+        {
+            "code": "320502",
+            "name": "Karangpawitan"
+        },
+        {
+            "code": "320503",
+            "name": "Wanaraja"
+        },
+        {
+            "code": "320504",
+            "name": "Tarogong Kaler"
+        },
+        {
+            "code": "320505",
+            "name": "Tarogong Kidul"
+        },
+        {
+            "code": "320506",
+            "name": "Banyuresmi"
+        },
+        {
+            "code": "320507",
+            "name": "Samarang"
+        },
+        {
+            "code": "320508",
+            "name": "Pasirwangi"
+        },
+        {
+            "code": "320509",
+            "name": "Leles"
+        },
+        {
+            "code": "320510",
+            "name": "Kadungora"
+        },
+        {
+            "code": "320511",
+            "name": "Leuwigoong"
+        },
+        {
+            "code": "320512",
+            "name": "Cibatu"
+        },
+        {
+            "code": "320513",
+            "name": "Kersamanah"
+        },
+        {
+            "code": "320514",
+            "name": "Malangbong"
+        },
+        {
+            "code": "320515",
+            "name": "Sukawening"
+        },
+        {
+            "code": "320516",
+            "name": "Karangtengah"
+        },
+        {
+            "code": "320517",
+            "name": "Bayongbong"
+        },
+        {
+            "code": "320518",
+            "name": "Cigedug"
+        },
+        {
+            "code": "320519",
+            "name": "Cilawu"
+        },
+        {
+            "code": "320520",
+            "name": "Cisurupan"
+        },
+        {
+            "code": "320521",
+            "name": "Sukaresmi"
+        },
+        {
+            "code": "320522",
+            "name": "Cikajang"
+        },
+        {
+            "code": "320523",
+            "name": "Banjarwangi"
+        },
+        {
+            "code": "320524",
+            "name": "Singajaya"
+        },
+        {
+            "code": "320525",
+            "name": "Cihurip"
+        },
+        {
+            "code": "320526",
+            "name": "Peundeuy"
+        },
+        {
+            "code": "320527",
+            "name": "Pameungpeuk"
+        },
+        {
+            "code": "320528",
+            "name": "Cisompet"
+        },
+        {
+            "code": "320529",
+            "name": "Cibalong"
+        },
+        {
+            "code": "320530",
+            "name": "Cikelet"
+        },
+        {
+            "code": "320531",
+            "name": "Bungbulang"
+        },
+        {
+            "code": "320532",
+            "name": "Mekarmukti"
+        },
+        {
+            "code": "320533",
+            "name": "Pakenjeng"
+        },
+        {
+            "code": "320534",
+            "name": "Pamulihan"
+        },
+        {
+            "code": "320535",
+            "name": "Cisewu"
+        },
+        {
+            "code": "320536",
+            "name": "Caringin"
+        },
+        {
+            "code": "320537",
+            "name": "Talegong"
+        },
+        {
+            "code": "320538",
+            "name": "Limbangan"
+        },
+        {
+            "code": "320539",
+            "name": "Selaawi"
+        },
+        {
+            "code": "320540",
+            "name": "Cibiuk"
+        },
+        {
+            "code": "320541",
+            "name": "Pangatikan"
+        },
+        {
+            "code": "320542",
+            "name": "Sucinaraja"
+        }
+    ],
+    "3206": [
+        {
+            "code": "320601",
+            "name": "Cipatujah"
+        },
+        {
+            "code": "320602",
+            "name": "Karangnunggal"
+        },
+        {
+            "code": "320603",
+            "name": "Cikalong"
+        },
+        {
+            "code": "320604",
+            "name": "Pancatengah"
+        },
+        {
+            "code": "320605",
+            "name": "Cikatomas"
+        },
+        {
+            "code": "320606",
+            "name": "Cibalong"
+        },
+        {
+            "code": "320607",
+            "name": "Parungponteng"
+        },
+        {
+            "code": "320608",
+            "name": "Bantarkalong"
+        },
+        {
+            "code": "320609",
+            "name": "Bojongasih"
+        },
+        {
+            "code": "320610",
+            "name": "Culamega"
+        },
+        {
+            "code": "320611",
+            "name": "Bojonggambir"
+        },
+        {
+            "code": "320612",
+            "name": "Sodonghilir"
+        },
+        {
+            "code": "320613",
+            "name": "Taraju"
+        },
+        {
+            "code": "320614",
+            "name": "Salawu"
+        },
+        {
+            "code": "320615",
+            "name": "Puspahiang"
+        },
+        {
+            "code": "320616",
+            "name": "Tanjungjaya"
+        },
+        {
+            "code": "320617",
+            "name": "Sukaraja"
+        },
+        {
+            "code": "320618",
+            "name": "Salopa"
+        },
+        {
+            "code": "320619",
+            "name": "Jatiwaras"
+        },
+        {
+            "code": "320620",
+            "name": "Cineam"
+        },
+        {
+            "code": "320621",
+            "name": "Karang Jaya"
+        },
+        {
+            "code": "320622",
+            "name": "Manonjaya"
+        },
+        {
+            "code": "320623",
+            "name": "Gunung Tanjung"
+        },
+        {
+            "code": "320624",
+            "name": "Singaparna"
+        },
+        {
+            "code": "320625",
+            "name": "Mangunreja"
+        },
+        {
+            "code": "320626",
+            "name": "Sukarame"
+        },
+        {
+            "code": "320627",
+            "name": "Cigalontang"
+        },
+        {
+            "code": "320628",
+            "name": "Leuwisari"
+        },
+        {
+            "code": "320629",
+            "name": "Padakembang"
+        },
+        {
+            "code": "320630",
+            "name": "Sariwangi"
+        },
+        {
+            "code": "320631",
+            "name": "Sukaratu"
+        },
+        {
+            "code": "320632",
+            "name": "Cisayong"
+        },
+        {
+            "code": "320633",
+            "name": "Sukahening"
+        },
+        {
+            "code": "320634",
+            "name": "Rajapolah"
+        },
+        {
+            "code": "320635",
+            "name": "Jamanis"
+        },
+        {
+            "code": "320636",
+            "name": "Ciawi"
+        },
+        {
+            "code": "320637",
+            "name": "Kadipaten"
+        },
+        {
+            "code": "320638",
+            "name": "Pagerageung"
+        },
+        {
+            "code": "320639",
+            "name": "Sukaresik"
+        }
+    ],
+    "3278": [
+        {
+            "code": "327801",
+            "name": "Cihideung"
+        },
+        {
+            "code": "327802",
+            "name": "Cipedes"
+        },
+        {
+            "code": "327803",
+            "name": "Tawang"
+        },
+        {
+            "code": "327804",
+            "name": "Indihiang"
+        },
+        {
+            "code": "327805",
+            "name": "Kawalu"
+        },
+        {
+            "code": "327806",
+            "name": "Cibeureum"
+        },
+        {
+            "code": "327807",
+            "name": "Tamansari"
+        },
+        {
+            "code": "327808",
+            "name": "Mangkubumi"
+        },
+        {
+            "code": "327809",
+            "name": "Bungursari"
+        },
+        {
+            "code": "327810",
+            "name": "Purbaratu"
+        }
+    ],
+    "3207": [
+        {
+            "code": "320701",
+            "name": "Ciamis"
+        },
+        {
+            "code": "320702",
+            "name": "Cikoneng"
+        },
+        {
+            "code": "320703",
+            "name": "Cijeungjing"
+        },
+        {
+            "code": "320704",
+            "name": "Sadananya"
+        },
+        {
+            "code": "320705",
+            "name": "Cidolog"
+        },
+        {
+            "code": "320706",
+            "name": "Cihaurbeuti"
+        },
+        {
+            "code": "320707",
+            "name": "Panumbangan"
+        },
+        {
+            "code": "320708",
+            "name": "Panjalu"
+        },
+        {
+            "code": "320709",
+            "name": "Kawali"
+        },
+        {
+            "code": "320710",
+            "name": "Panawangan"
+        },
+        {
+            "code": "320711",
+            "name": "Cipaku"
+        },
+        {
+            "code": "320712",
+            "name": "Jatinagara"
+        },
+        {
+            "code": "320713",
+            "name": "Rajadesa"
+        },
+        {
+            "code": "320714",
+            "name": "Sukadana"
+        },
+        {
+            "code": "320715",
+            "name": "Rancah"
+        },
+        {
+            "code": "320716",
+            "name": "Tambaksari"
+        },
+        {
+            "code": "320717",
+            "name": "Lakbok"
+        },
+        {
+            "code": "320718",
+            "name": "Banjarsari"
+        },
+        {
+            "code": "320719",
+            "name": "Pamarican"
+        },
+        {
+            "code": "320729",
+            "name": "Cimaragas"
+        },
+        {
+            "code": "320730",
+            "name": "Cisaga"
+        },
+        {
+            "code": "320731",
+            "name": "Sindangkasih"
+        },
+        {
+            "code": "320732",
+            "name": "Baregbeg"
+        },
+        {
+            "code": "320733",
+            "name": "Sukamantri"
+        },
+        {
+            "code": "320734",
+            "name": "Lumbung"
+        },
+        {
+            "code": "320735",
+            "name": "Purwadadi"
+        },
+        {
+            "code": "320737",
+            "name": "Banjaranyar"
+        }
+    ],
+    "3279": [
+        {
+            "code": "327901",
+            "name": "Banjar"
+        },
+        {
+            "code": "327902",
+            "name": "Pataruman"
+        },
+        {
+            "code": "327903",
+            "name": "Purwaharja"
+        },
+        {
+            "code": "327904",
+            "name": "Langensari"
+        }
+    ],
+    "3218": [
+        {
+            "code": "321801",
+            "name": "Parigi"
+        },
+        {
+            "code": "321802",
+            "name": "Cijulang"
+        },
+        {
+            "code": "321803",
+            "name": "Cimerak"
+        },
+        {
+            "code": "321804",
+            "name": "Cigugur"
+        },
+        {
+            "code": "321805",
+            "name": "Langkaplancar"
+        },
+        {
+            "code": "321806",
+            "name": "Mangunjaya"
+        },
+        {
+            "code": "321807",
+            "name": "Padaherang"
+        },
+        {
+            "code": "321808",
+            "name": "Kalipucang"
+        },
+        {
+            "code": "321809",
+            "name": "Pangandaran"
+        },
+        {
+            "code": "321810",
+            "name": "Sidamulih"
+        }
+    ],
+    "3171": [
+        {
+            "code": "317101",
+            "name": "Gambir"
+        },
+        {
+            "code": "317102",
+            "name": "Sawah Besar"
+        },
+        {
+            "code": "317103",
+            "name": "Kemayoran"
+        },
+        {
+            "code": "317104",
+            "name": "Senen"
+        },
+        {
+            "code": "317105",
+            "name": "Cempaka Putih"
+        },
+        {
+            "code": "317106",
+            "name": "Menteng"
+        },
+        {
+            "code": "317107",
+            "name": "Tanah Abang"
+        },
+        {
+            "code": "317108",
+            "name": "Johar Baru"
+        }
+    ],
+    "3174": [
+        {
+            "code": "317401",
+            "name": "Tebet"
+        },
+        {
+            "code": "317402",
+            "name": "Setiabudi"
+        },
+        {
+            "code": "317403",
+            "name": "Mampang Prapatan"
+        },
+        {
+            "code": "317404",
+            "name": "Pasar Minggu"
+        },
+        {
+            "code": "317405",
+            "name": "Kebayoran Lama"
+        },
+        {
+            "code": "317406",
+            "name": "Cilandak"
+        },
+        {
+            "code": "317407",
+            "name": "Kebayoran Baru"
+        },
+        {
+            "code": "317408",
+            "name": "Pancoran"
+        },
+        {
+            "code": "317409",
+            "name": "Jagakarsa"
+        },
+        {
+            "code": "317410",
+            "name": "Pesanggrahan"
+        }
+    ],
+    "3175": [
+        {
+            "code": "317501",
+            "name": "Matraman"
+        },
+        {
+            "code": "317502",
+            "name": "Pulogadung"
+        },
+        {
+            "code": "317503",
+            "name": "Jatinegara"
+        },
+        {
+            "code": "317504",
+            "name": "Kramatjati"
+        },
+        {
+            "code": "317505",
+            "name": "Pasar Rebo"
+        },
+        {
+            "code": "317506",
+            "name": "Cakung"
+        },
+        {
+            "code": "317507",
+            "name": "Duren Sawit"
+        },
+        {
+            "code": "317508",
+            "name": "Makasar"
+        },
+        {
+            "code": "317509",
+            "name": "Ciracas"
+        },
+        {
+            "code": "317510",
+            "name": "Cipayung"
+        }
+    ],
+    "3173": [
+        {
+            "code": "317301",
+            "name": "Cengkareng"
+        },
+        {
+            "code": "317302",
+            "name": "Grogol Petamburan"
+        },
+        {
+            "code": "317303",
+            "name": "Taman Sari"
+        },
+        {
+            "code": "317304",
+            "name": "Tambora"
+        },
+        {
+            "code": "317305",
+            "name": "Kebon Jeruk"
+        },
+        {
+            "code": "317306",
+            "name": "Kalideres"
+        },
+        {
+            "code": "317307",
+            "name": "Pal Merah"
+        },
+        {
+            "code": "317308",
+            "name": "Kembangan"
+        }
+    ],
+    "3172": [
+        {
+            "code": "317201",
+            "name": "Penjaringan"
+        },
+        {
+            "code": "317202",
+            "name": "Tanjung Priok"
+        },
+        {
+            "code": "317203",
+            "name": "Koja"
+        },
+        {
+            "code": "317204",
+            "name": "Cilincing"
+        },
+        {
+            "code": "317205",
+            "name": "Pademangan"
+        },
+        {
+            "code": "317206",
+            "name": "Kelapa Gading"
+        }
+    ],
+    "3603": [
+        {
+            "code": "360301",
+            "name": "Balaraja"
+        },
+        {
+            "code": "360302",
+            "name": "Jayanti"
+        },
+        {
+            "code": "360303",
+            "name": "Tigaraksa"
+        },
+        {
+            "code": "360304",
+            "name": "Jambe"
+        },
+        {
+            "code": "360305",
+            "name": "Cisoka"
+        },
+        {
+            "code": "360306",
+            "name": "Kresek"
+        },
+        {
+            "code": "360307",
+            "name": "Kronjo"
+        },
+        {
+            "code": "360308",
+            "name": "Mauk"
+        },
+        {
+            "code": "360309",
+            "name": "Kemiri"
+        },
+        {
+            "code": "360310",
+            "name": "Sukadiri"
+        },
+        {
+            "code": "360311",
+            "name": "Rajeg"
+        },
+        {
+            "code": "360312",
+            "name": "Pasar Kemis"
+        },
+        {
+            "code": "360313",
+            "name": "Teluknaga"
+        },
+        {
+            "code": "360314",
+            "name": "Kosambi"
+        },
+        {
+            "code": "360315",
+            "name": "Pakuhaji"
+        },
+        {
+            "code": "360316",
+            "name": "Sepatan"
+        },
+        {
+            "code": "360317",
+            "name": "Curug"
+        },
+        {
+            "code": "360318",
+            "name": "Cikupa"
+        },
+        {
+            "code": "360319",
+            "name": "Panongan"
+        },
+        {
+            "code": "360320",
+            "name": "Legok"
+        },
+        {
+            "code": "360322",
+            "name": "Pagedangan"
+        },
+        {
+            "code": "360323",
+            "name": "Cisauk"
+        },
+        {
+            "code": "360327",
+            "name": "Sukamulya"
+        },
+        {
+            "code": "360328",
+            "name": "Kelapa Dua"
+        },
+        {
+            "code": "360329",
+            "name": "Sindang Jaya"
+        },
+        {
+            "code": "360330",
+            "name": "Sepatan Timur"
+        },
+        {
+            "code": "360331",
+            "name": "Solear"
+        },
+        {
+            "code": "360332",
+            "name": "Gunung Kaler"
+        },
+        {
+            "code": "360333",
+            "name": "Mekar Baru"
+        }
+    ],
+    "3671": [
+        {
+            "code": "367101",
+            "name": "Tangerang"
+        },
+        {
+            "code": "367102",
+            "name": "Jatiuwung"
+        },
+        {
+            "code": "367103",
+            "name": "Batuceper"
+        },
+        {
+            "code": "367104",
+            "name": "Benda"
+        },
+        {
+            "code": "367105",
+            "name": "Cipondoh"
+        },
+        {
+            "code": "367106",
+            "name": "Ciledug"
+        },
+        {
+            "code": "367107",
+            "name": "Karawaci"
+        },
+        {
+            "code": "367108",
+            "name": "Periuk"
+        },
+        {
+            "code": "367109",
+            "name": "Cibodas"
+        },
+        {
+            "code": "367110",
+            "name": "Neglasari"
+        },
+        {
+            "code": "367111",
+            "name": "Pinang"
+        },
+        {
+            "code": "367112",
+            "name": "Karang Tengah"
+        },
+        {
+            "code": "367113",
+            "name": "Larangan"
+        }
+    ],
+    "3674": [
+        {
+            "code": "367401",
+            "name": "Serpong"
+        },
+        {
+            "code": "367402",
+            "name": "Serpong Utara"
+        },
+        {
+            "code": "367403",
+            "name": "Pondok Aren"
+        },
+        {
+            "code": "367404",
+            "name": "Ciputat"
+        },
+        {
+            "code": "367405",
+            "name": "Ciputat Timur"
+        },
+        {
+            "code": "367406",
+            "name": "Pamulang"
+        },
+        {
+            "code": "367407",
+            "name": "Setu"
+        }
+    ],
+    "3604": [
+        {
+            "code": "360405",
+            "name": "Kramatwatu"
+        },
+        {
+            "code": "360406",
+            "name": "Waringinkurung"
+        },
+        {
+            "code": "360407",
+            "name": "Bojonegara"
+        },
+        {
+            "code": "360408",
+            "name": "Pulo Ampel"
+        },
+        {
+            "code": "360409",
+            "name": "Ciruas"
+        },
+        {
+            "code": "360411",
+            "name": "Kragilan"
+        },
+        {
+            "code": "360412",
+            "name": "Pontang"
+        },
+        {
+            "code": "360413",
+            "name": "Tirtayasa"
+        },
+        {
+            "code": "360414",
+            "name": "Tanara"
+        },
+        {
+            "code": "360415",
+            "name": "Cikande"
+        },
+        {
+            "code": "360416",
+            "name": "Kibin"
+        },
+        {
+            "code": "360417",
+            "name": "Carenang"
+        },
+        {
+            "code": "360418",
+            "name": "Binuang"
+        },
+        {
+            "code": "360419",
+            "name": "Petir"
+        },
+        {
+            "code": "360420",
+            "name": "Tunjung Teja"
+        },
+        {
+            "code": "360422",
+            "name": "Baros"
+        },
+        {
+            "code": "360423",
+            "name": "Cikeusal"
+        },
+        {
+            "code": "360424",
+            "name": "Pamarayan"
+        },
+        {
+            "code": "360425",
+            "name": "Kopo"
+        },
+        {
+            "code": "360426",
+            "name": "Jawilan"
+        },
+        {
+            "code": "360427",
+            "name": "Ciomas"
+        },
+        {
+            "code": "360428",
+            "name": "Pabuaran"
+        },
+        {
+            "code": "360429",
+            "name": "Padarincang"
+        },
+        {
+            "code": "360430",
+            "name": "Anyar"
+        },
+        {
+            "code": "360431",
+            "name": "Cinangka"
+        },
+        {
+            "code": "360432",
+            "name": "Mancak"
+        },
+        {
+            "code": "360433",
+            "name": "Gunungsari"
+        },
+        {
+            "code": "360434",
+            "name": "Bandung"
+        },
+        {
+            "code": "360435",
+            "name": "Lebak Wangi"
+        }
+    ],
+    "3673": [
+        {
+            "code": "367301",
+            "name": "Serang"
+        },
+        {
+            "code": "367302",
+            "name": "Kasemen"
+        },
+        {
+            "code": "367303",
+            "name": "Walantaka"
+        },
+        {
+            "code": "367304",
+            "name": "Curug"
+        },
+        {
+            "code": "367305",
+            "name": "Cipocok Jaya"
+        },
+        {
+            "code": "367306",
+            "name": "Taktakan"
+        }
+    ],
+    "3672": [
+        {
+            "code": "367201",
+            "name": "Cibeber"
+        },
+        {
+            "code": "367202",
+            "name": "Cilegon"
+        },
+        {
+            "code": "367203",
+            "name": "Pulomerak"
+        },
+        {
+            "code": "367204",
+            "name": "Ciwandan"
+        },
+        {
+            "code": "367205",
+            "name": "Jombang"
+        },
+        {
+            "code": "367206",
+            "name": "Gerogol"
+        },
+        {
+            "code": "367207",
+            "name": "Purwakarta"
+        },
+        {
+            "code": "367208",
+            "name": "Citangkil"
+        }
+    ],
+    "3602": [
+        {
+            "code": "360201",
+            "name": "Malingping"
+        },
+        {
+            "code": "360202",
+            "name": "Panggarangan"
+        },
+        {
+            "code": "360203",
+            "name": "Bayah"
+        },
+        {
+            "code": "360204",
+            "name": "Cipanas"
+        },
+        {
+            "code": "360205",
+            "name": "Muncang"
+        },
+        {
+            "code": "360206",
+            "name": "Leuwidamar"
+        },
+        {
+            "code": "360207",
+            "name": "Bojongmanik"
+        },
+        {
+            "code": "360208",
+            "name": "Gunungkencana"
+        },
+        {
+            "code": "360209",
+            "name": "Banjarsari"
+        },
+        {
+            "code": "360210",
+            "name": "Cileles"
+        },
+        {
+            "code": "360211",
+            "name": "Cimarga"
+        },
+        {
+            "code": "360212",
+            "name": "Sajira"
+        },
+        {
+            "code": "360213",
+            "name": "Maja"
+        },
+        {
+            "code": "360214",
+            "name": "Rangkasbitung"
+        },
+        {
+            "code": "360215",
+            "name": "Warunggunung"
+        },
+        {
+            "code": "360216",
+            "name": "Cijaku"
+        },
+        {
+            "code": "360217",
+            "name": "Cikulur"
+        },
+        {
+            "code": "360218",
+            "name": "Cibadak"
+        },
+        {
+            "code": "360219",
+            "name": "Cibeber"
+        },
+        {
+            "code": "360220",
+            "name": "Cilograng"
+        },
+        {
+            "code": "360221",
+            "name": "Wanasalam"
+        },
+        {
+            "code": "360222",
+            "name": "Sobang"
+        },
+        {
+            "code": "360223",
+            "name": "Curugbitung"
+        },
+        {
+            "code": "360224",
+            "name": "Kalanganyar"
+        },
+        {
+            "code": "360225",
+            "name": "Lebakgedong"
+        },
+        {
+            "code": "360226",
+            "name": "Cihara"
+        },
+        {
+            "code": "360227",
+            "name": "Cirinten"
+        },
+        {
+            "code": "360228",
+            "name": "Cigemblong"
+        }
+    ],
+    "3601": [
+        {
+            "code": "360101",
+            "name": "Sumur"
+        },
+        {
+            "code": "360102",
+            "name": "Cimanggu"
+        },
+        {
+            "code": "360103",
+            "name": "Cibaliung"
+        },
+        {
+            "code": "360104",
+            "name": "Cikeusik"
+        },
+        {
+            "code": "360105",
+            "name": "Cigeulis"
+        },
+        {
+            "code": "360106",
+            "name": "Panimbang"
+        },
+        {
+            "code": "360107",
+            "name": "Angsana"
+        },
+        {
+            "code": "360108",
+            "name": "Munjul"
+        },
+        {
+            "code": "360109",
+            "name": "Pagelaran"
+        },
+        {
+            "code": "360110",
+            "name": "Bojong"
+        },
+        {
+            "code": "360111",
+            "name": "Picung"
+        },
+        {
+            "code": "360112",
+            "name": "Labuan"
+        },
+        {
+            "code": "360113",
+            "name": "Menes"
+        },
+        {
+            "code": "360114",
+            "name": "Saketi"
+        },
+        {
+            "code": "360115",
+            "name": "Cipeucang"
+        },
+        {
+            "code": "360116",
+            "name": "Jiput"
+        },
+        {
+            "code": "360117",
+            "name": "Mandalawangi"
+        },
+        {
+            "code": "360118",
+            "name": "Cimanuk"
+        },
+        {
+            "code": "360119",
+            "name": "Kaduhejo"
+        },
+        {
+            "code": "360120",
+            "name": "Banjar"
+        },
+        {
+            "code": "360121",
+            "name": "Pandeglang"
+        },
+        {
+            "code": "360122",
+            "name": "Cadasari"
+        },
+        {
+            "code": "360123",
+            "name": "Cisata"
+        },
+        {
+            "code": "360124",
+            "name": "Patia"
+        },
+        {
+            "code": "360125",
+            "name": "Karang Tanjung"
+        },
+        {
+            "code": "360126",
+            "name": "Cikedal"
+        },
+        {
+            "code": "360127",
+            "name": "Cibitung"
+        },
+        {
+            "code": "360128",
+            "name": "Carita"
+        },
+        {
+            "code": "360129",
+            "name": "Sukaresmi"
+        },
+        {
+            "code": "360130",
+            "name": "Mekarjaya"
+        },
+        {
+            "code": "360131",
+            "name": "Sindangresmi"
+        },
+        {
+            "code": "360132",
+            "name": "Pulosari"
+        },
+        {
+            "code": "360133",
+            "name": "Koroncong"
+        },
+        {
+            "code": "360134",
+            "name": "Majasari"
+        },
+        {
+            "code": "360135",
+            "name": "Sobang"
+        }
+    ],
+    "3374": [
+        {
+            "code": "337401",
+            "name": "Semarang Tengah"
+        },
+        {
+            "code": "337402",
+            "name": "Semarang Utara"
+        },
+        {
+            "code": "337403",
+            "name": "Semarang Timur"
+        },
+        {
+            "code": "337404",
+            "name": "Gayamsari"
+        },
+        {
+            "code": "337405",
+            "name": "Genuk"
+        },
+        {
+            "code": "337406",
+            "name": "Pedurungan"
+        },
+        {
+            "code": "337407",
+            "name": "Semarang Selatan"
+        },
+        {
+            "code": "337408",
+            "name": "Candisari"
+        },
+        {
+            "code": "337409",
+            "name": "Gajahmungkur"
+        },
+        {
+            "code": "337410",
+            "name": "Tembalang"
+        },
+        {
+            "code": "337411",
+            "name": "Banyumanik"
+        },
+        {
+            "code": "337412",
+            "name": "Gunungpati"
+        },
+        {
+            "code": "337413",
+            "name": "Semarang Barat"
+        },
+        {
+            "code": "337414",
+            "name": "Mijen"
+        },
+        {
+            "code": "337415",
+            "name": "Ngaliyan"
+        },
+        {
+            "code": "337416",
+            "name": "Tugu"
+        }
+    ],
+    "3578": [
+        {
+            "code": "357801",
+            "name": "Karang Pilang"
+        },
+        {
+            "code": "357802",
+            "name": "Wonocolo"
+        },
+        {
+            "code": "357803",
+            "name": "Rungkut"
+        },
+        {
+            "code": "357804",
+            "name": "Wonokromo"
+        },
+        {
+            "code": "357805",
+            "name": "Tegalsari"
+        },
+        {
+            "code": "357806",
+            "name": "Sawahan"
+        },
+        {
+            "code": "357807",
+            "name": "Genteng"
+        },
+        {
+            "code": "357808",
+            "name": "Gubeng"
+        },
+        {
+            "code": "357809",
+            "name": "Sukolilo"
+        },
+        {
+            "code": "357810",
+            "name": "Tambaksari"
+        },
+        {
+            "code": "357811",
+            "name": "Simokerto"
+        },
+        {
+            "code": "357812",
+            "name": "Pabean Cantian"
+        },
+        {
+            "code": "357813",
+            "name": "Bubutan"
+        },
+        {
+            "code": "357814",
+            "name": "Tandes"
+        },
+        {
+            "code": "357815",
+            "name": "Krembangan"
+        },
+        {
+            "code": "357816",
+            "name": "Semampir"
+        },
+        {
+            "code": "357817",
+            "name": "Kenjeran"
+        },
+        {
+            "code": "357818",
+            "name": "Lakarsantri"
+        },
+        {
+            "code": "357819",
+            "name": "Benowo"
+        },
+        {
+            "code": "357820",
+            "name": "Wiyung"
+        },
+        {
+            "code": "357821",
+            "name": "Dukuh Pakis"
+        },
+        {
+            "code": "357822",
+            "name": "Gayungan"
+        },
+        {
+            "code": "357823",
+            "name": "Jambangan"
+        },
+        {
+            "code": "357824",
+            "name": "Tenggilis Mejoyo"
+        },
+        {
+            "code": "357825",
+            "name": "Gunung Anyar"
+        },
+        {
+            "code": "357826",
+            "name": "Mulyorejo"
+        },
+        {
+            "code": "357827",
+            "name": "Sukomanunggal"
+        },
+        {
+            "code": "357828",
+            "name": "Asem Rowo"
+        },
+        {
+            "code": "357829",
+            "name": "Bulak"
+        },
+        {
+            "code": "357830",
+            "name": "Pakal"
+        },
+        {
+            "code": "357831",
+            "name": "Sambikerep"
+        }
+    ],
+    "3471": [
+        {
+            "code": "347101",
+            "name": "Tegalrejo"
+        },
+        {
+            "code": "347102",
+            "name": "Jetis"
+        },
+        {
+            "code": "347103",
+            "name": "Gondokusuman"
+        },
+        {
+            "code": "347104",
+            "name": "Danurejan"
+        },
+        {
+            "code": "347105",
+            "name": "Gedongtengen"
+        },
+        {
+            "code": "347106",
+            "name": "Ngampilan"
+        },
+        {
+            "code": "347107",
+            "name": "Wirobrajan"
+        },
+        {
+            "code": "347108",
+            "name": "Mantrijeron"
+        },
+        {
+            "code": "347109",
+            "name": "Kraton"
+        },
+        {
+            "code": "347110",
+            "name": "Gondomanan"
+        },
+        {
+            "code": "347111",
+            "name": "Pakualaman"
+        },
+        {
+            "code": "347112",
+            "name": "Mergangsan"
+        },
+        {
+            "code": "347113",
+            "name": "Umbulharjo"
+        },
+        {
+            "code": "347114",
+            "name": "Kotagede"
+        }
+    ],
+    "3321": [
+        {
+            "code": "332101",
+            "name": "Mranggen"
+        },
+        {
+            "code": "332102",
+            "name": "Karangawen"
+        },
+        {
+            "code": "332103",
+            "name": "Guntur"
+        },
+        {
+            "code": "332104",
+            "name": "Sayung"
+        },
+        {
+            "code": "332105",
+            "name": "Karangtengah"
+        },
+        {
+            "code": "332106",
+            "name": "Wonosalam"
+        },
+        {
+            "code": "332107",
+            "name": "Dempet"
+        },
+        {
+            "code": "332108",
+            "name": "Gajah"
+        },
+        {
+            "code": "332109",
+            "name": "Karanganyar"
+        },
+        {
+            "code": "332110",
+            "name": "Mijen"
+        },
+        {
+            "code": "332111",
+            "name": "Demak"
+        },
+        {
+            "code": "332112",
+            "name": "Bonang"
+        },
+        {
+            "code": "332113",
+            "name": "Wedung"
+        },
+        {
+            "code": "332114",
+            "name": "Kebonagung"
+        }
+    ],
+    "3301": [
+        {
+            "code": "330101",
+            "name": "Kedungreja"
+        },
+        {
+            "code": "330102",
+            "name": "Kesugihan"
+        },
+        {
+            "code": "330103",
+            "name": "Adipala"
+        },
+        {
+            "code": "330104",
+            "name": "Binangun"
+        },
+        {
+            "code": "330105",
+            "name": "Nusawungu"
+        },
+        {
+            "code": "330106",
+            "name": "Kroya"
+        },
+        {
+            "code": "330107",
+            "name": "Maos"
+        },
+        {
+            "code": "330108",
+            "name": "Jeruklegi"
+        },
+        {
+            "code": "330109",
+            "name": "Kawunganten"
+        },
+        {
+            "code": "330110",
+            "name": "Gandrungmangu"
+        },
+        {
+            "code": "330111",
+            "name": "Sidareja"
+        },
+        {
+            "code": "330112",
+            "name": "Karangpucung"
+        },
+        {
+            "code": "330113",
+            "name": "Cimanggu"
+        },
+        {
+            "code": "330114",
+            "name": "Majenang"
+        },
+        {
+            "code": "330115",
+            "name": "Wanareja"
+        },
+        {
+            "code": "330116",
+            "name": "Dayeuhluhur"
+        },
+        {
+            "code": "330117",
+            "name": "Sampang"
+        },
+        {
+            "code": "330118",
+            "name": "Cipari"
+        },
+        {
+            "code": "330119",
+            "name": "Patimuan"
+        },
+        {
+            "code": "330120",
+            "name": "Bantarsari"
+        },
+        {
+            "code": "330121",
+            "name": "Cilacap Selatan"
+        },
+        {
+            "code": "330122",
+            "name": "Cilacap Tengah"
+        },
+        {
+            "code": "330123",
+            "name": "Cilacap Utara"
+        },
+        {
+            "code": "330124",
+            "name": "Kampung Laut"
+        }
+    ],
+    "6171": [
+        {
+            "code": "617101",
+            "name": "Pontianak Selatan"
+        },
+        {
+            "code": "617102",
+            "name": "Pontianak Timur"
+        },
+        {
+            "code": "617103",
+            "name": "Pontianak Barat"
+        },
+        {
+            "code": "617104",
+            "name": "Pontianak Utara"
+        },
+        {
+            "code": "617105",
+            "name": "Pontianak Kota"
+        },
+        {
+            "code": "617106",
+            "name": "Pontianak Tenggara"
+        }
+    ],
+    "3302": [
+        {
+            "code": "330201",
+            "name": "Lumbir"
+        },
+        {
+            "code": "330202",
+            "name": "Wangon"
+        },
+        {
+            "code": "330203",
+            "name": "Jatilawang"
+        },
+        {
+            "code": "330204",
+            "name": "Rawalo"
+        },
+        {
+            "code": "330205",
+            "name": "Kebasen"
+        },
+        {
+            "code": "330206",
+            "name": "Kemranjen"
+        },
+        {
+            "code": "330207",
+            "name": "Sumpiuh"
+        },
+        {
+            "code": "330208",
+            "name": "Tambak"
+        },
+        {
+            "code": "330209",
+            "name": "Somagede"
+        },
+        {
+            "code": "330210",
+            "name": "Kalibagor"
+        },
+        {
+            "code": "330211",
+            "name": "Banyumas"
+        },
+        {
+            "code": "330212",
+            "name": "Patikraja"
+        },
+        {
+            "code": "330213",
+            "name": "Purwojati"
+        },
+        {
+            "code": "330214",
+            "name": "Ajibarang"
+        },
+        {
+            "code": "330215",
+            "name": "Gumelar"
+        },
+        {
+            "code": "330216",
+            "name": "Pekuncen"
+        },
+        {
+            "code": "330217",
+            "name": "Cilongok"
+        },
+        {
+            "code": "330218",
+            "name": "Karanglewas"
+        },
+        {
+            "code": "330219",
+            "name": "Sokaraja"
+        },
+        {
+            "code": "330220",
+            "name": "Kembaran"
+        },
+        {
+            "code": "330221",
+            "name": "Sumbang"
+        },
+        {
+            "code": "330222",
+            "name": "Baturraden"
+        },
+        {
+            "code": "330223",
+            "name": "Kedungbanteng"
+        },
+        {
+            "code": "330224",
+            "name": "Purwokerto Selatan"
+        },
+        {
+            "code": "330225",
+            "name": "Purwokerto Barat"
+        },
+        {
+            "code": "330226",
+            "name": "Purwokerto Timur"
+        },
+        {
+            "code": "330227",
+            "name": "Purwokerto Utara"
+        }
+    ],
+    "3372": [
+        {
+            "code": "337201",
+            "name": "Laweyan"
+        },
+        {
+            "code": "337202",
+            "name": "Serengan"
+        },
+        {
+            "code": "337203",
+            "name": "Pasar Kliwon"
+        },
+        {
+            "code": "337204",
+            "name": "Jebres"
+        },
+        {
+            "code": "337205",
+            "name": "Banjarsari"
+        }
+    ],
+    "3320": [
+        {
+            "code": "332001",
+            "name": "Kedung"
+        },
+        {
+            "code": "332002",
+            "name": "Pecangaan"
+        },
+        {
+            "code": "332003",
+            "name": "Welahan"
+        },
+        {
+            "code": "332004",
+            "name": "Mayong"
+        },
+        {
+            "code": "332005",
+            "name": "Batealit"
+        },
+        {
+            "code": "332006",
+            "name": "Jepara"
+        },
+        {
+            "code": "332007",
+            "name": "Mlonggo"
+        },
+        {
+            "code": "332008",
+            "name": "Bangsri"
+        },
+        {
+            "code": "332009",
+            "name": "Keling"
+        },
+        {
+            "code": "332010",
+            "name": "Karimunjawa"
+        },
+        {
+            "code": "332011",
+            "name": "Tahunan"
+        },
+        {
+            "code": "332012",
+            "name": "Nalumsari"
+        },
+        {
+            "code": "332013",
+            "name": "Kalinyamatan"
+        },
+        {
+            "code": "332014",
+            "name": "Kembang"
+        },
+        {
+            "code": "332015",
+            "name": "Pakis Aji"
+        },
+        {
+            "code": "332016",
+            "name": "Donorojo"
+        }
+    ],
+    "3328": [
+        {
+            "code": "332801",
+            "name": "Margasari"
+        },
+        {
+            "code": "332802",
+            "name": "Bumijawa"
+        },
+        {
+            "code": "332803",
+            "name": "Bojong"
+        },
+        {
+            "code": "332804",
+            "name": "Balapulang"
+        },
+        {
+            "code": "332805",
+            "name": "Pagerbarang"
+        },
+        {
+            "code": "332806",
+            "name": "Lebaksiu"
+        },
+        {
+            "code": "332807",
+            "name": "Jatinegara"
+        },
+        {
+            "code": "332808",
+            "name": "Kedungbanteng"
+        },
+        {
+            "code": "332809",
+            "name": "Pangkah"
+        },
+        {
+            "code": "332810",
+            "name": "Slawi"
+        },
+        {
+            "code": "332811",
+            "name": "Adiwerna"
+        },
+        {
+            "code": "332812",
+            "name": "Talang"
+        },
+        {
+            "code": "332813",
+            "name": "Dukuhturi"
+        },
+        {
+            "code": "332814",
+            "name": "Tarub"
+        },
+        {
+            "code": "332815",
+            "name": "Kramat"
+        },
+        {
+            "code": "332816",
+            "name": "Suradadi"
+        },
+        {
+            "code": "332817",
+            "name": "Warureja"
+        },
+        {
+            "code": "332818",
+            "name": "Dukuhwaru"
+        }
+    ]
+}

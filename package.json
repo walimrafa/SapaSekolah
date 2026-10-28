@@ -1,0 +1,24 @@
+{
+    "name": "sapasekolah",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build"
+    },
+    "devDependencies": {
+        "@tailwindcss/forms": "^0.5.11",
+        "@tailwindcss/typography": "^0.5.20",
+        "autoprefixer": "^10.5.4",
+        "axios": "^1.6.4",
+        "laravel-vite-plugin": "^1.0.0",
+        "postcss": "^8.5.26",
+        "tailwindcss": "^3.4.17",
+        "vite": "^5.0.0"
+    },
+    "dependencies": {
+        "alpinejs": "^3.15.12",
+        "chart.js": "^4.5.1",
+        "lucide": "^1.31.0"
+    }
+}
