@@ -225,7 +225,15 @@ class MasterDataController extends Controller
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'phone' => ['nullable', 'string', 'max:50'],
             'email' => ['nullable', 'string', 'max:100'],
+            'image_url' => ['nullable', 'string', 'max:255'],
+            'building_image' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
         ]);
+
+        if ($request->hasFile('building_image')) {
+            $path = $request->file('building_image')->store('branding', 'public');
+            $validated['image_url'] = '/storage/' . $path;
+        }
+        unset($validated['building_image']);
 
         $validated['is_active'] = $request->has('is_active');
         $validated['is_default'] = $request->has('is_default');
@@ -268,7 +276,15 @@ class MasterDataController extends Controller
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'phone' => ['nullable', 'string', 'max:50'],
             'email' => ['nullable', 'string', 'max:100'],
+            'image_url' => ['nullable', 'string', 'max:255'],
+            'building_image' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
         ]);
+
+        if ($request->hasFile('building_image')) {
+            $path = $request->file('building_image')->store('branding', 'public');
+            $validated['image_url'] = '/storage/' . $path;
+        }
+        unset($validated['building_image']);
 
         if ($currentUser->isAdmin()) {
             $validated['is_active'] = $request->has('is_active');

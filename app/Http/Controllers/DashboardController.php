@@ -29,15 +29,25 @@ class DashboardController extends Controller
             $schoolsQuery->where('campus_id', $activeCampus->id);
         }
 
-        // 1. KPI Statistics
-        $totalSchools = (clone $schoolsQuery)->count();
-        $priorityA = (clone $schoolsQuery)->where('priority_level', 'A')->count();
-        $priorityB = (clone $schoolsQuery)->where('priority_level', 'B')->count();
-        $priorityC = (clone $schoolsQuery)->where('priority_level', 'C')->count();
-        $unranked = (clone $schoolsQuery)->whereNull('priority_level')->count();
+        // 1. KPI Statistics (Dioptimasi menjadi aggregated queries untuk kecepatan eksekusi tinggi)
+        $schoolStats = (clone $schoolsQuery)
+            ->selectRaw("
+                COUNT(*) as total_schools,
+                COUNT(CASE WHEN priority_level = 'A' THEN 1 END) as priority_a,
+                COUNT(CASE WHEN priority_level = 'B' THEN 1 END) as priority_b,
+                COUNT(CASE WHEN priority_level = 'C' THEN 1 END) as priority_c,
+                COUNT(CASE WHEN priority_level IS NULL THEN 1 END) as unranked
+            ")
+            ->first();
+
+        $totalSchools = (int) ($schoolStats->total_schools ?? 0);
+        $priorityA = (int) ($schoolStats->priority_a ?? 0);
+        $priorityB = (int) ($schoolStats->priority_b ?? 0);
+        $priorityC = (int) ($schoolStats->priority_c ?? 0);
+        $unranked = (int) ($schoolStats->unranked ?? 0);
 
         $visitedCount = (clone $schoolsQuery)->has('visits')->count();
-        $unvisitedCount = $totalSchools - $visitedCount;
+        $unvisitedCount = max(0, $totalSchools - $visitedCount);
 
         $followUpBase = FollowUp::query();
         if ($activeCampus) $followUpBase->where('campus_id', $activeCampus->id);
@@ -51,15 +61,17 @@ class DashboardController extends Controller
         if ($activeCampus) $prospectBase->where('campus_id', $activeCampus->id);
         if ($activePeriod) $prospectBase->where('academic_period_id', $activePeriod->id);
 
-        $totalProspects = (clone $prospectBase)->count();
-        $registeredProspects = (clone $prospectBase)->whereIn('status', [
-            Prospect::STATUS_BAYAR_REGISTRASI,
-            Prospect::STATUS_UJIAN_SARINGAN,
-            Prospect::STATUS_BAYAR_DAFTAR_ULANG,
-            Prospect::STATUS_BERKAS_LENGKAP,
-            Prospect::STATUS_MAHASISWA
-        ])->count();
-        $mahasiswaCount = (clone $prospectBase)->where('status', Prospect::STATUS_MAHASISWA)->count();
+        $prospectStats = (clone $prospectBase)
+            ->selectRaw("
+                COUNT(*) as total_prospects,
+                COUNT(CASE WHEN status IN ('bayar_registrasi', 'ujian_saringan', 'bayar_daftar_ulang', 'berkas_lengkap', 'mahasiswa') THEN 1 END) as registered_prospects,
+                COUNT(CASE WHEN status = 'mahasiswa' THEN 1 END) as mahasiswa_count
+            ")
+            ->first();
+
+        $totalProspects = (int) ($prospectStats->total_prospects ?? 0);
+        $registeredProspects = (int) ($prospectStats->registered_prospects ?? 0);
+        $mahasiswaCount = (int) ($prospectStats->mahasiswa_count ?? 0);
 
         // 2. Charts Data
         // Schools per Kecamatan (Sesuai Kampus)

@@ -51,12 +51,30 @@ class SchoolVisitController extends Controller
 
         $visits = $query->orderBy('visit_date', 'desc')->paginate(15)->withQueryString();
 
-        $schools = School::whereHas('district', function($q) {
-            $q->whereNotIn('name', \App\Models\District::EXCLUDED_DISTRICTS);
-        })->orderBy('name')->get();
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+
+        $schoolsQuery = School::select('id', 'name', 'district_id')
+            ->whereHas('district', function($q) {
+                $q->whereNotIn('name', \App\Models\District::EXCLUDED_DISTRICTS);
+            });
+        if ($activeCampus) {
+            $schoolsQuery->where('campus_id', $activeCampus->id);
+        }
+        $schools = $schoolsQuery->orderBy('name')->get();
         
-        $marketingUsers = User::active()->get();
-        $visitPlans = VisitPlan::where('status', 'planned')->with('school')->get();
+        $marketingUsersQuery = User::active()->select('id', 'name', 'role_id', 'campus_id');
+        if ($activeCampus) {
+            $marketingUsersQuery->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)->orWhereNull('campus_id');
+            });
+        }
+        $marketingUsers = $marketingUsersQuery->get();
+
+        $visitPlansQuery = VisitPlan::where('status', 'planned')->with('school:id,name');
+        if ($activeCampus) {
+            $visitPlansQuery->where('campus_id', $activeCampus->id);
+        }
+        $visitPlans = $visitPlansQuery->get();
 
         return view('visits.index', compact('visits', 'schools', 'marketingUsers', 'visitPlans'));
     }

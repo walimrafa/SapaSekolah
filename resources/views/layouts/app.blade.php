@@ -18,6 +18,14 @@
     <link rel="shortcut icon" href="{{ !empty($appSettings['app_logo_url']) ? asset($appSettings['app_logo_url']) : asset('favicon.ico') }}">
     <link rel="apple-touch-icon" href="{{ !empty($appSettings['app_logo_url']) ? asset($appSettings['app_logo_url']) : asset('favicon.png') }}">
 
+    <!-- PWA Progressive Web App Meta Tags -->
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SAPA Sekolah">
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -157,7 +165,7 @@
             @endauth
 
             <!-- Main Content Body -->
-            <main class="flex-1 p-4 lg:p-8 overflow-y-auto">
+            <main class="flex-1 p-4 lg:p-8 pb-24 sm:pb-8 overflow-y-auto">
                 {{ $slot }}
             </main>
 
@@ -169,8 +177,22 @@
         </div>
     </div>
 
+    <!-- PWA Mobile Bottom Navigation (Akses Cepat Lapangan) -->
+    <x-pwa-bottom-nav />
+
     <!-- Toast Component -->
     <x-toast />
+
+    <!-- Service Worker Registration for PWA -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('SAPA Sekolah PWA Service Worker Registered', reg.scope))
+                    .catch(err => console.log('SW registration skipped', err));
+            });
+        }
+    </script>
 
     <!-- Global School Filter Select2 Auto-Initializer -->
     <script>

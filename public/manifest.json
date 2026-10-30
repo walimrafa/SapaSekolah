@@ -1,0 +1,63 @@
+{
+  "name": "SAPA Sekolah - Marketing Command Center",
+  "short_name": "SAPA Sekolah",
+  "description": "Platform GIS Cerdas & Aplikasi Operasional Marketing Lapangan Universitas Bina Sarana Informatika",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#020617",
+  "theme_color": "#0f172a",
+  "categories": ["education", "business", "productivity"],
+  "icons": [
+    {
+      "src": "/logo-sapa-sekolah.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo-sapa-sekolah.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Jadwal Hari Ini",
+      "short_name": "Jadwal",
+      "description": "Rencana & Jadwal Kunjungan Lapangan",
+      "url": "/visit-plans",
+      "icons": [{ "src": "/logo-sapa-sekolah.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Catat Kunjungan Baru",
+      "short_name": "+ Kunjungan",
+      "description": "Input Laporan Kunjungan Sekolah Langsung di Lapangan",
+      "url": "/visits/create",
+      "icons": [{ "src": "/logo-sapa-sekolah.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Peta GIS Sekolah",
+      "short_name": "Peta GIS",
+      "description": "Navigasi Rute Sekolah Terdekat",
+      "url": "/map",
+      "icons": [{ "src": "/logo-sapa-sekolah.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Kuisioner Siswa",
+      "short_name": "Kuisioner",
+      "description": "Input & Kelola Kuisioner Siswa Lapangan",
+      "url": "/hasil-kuisioner",
+      "icons": [{ "src": "/logo-sapa-sekolah.png", "sizes": "192x192" }]
+    }
+  ]
+}
+

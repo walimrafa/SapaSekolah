@@ -18,12 +18,32 @@ class Campus extends Model
         'latitude',
         'longitude',
         'phone',
+        'image_url',
         'email',
         'website',
         'is_active',
         'is_default',
         'notes',
     ];
+
+    /**
+     * Dapatkan URL Foto Gedung Kampus (dengan fallback cerdas).
+     */
+    public function getBuildingImageUrlAttribute(): string
+    {
+        if (!empty($this->image_url)) {
+            if (str_starts_with($this->image_url, 'http://') || str_starts_with($this->image_url, 'https://')) {
+                return $this->image_url;
+            }
+            return asset(ltrim($this->image_url, '/'));
+        }
+
+        if ($this->code === 'CKP') {
+            return asset('storage/branding/ubsi_cikampek_building.jpg');
+        }
+
+        return asset('storage/branding/ubsi_karawang_building.jpg');
+    }
 
     protected $casts = [
         'latitude' => 'decimal:8',

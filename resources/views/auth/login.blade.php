@@ -1,13 +1,15 @@
 @php
     $appSettings = \App\Services\AppSettingService::all();
+    $campuses = \App\Models\Campus::where('is_active', true)->orderBy('is_default', 'desc')->orderBy('id')->get();
+    $firstCampusBuilding = $campuses->first()?->building_image_url ?? ($appSettings['campus_building_url'] ?? null);
 @endphp
 <x-guest-layout title="Login Marketing Command Center">
     <div class="min-h-screen grid grid-cols-1 lg:grid-cols-12 bg-white">
         <!-- Left Side: Branding & Marketing Visuals -->
         <div class="lg:col-span-7 bg-gradient-to-br from-slate-950 via-slate-900 to-brand-navy text-white p-8 lg:p-16 flex flex-col justify-between relative overflow-hidden">
-            @if(!empty($appSettings['campus_building_url']))
+            @if(!empty($firstCampusBuilding))
                 <!-- Subtle High-End Campus Building Backdrop -->
-                <div class="absolute inset-0 bg-cover bg-center opacity-30 mix-blend-luminosity scale-105 pointer-events-none transition-transform duration-1000" style="background-image: url('{{ $appSettings['campus_building_url'] }}')"></div>
+                <div class="absolute inset-0 bg-cover bg-center opacity-30 mix-blend-luminosity scale-105 pointer-events-none transition-transform duration-1000" style="background-image: url('{{ $firstCampusBuilding }}')"></div>
                 <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/80 to-slate-950/85 pointer-events-none"></div>
             @endif
 
@@ -45,22 +47,41 @@
                     Tingkatkan Konversinya.
                 </h2>
                 <p class="text-slate-300 text-base lg:text-lg max-w-xl leading-relaxed mb-6">
-                    Platform GIS cerdas pemetaan sekolah SLTA sederajat di Kabupaten Karawang untuk perencana kunjungan, analisis potensi, tracking marketing, dan optimasi konversi PMB.
+                    Platform GIS cerdas pemetaan sekolah SLTA sederajat untuk perencana kunjungan, analisis potensi, tracking marketing, dan optimasi konversi PMB multi-kampus Universitas BSI.
                 </p>
 
-                @if(!empty($appSettings['campus_building_url']))
-                <!-- Showcase Campus Card -->
-                <div class="mb-8 p-3.5 rounded-2xl bg-slate-900/70 backdrop-blur-md border border-slate-700/60 max-w-lg flex items-center gap-3.5 shadow-xl">
-                    <img src="{{ $appSettings['campus_building_url'] }}" alt="Gedung Kampus" class="w-20 h-14 object-cover rounded-xl border border-white/20 shadow shrink-0">
-                    <div class="min-w-0 flex-1">
-                        <div class="flex items-center gap-1.5 mb-1">
-                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                            <span class="text-[10px] font-extrabold uppercase tracking-wider text-amber-300">Gedung Kampus Acuan</span>
+                <!-- Showcase Dua Gedung Kampus (Karawang & Cikampek) -->
+                @if($campuses->isNotEmpty())
+                    <div class="mb-8 max-w-xl">
+                        <div class="flex items-center justify-between mb-2.5">
+                            <span class="text-[11px] font-extrabold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                                <span>Gedung Kampus Operasional Universitas BSI</span>
+                            </span>
+                            <span class="text-[10px] text-slate-400 font-semibold">{{ $campuses->count() }} Kampus Aktif</span>
                         </div>
-                        <h4 class="text-xs font-bold text-white truncate">{{ $appSettings['campus_name'] ?? 'UBSI Kampus Karawang' }}</h4>
-                        <p class="text-[10px] text-slate-300 truncate mt-0.5">{{ $appSettings['campus_address'] ?? 'Karawang Barat' }}</p>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            @foreach($campuses->take(2) as $cmp)
+                                <div class="p-3 rounded-2xl bg-slate-900/80 backdrop-blur-md border border-slate-700/70 shadow-xl flex items-center gap-3 hover:border-amber-400/50 transition group">
+                                    <div class="relative shrink-0">
+                                        <img src="{{ $cmp->building_image_url }}" alt="{{ $cmp->name }}" class="w-16 h-14 object-cover rounded-xl border border-white/15 shadow group-hover:scale-105 transition duration-200">
+                                        <span class="absolute -top-1.5 -left-1.5 px-1.5 py-0.2 rounded text-[9px] font-mono font-black {{ $cmp->is_default ? 'bg-amber-400 text-slate-950' : 'bg-emerald-500 text-white' }} shadow">
+                                            {{ $cmp->code }}
+                                        </span>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <h4 class="text-xs font-bold text-white truncate group-hover:text-amber-300 transition">{{ $cmp->name }}</h4>
+                                        <p class="text-[10px] text-slate-300 truncate mt-0.5">{{ $cmp->city ?: 'Jawa Barat' }}</p>
+                                        <div class="mt-1 flex items-center gap-1 text-[10px] text-emerald-400 font-semibold truncate">
+                                            <i data-lucide="phone" class="w-3 h-3 text-emerald-400 shrink-0"></i>
+                                            <span class="font-mono">{{ $cmp->phone ?: '-' }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
                     </div>
-                </div>
                 @endif
 
                 <!-- Feature Highlights -->
