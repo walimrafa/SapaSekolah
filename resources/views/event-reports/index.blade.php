@@ -25,6 +25,16 @@
                 </div>
 
                 <div class="flex flex-wrap items-center gap-3 shrink-0">
+                    <!-- Tombol Buka Root Google Drive Dokumentasi -->
+                    <a href="https://drive.google.com/drive/folders/1DQkSEomL8cacePKG8Ex72JldQABKndiD?usp=sharing"
+                        target="_blank"
+                        class="inline-flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-white text-slate-800 hover:bg-slate-50 border border-slate-200 shadow-sm transition"
+                        title="Buka Folder Induk Dokumentasi di Google Drive">
+                        <i data-lucide="folder" class="w-4 h-4 text-amber-500"></i>
+                        <span>Google Drive Cloud</span>
+                        <i data-lucide="external-link" class="w-3 h-3 text-slate-400"></i>
+                    </a>
+
                     <a href="{{ route('event-proposals.index') }}"
                         class="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 shadow-sm transition">
                         <i data-lucide="inbox" class="w-4 h-4 text-amber-400"></i>
@@ -188,6 +198,14 @@
                                     <span>QR Code</span>
                                 </button>
 
+                                <a href="{{ $event->drive_folder_url }}" target="_blank"
+                                    class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 shadow-sm transition hover:scale-105"
+                                    title="Buka Folder Google Drive Dokumentasi Kegiatan Ini">
+                                    <i data-lucide="folder" class="w-3.5 h-3.5 text-amber-600"></i>
+                                    <span>Folder Drive</span>
+                                    <i data-lucide="external-link" class="w-2.5 h-2.5 text-amber-700"></i>
+                                </a>
+
                                 <button type="button" @click="openReportModal({{ $event->id }})"
                                     class="inline-flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition hover:scale-[1.02]">
                                     <i data-lucide="upload-cloud" class="w-4 h-4"></i>
@@ -307,13 +325,22 @@
                                 <div class="space-y-3">
                                     <div class="flex items-center justify-between">
                                         <h4 class="font-bold text-xs uppercase tracking-wider text-slate-400">
-                                            Dokumentasi & Berkas Kegiatan ({{ count($docItems) }})
+                                            Dokumentasi &amp; Berkas Kegiatan ({{ count($docItems) }})
                                         </h4>
-                                        @if(count($docItems) > 0)
-                                            <span class="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
-                                                <i data-lucide="check" class="w-3.5 h-3.5"></i> Tersimpan di Server
-                                            </span>
-                                        @endif
+                                        <div class="flex items-center gap-2">
+                                            @if(count($docItems) > 0)
+                                                <span class="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+                                                    <i data-lucide="check" class="w-3.5 h-3.5"></i> Tersimpan di Server &amp; Google Drive
+                                                </span>
+                                            @endif
+                                            <a href="{{ $event->drive_folder_url }}" target="_blank"
+                                                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold transition shadow-2xs"
+                                                title="Buka Folder Google Drive Sekolah &amp; Kegiatan Ini">
+                                                <i data-lucide="folder" class="w-3 h-3 text-amber-600"></i>
+                                                <span>Buka Folder Drive</span>
+                                                <i data-lucide="external-link" class="w-2.5 h-2.5 text-amber-700"></i>
+                                            </a>
+                                        </div>
                                     </div>
 
                                     @if(empty($docItems))
@@ -365,12 +392,16 @@
                                                         <img src="{{ $photo['url'] }}" alt="Dokumentasi Event" class="w-full h-full object-cover group-hover:scale-105 transition duration-200">
                                                         <div class="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
                                                             <button type="button" @click="previewImage('{{ $photo['url'] }}')"
-                                                                class="p-2 rounded-xl bg-white text-slate-900 shadow-md hover:bg-slate-100">
+                                                                class="p-2 rounded-xl bg-white text-slate-900 shadow-md hover:bg-slate-100" title="Perbesar Foto">
                                                                 <i data-lucide="maximize-2" class="w-4 h-4"></i>
                                                             </button>
                                                             <a href="{{ $photo['url'] }}" download="{{ $photo['name'] }}"
                                                                 class="p-2 rounded-xl bg-white text-slate-900 shadow-md hover:bg-slate-100" title="Unduh Foto">
                                                                 <i data-lucide="download" class="w-4 h-4"></i>
+                                                            </a>
+                                                            <a href="{{ $photo['drive_folder_url'] ?? $event->drive_folder_url }}" target="_blank"
+                                                                class="p-2 rounded-xl bg-amber-400 text-slate-950 shadow-md hover:bg-amber-300" title="Buka di Google Drive Cloud">
+                                                                <i data-lucide="folder" class="w-4 h-4 text-slate-950"></i>
                                                             </a>
                                                         </div>
                                                     </div>

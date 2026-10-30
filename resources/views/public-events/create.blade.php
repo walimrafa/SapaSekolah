@@ -29,7 +29,8 @@
     <div class="fixed top-1/2 right-10 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
     <div class="max-w-4xl mx-auto space-y-6 relative z-10" x-data="{
-        allSchools: {{ json_encode($schools->map(fn($s) => ['id' => $s->id, 'name' => $s->name, 'district' => $s->district->name ?? ''])) }},
+        allSchools: {{ json_encode($schools->map(fn($s) => ['id' => $s->id, 'name' => $s->name, 'district' => $s->district->name ?? '', 'campus_id' => $s->campus_id])) }},
+        selectedCampusId: '{{ old('campus_id', $activeCampus?->id ?? 1) }}',
         schoolMode: '{{ old('school_id') ? 'select' : (old('school_name') ? 'manual' : 'select') }}',
         selectedSchoolId: '{{ old('school_id', '') }}',
         manualSchoolName: '{{ old('school_name', '') }}',
@@ -39,9 +40,15 @@
         isSubmitting: false,
         otherSupportChecked: {{ old('support_type_other') ? 'true' : 'false' }},
         get filteredSchools() {
-            if (!this.schoolSearch) return this.allSchools;
-            const q = this.schoolSearch.toLowerCase();
-            return this.allSchools.filter(s => s.name.toLowerCase().includes(q) || (s.district && s.district.toLowerCase().includes(q)));
+            let list = this.allSchools;
+            if (this.selectedCampusId) {
+                list = list.filter(s => s.campus_id == this.selectedCampusId);
+            }
+            if (this.schoolSearch) {
+                const q = this.schoolSearch.toLowerCase().trim();
+                list = list.filter(s => s.name.toLowerCase().includes(q) || (s.district && s.district.toLowerCase().includes(q)));
+            }
+            return list;
         },
         handleFileSelect(event) {
             const file = event.target.files[0];
@@ -72,15 +79,19 @@
                         <span class="text-xs text-slate-400 font-medium">BSI Peduli Pendidikan</span>
                     </div>
                     <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-white mt-1">{{ $appSettings['app_name'] }}</h1>
-                    <p class="text-xs sm:text-sm text-slate-300">Pengajuan Dukungan & Sponsorship Event Sekolah</p>
+                    <p class="text-xs sm:text-sm text-slate-300">Pengajuan Dukungan &amp; Sponsorship Event Sekolah</p>
                 </div>
             </div>
 
-            <div class="text-center md:text-right border-t md:border-t-0 pt-3 md:pt-0 border-slate-800 text-xs text-slate-400 flex flex-row md:flex-col items-center md:items-end justify-between w-full md:w-auto gap-2">
-                <span class="font-bold text-amber-300 bg-amber-400/10 px-3 py-1 rounded-full border border-amber-400/20">
+            <div class="flex flex-wrap items-center gap-2.5">
+                <a href="{{ route('school-events.tracking') }}"
+                    class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-md transition">
+                    <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                    <span>Cek Status Proposal</span>
+                </a>
+                <span class="font-bold text-amber-300 bg-amber-400/10 px-3 py-1.5 rounded-xl border border-amber-400/20 text-xs">
                     {{ $appSettings['campus_name'] ?? 'Universitas BSI' }}
                 </span>
-                <span class="text-[11px] text-slate-400">Proses Cepat & Terpantau Realtime</span>
             </div>
         </div>
 
@@ -124,6 +135,26 @@
                     </div>
 
                     <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-5 space-y-4">
+                        <!-- Pilihan Kampus UBSI Tujuan (Pemisahan Karawang & Cikampek) -->
+                        <div>
+                            <label class="text-xs font-semibold text-slate-300 block mb-1.5">
+                                Kampus UBSI Dituju <span class="text-rose-400">*</span>
+                            </label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                @foreach($campuses as $cmp)
+                                    <label class="flex items-center space-x-3 p-3 rounded-xl border cursor-pointer transition"
+                                        @click="selectedCampusId = '{{ $cmp->id }}'; selectedSchoolId = ''; schoolSearch = ''"
+                                        :class="selectedCampusId == {{ $cmp->id }} ? 'bg-brand-600/20 border-brand-500 text-white font-bold ring-1 ring-brand-500' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500'">
+                                        <input type="radio" name="campus_id" value="{{ $cmp->id }}" x-model="selectedCampusId" @change="selectedSchoolId = ''; schoolSearch = ''" class="text-brand-500 focus:ring-brand-500">
+                                        <div class="text-left">
+                                            <span class="block text-xs font-bold">{{ $cmp->name }}</span>
+                                            <span class="block text-[10px] text-slate-400">{{ $cmp->code == 'CKP' ? 'Wilayah Cikampek & Sekitarnya' : 'Wilayah Karawang Barat & Sekitarnya' }}</span>
+                                        </div>
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
+
                         <!-- Pilihan Sekolah Terdaftar / Input Manual -->
                         <div>
                             <div class="flex items-center justify-between mb-2">
@@ -145,15 +176,21 @@
                             </div>
 
                             <div x-show="schoolMode === 'select'" class="space-y-2">
+                                <div class="relative">
+                                    <input type="text" x-model="schoolSearch" placeholder="Cari nama sekolah atau kecamatan..."
+                                        class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-brand-500 mb-1.5">
+                                    <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5"></i>
+                                </div>
                                 <select name="school_id" x-model="selectedSchoolId" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 transition">
                                     <option value="">-- Pilih Sekolah Asal Anda --</option>
-                                    @foreach($schools as $school)
-                                        <option value="{{ $school->id }}" {{ old('school_id') == $school->id ? 'selected' : '' }}>
-                                            {{ $school->name }} {{ $school->district ? '('.$school->district->name.')' : '' }}
-                                        </option>
-                                    @endforeach
+                                    <template x-for="sch in filteredSchools" :key="sch.id">
+                                        <option :value="sch.id" x-text="sch.name + (sch.district ? ' (' + sch.district + ')' : '')" :selected="selectedSchoolId == sch.id"></option>
+                                    </template>
                                 </select>
-                                <p class="text-[11px] text-slate-400">Jika nama sekolah tidak ada di daftar, klik tombol "Sekolah Lain / Manual" di atas.</p>
+                                <p class="text-[11px] text-slate-400 flex items-center justify-between">
+                                    <span>Menampilkan <strong class="text-amber-300" x-text="filteredSchools.length"></strong> sekolah terdaftar.</span>
+                                    <span>Jika tidak ada di daftar, klik "Sekolah Lain / Manual".</span>
+                                </p>
                             </div>
 
                             <div x-show="schoolMode === 'manual'" class="space-y-1" style="display: none;">

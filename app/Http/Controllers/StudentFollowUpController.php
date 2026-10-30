@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Prospect;
+use App\Models\School;
+use App\Models\StudyProgram;
 use App\Models\StudentFollowUp;
 use App\Models\StudentQuestionnaire;
 use App\Models\User;
@@ -61,15 +64,28 @@ class StudentFollowUpController extends Controller
             ->with(['lastFollowedUpBy', 'assignedUser', 'assignedBy', 'followUps.user', 'school', 'eventProposal'])
             ->withCount('followUps');
 
-        // Pembatasan hak akses: Staf Marketing murni hanya melihat data follow up yang di-ploting ke dirinya
-        if ($user && $user->isMarketing() && !$canPlot) {
-            $query->where('assigned_to', $user->id);
+        // Pembatasan hak akses ketat: Petugas non-plotter (Marketing atau CS biasa) HANYA melihat data yang ditugaskan ke dirinya
+        if (!$canPlot) {
+            $query->where('assigned_to', $user?->id);
         } elseif ($request->filled('assigned_to') && $request->assigned_to !== 'all') {
             if ($request->assigned_to === 'unassigned') {
                 $query->whereNull('assigned_to');
             } else {
                 $query->where('assigned_to', $request->assigned_to);
             }
+        }
+
+        // Terapkan filter kampus dan periode aktif
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        if ($activeCampus) {
+            $query->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)
+                    ->orWhereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id));
+            });
+        }
+        $activePeriod = \App\Services\AppContextService::getActivePeriod();
+        if ($activePeriod) {
+            $query->where('academic_period_id', $activePeriod->id);
         }
 
         // Search Filter
@@ -102,6 +118,11 @@ class StudentFollowUpController extends Controller
             }
         }
 
+        // School Filter (Format Asal Sekolah Kuisioner)
+        if ($request->filled('school_id') && $request->school_id !== 'all') {
+            $query->where('school_id', $request->school_id);
+        }
+
         // Scholarship Interest Filter (Khususnya minat beasiswa)
         if ($request->filled('scholarship') && $request->scholarship !== 'all') {
             $query->where('scholarship_interest', $request->scholarship);
@@ -126,8 +147,8 @@ class StudentFollowUpController extends Controller
             if ($request->source === 'support_event') {
                 $query->where(function ($q) {
                     $q->where('source', 'support_event')
-                      ->orWhereNotNull('school_event_proposal_id')
-                      ->orWhere('college_interest_notes', 'like', '%Support Event%');
+                        ->orWhereNotNull('school_event_proposal_id')
+                        ->orWhere('college_interest_notes', 'like', '%Support Event%');
                 });
             } else {
                 $query->where('source', $request->source);
@@ -175,8 +196,8 @@ class StudentFollowUpController extends Controller
         $unassignedSupportEvent = StudentQuestionnaire::whereNull('assigned_to')
             ->where(function ($q) {
                 $q->where('source', 'support_event')
-                  ->orWhereNotNull('school_event_proposal_id')
-                  ->orWhere('college_interest_notes', 'like', '%Support Event%');
+                    ->orWhereNotNull('school_event_proposal_id')
+                    ->orWhere('college_interest_notes', 'like', '%Support Event%');
             })->count();
 
         $assignableOfficers = User::query()
@@ -195,7 +216,8 @@ class StudentFollowUpController extends Controller
 
         $classes = StudentQuestionnaire::query()->distinct()->whereNotNull('student_class')->orderBy('student_class')->pluck('student_class');
         $majors = StudentQuestionnaire::query()->distinct()->whereNotNull('student_major')->orderBy('student_major')->pluck('student_major');
-        $studyPrograms = \App\Models\StudyProgram::where('status', 1)->orderBy('name')->get();
+        $studyPrograms = StudyProgram::where('status', 1)->orderBy('name')->get();
+        $schools = School::with('district:id,name')->orderBy('name')->get();
 
         $students = $query->latest('id')->paginate(15)->withQueryString();
 
@@ -204,6 +226,7 @@ class StudentFollowUpController extends Controller
             'classes' => $classes,
             'majors' => $majors,
             'studyPrograms' => $studyPrograms,
+            'schools' => $schools,
             'canPlot' => $canPlot,
             'assignableOfficers' => $assignableOfficers,
             'plottingMetrics' => [
@@ -239,8 +262,8 @@ class StudentFollowUpController extends Controller
             'next_followup_date' => ['nullable', 'date'],
         ]);
 
-        $statusToSave = ($validated['status'] === 'closing') 
-            ? StudentQuestionnaire::STATUS_DAFTAR_APLIKASI 
+        $statusToSave = ($validated['status'] === 'closing')
+            ? StudentQuestionnaire::STATUS_DAFTAR_APLIKASI
             : $validated['status'];
 
         $followUp = StudentFollowUp::create([
@@ -282,118 +305,23 @@ class StudentFollowUpController extends Controller
         $isDaftarAplikasi = ($statusToSave === StudentQuestionnaire::STATUS_DAFTAR_APLIKASI);
 
         if ($isDaftarAplikasi) {
-            $noteParts = [];
-            if (!empty($validated['notes'])) {
-                $noteParts[] = "Catatan Follow Up: " . $validated['notes'];
-            }
-            if (!empty($validated['college_interest_notes'])) {
-                $noteParts[] = "Minat Prodi: " . $validated['college_interest_notes'];
-            }
-            if (!empty($validated['scholarship_interest_notes'])) {
-                $noteParts[] = "Minat Beasiswa: " . $validated['scholarship_interest_notes'];
-            }
-            if ($studentQuestionnaire->guardian_name || $studentQuestionnaire->guardian_phone) {
-                $noteParts[] = "Wali/Ortu: " . ($studentQuestionnaire->guardian_name ?? '-') . " (WA: " . ($studentQuestionnaire->guardian_phone ?? '-') . ")";
-            }
-            $noteText = implode(" | ", $noteParts);
-
-            $interestProgram = $validated['college_interest_notes'] 
-                ?? $studentQuestionnaire->college_interest_notes 
-                ?? 'S1 Sistem Informasi';
-
-            // Find matching school if any, or default school
-            $schoolId = $studentQuestionnaire->school_id ?? \App\Models\School::first()?->id;
-
-            // Search existing prospect by phone, email, or name
-            if ($studentQuestionnaire->student_phone) {
-                $prospect = \App\Models\Prospect::where('phone', $studentQuestionnaire->student_phone)->first();
-            }
-            if (!$prospect && $studentQuestionnaire->student_email) {
-                $prospect = \App\Models\Prospect::where('email', $studentQuestionnaire->student_email)->first();
-            }
-            if (!$prospect) {
-                $prospect = \App\Models\Prospect::where('name', $studentQuestionnaire->student_name)->first();
-            }
-
-            // Determine scholarship type category
-            $scholarshipType = $validated['scholarship_interest_notes'] 
-                ?? $studentQuestionnaire->scholarship_notes;
-            if (!$scholarshipType) {
-                $scholarshipType = ($studentQuestionnaire->scholarship_interest === 'ya') 
-                    ? 'Beasiswa KIP-Kuliah' 
-                    : 'Non Beasiswa (Reguler Mandiri)';
-            }
-
-            // Determine study_time and clean prodi name from interestProgram
-            $studyTime = null;
-            if ($interestProgram) {
-                if (str_contains($interestProgram, ' - ')) {
-                    $parts = explode(' - ', $interestProgram);
-                    $potentialName = trim($parts[0]);
-                    $matchedProdi = \App\Models\StudyProgram::where('name', $potentialName)
-                        ->orWhere('code', $potentialName)
-                        ->first();
-                    if ($matchedProdi) {
-                        $interestProgram = $matchedProdi->name;
-                        $lowerSuffix = strtolower($interestProgram . ' ' . $validated['college_interest_notes']);
-                        if (str_contains($lowerSuffix, 'karyawan') || str_contains($lowerSuffix, 'sabtu')) {
-                            $studyTime = \App\Models\StudyProgram::TIME_KARYAWAN;
-                        } elseif (str_contains($lowerSuffix, 'malam') || str_contains($lowerSuffix, 'sore')) {
-                            $studyTime = \App\Models\StudyProgram::TIME_REGULER_MALAM;
-                        } else {
-                            $studyTime = \App\Models\StudyProgram::TIME_REGULER_PAGI;
-                        }
-                    }
-                } else {
-                    $matchedProdi = \App\Models\StudyProgram::where('name', $interestProgram)->first();
-                    if ($matchedProdi && !empty($matchedProdi->study_times)) {
-                        $studyTime = $matchedProdi->study_times[0];
-                    }
-                }
-            }
-
-            $prospectSource = ($studentQuestionnaire->source === 'support_event' || $studentQuestionnaire->school_event_proposal_id)
-                ? 'Support Event Sekolah (Daftar Aplikasi)'
-                : 'Kuisioner Siswa (Daftar Aplikasi)';
-
-            if ($prospect) {
-                $prospect->update([
-                    'status' => \App\Models\Prospect::STATUS_DAFTAR_AKUN,
-                    'source' => $prospectSource,
-                    'interest_program' => $interestProgram ?: $prospect->interest_program,
-                    'study_time' => $prospect->study_time ?: $studyTime,
-                    'scholarship_type' => $scholarshipType ?: $prospect->scholarship_type,
-                    'marketing_user_id' => auth()->id() ?? $prospect->marketing_user_id,
-                    'notes' => trim(($prospect->notes ? $prospect->notes . "\n---\n" : '') . $noteText),
-                ]);
-            } else {
-                $prospect = \App\Models\Prospect::create([
-                    'name' => $studentQuestionnaire->student_name,
-                    'phone' => $studentQuestionnaire->student_phone,
-                    'email' => $studentQuestionnaire->student_email,
-                    'school_id' => $schoolId,
-                    'graduation_year' => (int) date('Y'),
-                    'interest_program' => $interestProgram,
-                    'study_time' => $studyTime,
-                    'scholarship_type' => $scholarshipType,
-                    'source' => $prospectSource,
-                    'status' => \App\Models\Prospect::STATUS_DAFTAR_AKUN,
-                    'marketing_user_id' => auth()->id(),
-                    'notes' => $noteText,
-                ]);
-            }
+            $prospect = \App\Services\ProspectSyncService::syncStudentQuestionnaire($studentQuestionnaire->fresh(), [
+                'notes' => $validated['notes'] ?? null,
+                'interest_program' => $validated['college_interest_notes'] ?? null,
+                'scholarship_type' => $validated['scholarship_interest_notes'] ?? null,
+            ]);
         }
 
         $redirectUrl = route('prospects.index', [
             'search' => $studentQuestionnaire->student_name,
-            'status' => \App\Models\Prospect::STATUS_DAFTAR_AKUN
+            'status' => Prospect::STATUS_DAFTAR_AKUN
         ]);
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
                 'success' => true,
-                'message' => $isDaftarAplikasi 
-                    ? "Status berhasil diubah ke 'Daftar Aplikasi' dan otomatis tersinkron ke Data Prospek!" 
+                'message' => $isDaftarAplikasi
+                    ? "Status berhasil diubah ke 'Daftar Aplikasi' dan otomatis tersinkron ke Data Prospek!"
                     : 'Hasil follow up siswa berhasil disimpan!',
                 'follow_up' => $followUp->load('user'),
                 'student' => $studentQuestionnaire->fresh(['lastFollowedUpBy']),
@@ -463,7 +391,9 @@ class StudentFollowUpController extends Controller
                 return [
                     'id' => $fu->id,
                     'date' => $fu->followup_date->format('d/m/Y'),
+                    'date_raw' => $fu->followup_date->format('Y-m-d'),
                     'method' => StudentFollowUp::contactMethods()[$fu->contact_method] ?? $fu->contact_method,
+                    'method_raw' => $fu->contact_method,
                     'status' => $fu->status,
                     'status_label' => $fu->status_label,
                     'badge_class' => $fu->status_badge_class,
@@ -471,7 +401,10 @@ class StudentFollowUpController extends Controller
                     'college_interest_notes' => $fu->college_interest_notes,
                     'notes' => $fu->notes,
                     'next_date' => $fu->next_followup_date?->format('d/m/Y'),
+                    'next_date_raw' => $fu->next_followup_date?->format('Y-m-d'),
                     'officer' => $fu->user?->name ?? 'Admin',
+                    'user_id' => $fu->user_id,
+                    'can_edit' => auth()->id() === $fu->user_id || (auth()->user() && auth()->user()->canPlotFollowUps()),
                     'created_at' => $fu->created_at->format('d/m/Y H:i'),
                 ];
             }),
@@ -480,7 +413,27 @@ class StudentFollowUpController extends Controller
 
     public function export(Request $request): StreamedResponse
     {
+        $user = auth()->user();
+        $canPlot = $user && $user->canPlotFollowUps();
+
         $query = StudentQuestionnaire::query()->with(['lastFollowedUpBy']);
+
+        // Batasi hasil ekspor: Staf biasa hanya bisa mengekspor data yang ditugaskan ke dirinya
+        if (!$canPlot) {
+            $query->where('assigned_to', $user?->id);
+        }
+
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        if ($activeCampus) {
+            $query->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)
+                    ->orWhereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id));
+            });
+        }
+        $activePeriod = \App\Services\AppContextService::getActivePeriod();
+        if ($activePeriod) {
+            $query->where('academic_period_id', $activePeriod->id);
+        }
 
         if ($request->filled('search')) {
             $search = trim($request->string('search')->toString());
@@ -598,7 +551,7 @@ class StudentFollowUpController extends Controller
             $noResponCount = $records->where('followup_status', 'no_respon')->count();
             $responCount = $records->where('followup_status', 'respon')->count();
             $berminatCount = $records->where('followup_status', 'berminat')->count();
-            $daftarAplikasiCount = $records->filter(fn ($r) => in_array($r->followup_status, ['daftar_aplikasi', 'closing']))->count();
+            $daftarAplikasiCount = $records->filter(fn($r) => in_array($r->followup_status, ['daftar_aplikasi', 'closing']))->count();
             $belumCount = $records->where('followup_status', 'belum_dihubungi')->count();
 
             $summaryData = [
@@ -639,8 +592,8 @@ class StudentFollowUpController extends Controller
                     'Daftar Aplikasi (Masuk Data Prospek)',
                     $daftarAplikasiCount,
                     $totalAll > 0 ? round(($daftarAplikasiCount / $totalAll) * 100, 1) . '%' : '0%',
-                    $records->filter(fn ($r) => in_array($r->followup_status, ['daftar_aplikasi', 'closing']))->where('scholarship_interest', 'ya')->count(),
-                    $records->filter(fn ($r) => in_array($r->followup_status, ['daftar_aplikasi', 'closing']))->where('scholarship_interest', 'tidak')->count(),
+                    $records->filter(fn($r) => in_array($r->followup_status, ['daftar_aplikasi', 'closing']))->where('scholarship_interest', 'ya')->count(),
+                    $records->filter(fn($r) => in_array($r->followup_status, ['daftar_aplikasi', 'closing']))->where('scholarship_interest', 'tidak')->count(),
                 ],
                 [
                     'TOTAL',
@@ -733,14 +686,14 @@ class StudentFollowUpController extends Controller
         } elseif ($validated['source_filter'] === 'support_event') {
             $query->where(function ($q) {
                 $q->where('source', 'support_event')
-                  ->orWhereNotNull('school_event_proposal_id')
-                  ->orWhere('college_interest_notes', 'like', '%Support Event%');
+                    ->orWhereNotNull('school_event_proposal_id')
+                    ->orWhere('college_interest_notes', 'like', '%Support Event%');
             });
         }
 
         // Prioritaskan yang belum dihubungi
         $query->orderByRaw("CASE WHEN followup_status = ? THEN 0 ELSE 1 END", [StudentQuestionnaire::STATUS_BELUM_DIHUBUNGI])
-              ->orderBy('id', 'asc');
+            ->orderBy('id', 'asc');
 
         $distributionType = $validated['distribution_type'];
         $assignedTotal = 0;
@@ -898,5 +851,340 @@ class StudentFollowUpController extends Controller
             'type' => 'success',
             'message' => "Penugasan siswa berhasil diperbarui ke: {$targetName}.",
         ])->with('success', "Penugasan siswa berhasil diperbarui ke: {$targetName}.");
+    }
+
+    /**
+     * Get single student questionnaire data for edit modal (JSON).
+     */
+    public function getStudentData(StudentQuestionnaire $studentQuestionnaire): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'student' => [
+                'id' => $studentQuestionnaire->id,
+                'student_name' => $studentQuestionnaire->student_name,
+                'school_id' => $studentQuestionnaire->school_id,
+                'school_name' => $studentQuestionnaire->school_name,
+                'school_display_name' => $studentQuestionnaire->school_display_name,
+                'student_class' => $studentQuestionnaire->student_class,
+                'student_major' => $studentQuestionnaire->student_major,
+                'student_phone' => $studentQuestionnaire->student_phone,
+                'student_email' => $studentQuestionnaire->student_email,
+                'student_social_media' => $studentQuestionnaire->student_social_media,
+                'guardian_name' => $studentQuestionnaire->guardian_name,
+                'guardian_phone' => $studentQuestionnaire->guardian_phone,
+                'guardian_social_media' => $studentQuestionnaire->guardian_social_media,
+                'scholarship_interest' => $studentQuestionnaire->scholarship_interest,
+                'scholarship_notes' => $studentQuestionnaire->scholarship_notes,
+                'college_interest_notes' => $studentQuestionnaire->college_interest_notes,
+                'followup_status' => $studentQuestionnaire->followup_status,
+                'followup_notes' => $studentQuestionnaire->followup_notes,
+                'answers' => $studentQuestionnaire->answers ?? [],
+            ],
+        ]);
+    }
+
+    /**
+     * Update student questionnaire data.
+     */
+    public function updateStudent(Request $request, StudentQuestionnaire $studentQuestionnaire): JsonResponse|RedirectResponse
+    {
+        $user = auth()->user();
+        if ($user && $user->isMarketing() && !$user->canPlotFollowUps() && $studentQuestionnaire->assigned_to !== $user->id) {
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Akses ditolak.'], 403);
+            }
+            abort(403, 'Akses ditolak.');
+        }
+
+        $validated = $request->validate([
+            'student_name' => ['required', 'string', 'max:150'],
+            'school_id' => ['nullable'],
+            'school_name' => ['nullable', 'string', 'max:150'],
+            'student_class' => ['nullable', 'string', 'max:50'],
+            'student_major' => ['nullable', 'string', 'max:100'],
+            'student_phone' => ['required', 'string', 'max:30'],
+            'student_email' => ['nullable', 'email', 'max:150'],
+            'student_social_media' => ['nullable', 'string', 'max:255'],
+            'guardian_name' => ['nullable', 'string', 'max:150'],
+            'guardian_phone' => ['nullable', 'string', 'max:30'],
+            'guardian_social_media' => ['nullable', 'string', 'max:255'],
+            'scholarship_interest' => ['required', 'in:ya,tidak'],
+            'followup_status' => ['nullable', 'in:belum_dihubungi,no_respon,respon,berminat,daftar_aplikasi,closing'],
+            'scholarship_notes' => ['nullable', 'string', 'max:500'],
+            'college_interest_notes' => ['nullable', 'string', 'max:500'],
+            'followup_notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $schoolId = null;
+        $schoolName = trim((string) ($request->input('school_name') ?? ''));
+
+        if (!empty($validated['school_id']) && $validated['school_id'] !== 'other') {
+            $school = School::find($validated['school_id']);
+            if ($school) {
+                $schoolId = $school->id;
+                $schoolName = $school->name;
+            }
+        }
+
+        $dataToUpdate = [
+            'student_name' => $validated['student_name'],
+            'school_id' => $schoolId,
+            'school_name' => $schoolName ?: $studentQuestionnaire->school_name,
+            'student_class' => $validated['student_class'] ?? null,
+            'student_major' => $validated['student_major'] ?? null,
+            'student_phone' => $validated['student_phone'],
+            'student_email' => $validated['student_email'] ?? null,
+            'student_social_media' => $validated['student_social_media'] ?? null,
+            'guardian_name' => $validated['guardian_name'] ?? null,
+            'guardian_phone' => $validated['guardian_phone'] ?? null,
+            'guardian_social_media' => $validated['guardian_social_media'] ?? null,
+            'scholarship_interest' => $validated['scholarship_interest'],
+            'scholarship_notes' => $validated['scholarship_notes'] ?? $studentQuestionnaire->scholarship_notes,
+            'college_interest_notes' => $validated['college_interest_notes'] ?? $studentQuestionnaire->college_interest_notes,
+        ];
+
+        if (!empty($validated['followup_status'])) {
+            $statusVal = ($validated['followup_status'] === 'closing') ? StudentQuestionnaire::STATUS_DAFTAR_APLIKASI : $validated['followup_status'];
+            $dataToUpdate['followup_status'] = $statusVal;
+        }
+
+        if (array_key_exists('followup_notes', $validated)) {
+            $dataToUpdate['followup_notes'] = $validated['followup_notes'];
+        }
+
+        $studentQuestionnaire->update($dataToUpdate);
+
+        // Auto-sync to prospects CRM when status is daftar_aplikasi
+        if (in_array($studentQuestionnaire->followup_status, [StudentQuestionnaire::STATUS_DAFTAR_APLIKASI, 'closing', 'daftar_aplikasi'])) {
+            \App\Services\ProspectSyncService::syncStudentQuestionnaire($studentQuestionnaire->fresh());
+        } elseif ($studentQuestionnaire->prospect) {
+            $studentQuestionnaire->prospect->update([
+                'name' => $validated['student_name'],
+                'phone' => $validated['student_phone'],
+                'email' => $validated['student_email'] ?? $studentQuestionnaire->prospect->email,
+                'school_id' => $schoolId ?: $studentQuestionnaire->prospect->school_id,
+            ]);
+        }
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => "Data siswa {$studentQuestionnaire->student_name} berhasil diperbarui!",
+                'student' => $studentQuestionnaire->fresh(['school', 'lastFollowedUpBy']),
+                'status_label' => $studentQuestionnaire->fresh()->followup_status_label,
+                'badge_class' => $studentQuestionnaire->fresh()->followup_badge_class,
+            ]);
+        }
+
+        return redirect()->back()->with('toast', [
+            'type' => 'success',
+            'message' => "Data siswa {$studentQuestionnaire->student_name} berhasil diperbarui!",
+        ]);
+    }
+
+    /**
+     * Delete a single student questionnaire and its follow-up records.
+     * Hanya diizinkan bagi Pimpinan, Koordinator Marketing, dan Admin.
+     */
+    public function destroyStudent(Request $request, StudentQuestionnaire $studentQuestionnaire): JsonResponse|RedirectResponse
+    {
+        $user = auth()->user();
+        if (!$user || !$user->canPlotFollowUps()) {
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Akses ditolak. Hanya Pimpinan, Koordinator Marketing, dan Admin yang berwenang menghapus data siswa.'], 403);
+            }
+            abort(403, 'Akses ditolak. Hanya Pimpinan, Koordinator Marketing, dan Admin yang berwenang menghapus data siswa.');
+        }
+
+        $studentName = $studentQuestionnaire->student_name;
+        $studentQuestionnaire->delete();
+
+        \App\Services\ActivityLogService::log(
+            'DELETE',
+            'student_follow_up',
+            $studentQuestionnaire->id,
+            "Menghapus data siswa follow up: {$studentName}",
+            ['student_name' => $studentName]
+        );
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => "Data siswa {$studentName} berhasil dihapus beserta seluruh riwayat follow up.",
+            ]);
+        }
+
+        return redirect()->back()->with('toast', [
+            'type' => 'success',
+            'message' => "Data siswa {$studentName} berhasil dihapus.",
+        ]);
+    }
+
+    /**
+     * Bulk delete selected student questionnaires.
+     */
+    public function bulkDestroy(Request $request): RedirectResponse
+    {
+        $user = auth()->user();
+        if (!$user || !$user->canPlotFollowUps()) {
+            abort(403, 'Akses ditolak. Penghapusan massal hanya dapat dilakukan oleh Pimpinan, Koordinator Marketing, dan Admin.');
+        }
+
+        $validated = $request->validate([
+            'selected_ids' => ['required', 'array', 'min:1'],
+            'selected_ids.*' => ['exists:student_questionnaires,id'],
+        ], [
+            'selected_ids.required' => 'Pilih minimal satu data siswa untuk dihapus.',
+        ]);
+
+        $count = StudentQuestionnaire::whereIn('id', $validated['selected_ids'])->delete();
+
+        return redirect()->back()->with('toast', [
+            'type' => 'success',
+            'message' => "Berhasil menghapus {$count} data siswa terpilih.",
+        ]);
+    }
+
+    /**
+     * Update an existing follow-up interaction record.
+     */
+    public function updateFollowUp(Request $request, StudentFollowUp $studentFollowUp): JsonResponse|RedirectResponse
+    {
+        $user = auth()->user();
+        if ($user && $user->isMarketing() && !$user->canPlotFollowUps() && $studentFollowUp->user_id !== $user->id) {
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Akses ditolak.'], 403);
+            }
+            abort(403, 'Akses ditolak.');
+        }
+
+        $validated = $request->validate([
+            'status' => ['required', 'in:no_respon,respon,berminat,daftar_aplikasi,closing,belum_dihubungi'],
+            'contact_method' => ['required', 'in:wa,telepon,email,tatap_muka,lainnya'],
+            'followup_date' => ['required', 'date'],
+            'scholarship_interest_notes' => ['nullable', 'string', 'max:500'],
+            'college_interest_notes' => ['nullable', 'string', 'max:500'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+            'next_followup_date' => ['nullable', 'date'],
+        ]);
+
+        $statusToSave = ($validated['status'] === 'closing')
+            ? StudentQuestionnaire::STATUS_DAFTAR_APLIKASI
+            : $validated['status'];
+
+        $studentFollowUp->update([
+            'followup_date' => $validated['followup_date'],
+            'contact_method' => $validated['contact_method'],
+            'status' => $statusToSave,
+            'scholarship_interest_notes' => $validated['scholarship_interest_notes'] ?? null,
+            'college_interest_notes' => $validated['college_interest_notes'] ?? null,
+            'notes' => $validated['notes'] ?? null,
+            'next_followup_date' => $validated['next_followup_date'] ?? null,
+        ]);
+
+        $studentQuestionnaire = $studentFollowUp->student;
+
+        // If this is the latest follow-up, sync questionnaire status & notes
+        $latestFollowUp = $studentQuestionnaire->followUps()->latest('followup_date')->latest('id')->first();
+        if ($latestFollowUp && $latestFollowUp->id === $studentFollowUp->id) {
+            $scholarshipInterestValue = $studentQuestionnaire->scholarship_interest;
+            if (!empty($validated['scholarship_interest_notes'])) {
+                $notesLower = strtolower($validated['scholarship_interest_notes']);
+                if (str_contains($notesLower, 'non beasiswa') || str_contains($notesLower, 'mandiri')) {
+                    $scholarshipInterestValue = 'tidak';
+                } elseif (str_contains($notesLower, 'beasiswa') || str_contains($notesLower, 'kip') || str_contains($notesLower, 'prestasi')) {
+                    $scholarshipInterestValue = 'ya';
+                }
+            }
+
+            $studentQuestionnaire->update([
+                'followup_status' => $statusToSave,
+                'scholarship_interest' => $scholarshipInterestValue,
+                'followup_notes' => $validated['notes'] ?? $studentQuestionnaire->followup_notes,
+                'scholarship_notes' => $validated['scholarship_interest_notes'] ?? $studentQuestionnaire->scholarship_notes,
+                'college_interest_notes' => $validated['college_interest_notes'] ?? $studentQuestionnaire->college_interest_notes,
+            ]);
+
+            if (in_array($statusToSave, [StudentQuestionnaire::STATUS_DAFTAR_APLIKASI, 'closing', 'daftar_aplikasi'])) {
+                \App\Services\ProspectSyncService::syncStudentQuestionnaire($studentQuestionnaire->fresh(), [
+                    'notes' => $validated['notes'] ?? null,
+                    'interest_program' => $validated['college_interest_notes'] ?? null,
+                    'scholarship_type' => $validated['scholarship_interest_notes'] ?? null,
+                ]);
+            }
+        }
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Catatan follow up berhasil diperbarui!',
+                'follow_up' => $studentFollowUp->load('user'),
+                'student' => $studentQuestionnaire->fresh(['lastFollowedUpBy']),
+                'status_label' => $studentQuestionnaire->fresh()->followup_status_label,
+                'badge_class' => $studentQuestionnaire->fresh()->followup_badge_class,
+            ]);
+        }
+
+        return redirect()->back()->with('toast', [
+            'type' => 'success',
+            'message' => 'Catatan follow up berhasil diperbarui!',
+        ]);
+    }
+
+    /**
+     * Delete an existing follow-up interaction record.
+     */
+    public function destroyFollowUp(Request $request, StudentFollowUp $studentFollowUp): JsonResponse|RedirectResponse
+    {
+        $user = auth()->user();
+        if ($user && $user->isMarketing() && !$user->canPlotFollowUps() && $studentFollowUp->user_id !== $user->id) {
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Akses ditolak.'], 403);
+            }
+            abort(403, 'Akses ditolak.');
+        }
+
+        $studentQuestionnaire = $studentFollowUp->student;
+        $studentFollowUp->delete();
+
+        // Recalculate status from remaining follow ups
+        $remainingLatest = $studentQuestionnaire->followUps()->latest('followup_date')->latest('id')->first();
+
+        if ($remainingLatest) {
+            $studentQuestionnaire->update([
+                'followup_status' => $remainingLatest->status,
+                'last_followup_at' => $remainingLatest->created_at ?? $remainingLatest->followup_date,
+                'last_followed_up_by' => $remainingLatest->user_id,
+                'followup_notes' => $remainingLatest->notes,
+                'scholarship_notes' => $remainingLatest->scholarship_interest_notes,
+                'college_interest_notes' => $remainingLatest->college_interest_notes,
+            ]);
+        } else {
+            $studentQuestionnaire->update([
+                'followup_status' => StudentQuestionnaire::STATUS_BELUM_DIHUBUNGI,
+                'last_followup_at' => null,
+                'last_followed_up_by' => null,
+                'followup_notes' => null,
+                'scholarship_notes' => null,
+                'college_interest_notes' => null,
+            ]);
+        }
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Riwayat follow up berhasil dihapus!',
+                'student' => $studentQuestionnaire->fresh(['lastFollowedUpBy']),
+                'status_label' => $studentQuestionnaire->fresh()->followup_status_label,
+                'badge_class' => $studentQuestionnaire->fresh()->followup_badge_class,
+                'remaining_count' => $studentQuestionnaire->followUps()->count(),
+            ]);
+        }
+
+        return redirect()->back()->with('toast', [
+            'type' => 'success',
+            'message' => 'Riwayat follow up berhasil dihapus!',
+        ]);
     }
 }

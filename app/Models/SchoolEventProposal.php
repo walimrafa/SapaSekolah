@@ -24,6 +24,8 @@ class SchoolEventProposal extends Model
     protected $fillable = [
         'reference_no',
         'school_id',
+        'campus_id',
+        'academic_period_id',
         'school_name',
         'pic_name',
         'pic_phone',
@@ -47,6 +49,8 @@ class SchoolEventProposal extends Model
         'reviewed_at',
         'execution_status',
         'documentation_photos',
+        'google_drive_folder_url',
+        'google_drive_file_url',
         'report_description',
         'realized_participants',
         'prospects_acquired',
@@ -95,17 +99,29 @@ class SchoolEventProposal extends Model
 
     public function getStatusLabelAttribute(): string
     {
-        return self::getStatusOptions()[$this->status] ?? ucfirst(str_replace('_', ' ', $this->status));
+        return self::getStatusOptions()[$this->status] ?? ucfirst(str_replace('_', ' ', $this->status ?? ''));
     }
 
     public function getExecutionStatusLabelAttribute(): string
     {
-        return self::getExecutionStatusOptions()[$this->execution_status] ?? ucfirst(str_replace('_', ' ', $this->execution_status));
+        return self::getExecutionStatusOptions()[$this->execution_status] ?? ucfirst(str_replace('_', ' ', $this->execution_status ?? ''));
     }
 
     public function getProposalFileUrlAttribute(): string
     {
-        return $this->proposal_file_path ? Storage::url($this->proposal_file_path) : '#';
+        return $this->proposal_file_path ? asset('storage/' . ltrim($this->proposal_file_path, '/')) : '#';
+    }
+
+    public function getDriveFolderUrlAttribute(): string
+    {
+        if (!empty($this->attributes['google_drive_folder_url'])) {
+            return $this->attributes['google_drive_folder_url'];
+        }
+
+        $schoolName = $this->school?->name ?? $this->school_name ?? 'Sekolah';
+        $date = $this->event_date ? $this->event_date->format('Y-m-d') : null;
+
+        return \App\Services\GoogleDriveService::buildFolderUrlForSchool($schoolName, $date);
     }
 
     public function getDocumentationItemsAttribute(): array
@@ -117,10 +133,14 @@ class SchoolEventProposal extends Model
                 $path = $entry['path'] ?? '';
                 $name = $entry['name'] ?? basename($path);
                 $size = $entry['size'] ?? 0;
+                $driveFileUrl = $entry['drive_file_url'] ?? null;
+                $driveFolderUrl = $entry['drive_folder_url'] ?? null;
             } else {
                 $path = $entry;
                 $name = basename($path);
                 $size = Storage::disk('public')->exists($path) ? Storage::disk('public')->size($path) : 0;
+                $driveFileUrl = null;
+                $driveFolderUrl = null;
             }
 
             if (!$path) continue;
@@ -132,7 +152,9 @@ class SchoolEventProposal extends Model
 
             $items[] = [
                 'path' => $path,
-                'url' => Storage::url($path),
+                'url' => asset('storage/' . ltrim($path, '/')),
+                'drive_file_url' => $driveFileUrl ?: ($this->google_drive_file_url ?: $this->drive_folder_url),
+                'drive_folder_url' => $driveFolderUrl ?: $this->drive_folder_url,
                 'name' => $name,
                 'size' => $size,
                 'size_formatted' => $size ? round($size / (1024 * 1024), 2) . ' MB' : '',
@@ -148,6 +170,16 @@ class SchoolEventProposal extends Model
     public function school(): BelongsTo
     {
         return $this->belongsTo(School::class);
+    }
+
+    public function campus(): BelongsTo
+    {
+        return $this->belongsTo(Campus::class);
+    }
+
+    public function academicPeriod(): BelongsTo
+    {
+        return $this->belongsTo(AcademicPeriod::class);
     }
 
     public function reviewer(): BelongsTo

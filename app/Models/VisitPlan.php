@@ -10,6 +10,8 @@ class VisitPlan extends Model
 {
     protected $fillable = [
         'school_id',
+        'campus_id',
+        'academic_period_id',
         'user_id',
         'planned_date',
         'purpose',
@@ -28,6 +30,16 @@ class VisitPlan extends Model
     public function school(): BelongsTo
     {
         return $this->belongsTo(School::class);
+    }
+
+    public function campus(): BelongsTo
+    {
+        return $this->belongsTo(Campus::class);
+    }
+
+    public function academicPeriod(): BelongsTo
+    {
+        return $this->belongsTo(AcademicPeriod::class);
     }
 
     /**

@@ -233,6 +233,70 @@ class WhatsAppNotificationService
     }
 
     /**
+     * Notifikasi Data Kunjungan Lapangan Tercatat & Terintegrasi (WA & Google Calendar).
+     */
+    public function notifySchoolVisit(\App\Models\SchoolVisit $visit): array
+    {
+        $visit->loadMissing(['school.district', 'user']);
+
+        $recipientPhone = $visit->user?->phone ?: $this->getAdminNotificationPhone();
+        $recipientName = $visit->user?->name ?: 'Petugas Marketing';
+        $recipientEmail = $visit->user?->email ?: 'marketing@bsi.ac.id';
+
+        $schoolName = $visit->school?->name ?: 'Sekolah Target';
+        $districtName = $visit->school?->district?->name ? 'Kec. ' . $visit->school->district->name : '';
+        $visitDateStr = $visit->visit_date ? Carbon::parse($visit->visit_date)->translatedFormat('l, d F Y') : '-';
+        $targetDateStr = $visit->target_date ? Carbon::parse($visit->target_date)->translatedFormat('d F Y') : ($visit->target_month_year ?: 'Belum ditentukan');
+        $totalSiswa = ($visit->grade_12_class_count && $visit->students_per_class) 
+            ? ($visit->grade_12_class_count * $visit->students_per_class) . ' Siswa (' . $visit->grade_12_class_count . ' Kelas)' 
+            : '-';
+
+        $driveLink = $visit->drive_folder_url;
+
+        // Generate Google Calendar Link & Undangan Email (.ics)
+        $gcalRes = GoogleCalendarNotificationService::notifySchoolVisit($visit);
+        $calendarUrl = $gcalRes['gcal_url'] ?? null;
+        $emailRecipients = implode(', ', $gcalRes['recipients'] ?? []);
+
+        $statusLabel = match ($visit->status) {
+            'berhasil' => 'Berhasil Bertemu PIC',
+            'tidak_bertemu' => 'Tidak Bertemu PIC',
+            'tidak_berhasil' => 'Belum Berhasil',
+            default => ucfirst((string)$visit->status),
+        };
+
+        $message = "🚗 *LAPORAN DATA KUNJUNGAN SEKOLAH TERINTEGRASI*\n"
+            . "Halo Kak *{$recipientName}*,\n\n"
+            . "Data kunjungan lapangan Anda telah berhasil disimpan dan disinkronkan ke kalender:\n\n"
+            . "🏫 *Sekolah:* {$schoolName} {$districtName}\n"
+            . "📅 *Tanggal Kunjungan:* {$visitDateStr}\n"
+            . "👤 *Petugas Bertugas:* {$recipientName} ({$recipientPhone})\n"
+            . "🤝 *Penerima Sekolah:* {$visit->recipient_name} ({$visit->recipient_position})\n"
+            . "📱 *No HP PIC Sekolah:* " . ($visit->recipient_phone ?: '-') . "\n"
+            . "🎯 *Status Kunjungan:* {$statusLabel}\n"
+            . "📅 *Target Agenda Sosialisasi:* {$targetDateStr} (Pukul {$visit->target_time})\n"
+            . "👥 *Estimasi Siswa Kelas 12:* {$totalSiswa}\n"
+            . "📢 *Metode Kegiatan:* {$visit->socialization_method}\n"
+            . "📁 *Folder Google Drive Dokumentasi:*\n{$driveLink}\n\n"
+            . ($calendarUrl ? "📅 *Simpan ke Google Calendar:*\n{$calendarUrl}\n\n" : "")
+            . "📧 _Undangan kalender (.ics) otomatis dikirimkan ke email akun: {$recipientEmail}_\n\n"
+            . "Lihat rekap kunjungan lengkap:\n"
+            . url('/visits') . "\n\n"
+            . "_SAPA Sekolah UBSI Command Center_";
+
+        return $this->sendMessage(
+            $recipientPhone,
+            $message,
+            'kunjungan_data',
+            $recipientName,
+            \App\Models\SchoolVisit::class,
+            $visit->id,
+            $calendarUrl,
+            $emailRecipients
+        );
+    }
+
+    /**
      * 3. Notifikasi Jadwal Sosialisasi (Minimal H-5 sebelum pelaksanaan sosialisasi).
      */
     public function notifySocializationH5(FollowUp $followUp): array

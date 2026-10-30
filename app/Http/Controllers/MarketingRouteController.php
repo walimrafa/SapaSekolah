@@ -26,36 +26,75 @@ class MarketingRouteController extends Controller
      */
     public function index(Request $request): View
     {
-        $routes = MarketingRoute::with(['user', 'routeSchools.school'])
-            ->orderBy('date', 'desc')
-            ->paginate(10);
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
 
-        // Regencies that have schools or are active
-        $regencies = Regency::whereHas('schools')
-            ->withCount('schools')
-            ->orderBy('name')
-            ->get();
+        $routesQuery = MarketingRoute::with(['user', 'routeSchools.school.district', 'routeSchools.school.regency'])
+            ->orderBy('date', 'desc');
 
-        if ($regencies->isEmpty()) {
-            $regencies = Regency::withCount('schools')->orderBy('name')->get();
+        if ($activeCampus) {
+            $routesQuery->where('campus_id', $activeCampus->id);
         }
 
-        // Districts that have schools or belong to active regencies
-        $districts = District::with('regency')
-            ->withCount('schools')
-            ->whereHas('regency')
-            ->orderBy('name')
-            ->get();
+        $routes = $routesQuery->paginate(10);
 
-        $schools = School::with(['district', 'regency'])
+        // Regencies strictly synchronized with integrated schools
+        $regencies = Regency::whereHas('schools', function ($q) use ($activeCampus) {
+            $q->whereNotNull('latitude')->whereNotNull('longitude');
+            if ($activeCampus) $q->where('campus_id', $activeCampus->id);
+        })
+        ->withCount(['schools' => function ($q) use ($activeCampus) {
+            $q->whereNotNull('latitude')->whereNotNull('longitude');
+            if ($activeCampus) $q->where('campus_id', $activeCampus->id);
+        }])
+        ->orderBy('name')
+        ->get();
+
+        if ($regencies->isEmpty()) {
+            $regencies = Regency::whereHas('schools', fn($q) => $activeCampus ? $q->where('campus_id', $activeCampus->id) : null)
+                ->withCount('schools')
+                ->orderBy('name')
+                ->get();
+        }
+
+        // Districts strictly synchronized with integrated schools
+        $districts = District::whereHas('schools', function ($q) use ($activeCampus) {
+            $q->whereNotNull('latitude')->whereNotNull('longitude');
+            if ($activeCampus) $q->where('campus_id', $activeCampus->id);
+        })
+        ->with('regency')
+        ->withCount(['schools' => function ($q) use ($activeCampus) {
+            $q->whereNotNull('latitude')->whereNotNull('longitude');
+            if ($activeCampus) $q->where('campus_id', $activeCampus->id);
+        }])
+        ->orderBy('name')
+        ->get();
+
+        if ($districts->isEmpty()) {
+            $districts = District::whereHas('schools', fn($q) => $activeCampus ? $q->where('campus_id', $activeCampus->id) : null)
+                ->with('regency')
+                ->withCount('schools')
+                ->orderBy('name')
+                ->get();
+        }
+
+        $schoolsQuery = School::with(['district', 'regency', 'schoolType', 'accreditation'])
             ->whereNotNull('latitude')
-            ->whereNotNull('longitude')
-            ->get();
+            ->whereNotNull('longitude');
 
-        $marketingUsers = User::active()->get();
+        if ($activeCampus) {
+            $schoolsQuery->where('campus_id', $activeCampus->id);
+        }
 
-        $ubsiLat = SchoolScoringService::UBSI_LATITUDE;
-        $ubsiLng = SchoolScoringService::UBSI_LONGITUDE;
+        $schools = $schoolsQuery->orderBy('name')->get();
+
+        $marketingUsers = User::active();
+        if ($activeCampus) {
+            $marketingUsers->where('campus_id', $activeCampus->id);
+        }
+        $marketingUsers = $marketingUsers->get();
+
+        $ubsiLat = $activeCampus ? (float)$activeCampus->latitude : SchoolScoringService::UBSI_LATITUDE;
+        $ubsiLng = $activeCampus ? (float)$activeCampus->longitude : SchoolScoringService::UBSI_LONGITUDE;
 
         return view('marketing-routes.index', compact('routes', 'regencies', 'districts', 'schools', 'marketingUsers', 'ubsiLat', 'ubsiLng'));
     }
@@ -100,22 +139,30 @@ class MarketingRouteController extends Controller
             'regency_id' => ['nullable'],
             'district_ids' => ['nullable', 'array'],
             'district_ids.*' => ['exists:districts,id'],
+            'school_ids' => ['nullable', 'array'],
+            'school_ids.*' => ['exists:schools,id'],
             'start_school_id' => ['nullable', 'string'],
             'end_school_id' => ['nullable', 'string'],
         ]);
 
         $regencyId = (!empty($validated['regency_id']) && $validated['regency_id'] !== 'ALL') ? (int) $validated['regency_id'] : null;
         $districtIds = $validated['district_ids'] ?? [];
+        $schoolIds = $validated['school_ids'] ?? [];
         $startSchoolId = $validated['start_school_id'] ?? null;
         $endSchoolId = $validated['end_school_id'] ?? null;
-        $cluster = $this->clusteringService->generateDailyCluster([], $districtIds, 10, [], $startSchoolId, $endSchoolId, $regencyId);
+        $cluster = $this->clusteringService->generateDailyCluster($schoolIds, $districtIds, 10, [], $startSchoolId, $endSchoolId, $regencyId);
 
         if (empty($cluster['sequence'])) {
             return redirect()->route('marketing-routes.index')
                 ->with('toast', ['type' => 'danger', 'message' => 'Tidak ada sekolah dengan koordinat valid untuk rute ini.']);
         }
 
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $activePeriod = \App\Services\AppContextService::getActivePeriod();
+
         $route = MarketingRoute::create([
+            'campus_id' => $activeCampus?->id,
+            'academic_period_id' => $activePeriod?->id,
             'name' => $validated['name'],
             'date' => $validated['date'],
             'user_id' => $validated['user_id'],

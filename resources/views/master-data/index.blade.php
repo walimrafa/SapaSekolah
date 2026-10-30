@@ -6,6 +6,24 @@
 
     <!-- Navigation Tabs -->
     <div class="flex flex-wrap gap-2 border-b border-slate-200 mb-6 bg-white rounded-2xl p-2 shadow-sm border border-slate-200/80">
+        <a href="{{ route('master-data.index', ['tab' => 'campuses']) }}"
+            class="px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 {{ $tab === 'campuses' ? 'bg-brand-navy text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
+            <i data-lucide="graduation-cap" class="w-4 h-4 text-emerald-400"></i>
+            <span>Master Kampus</span>
+        </a>
+
+        <a href="{{ route('master-data.index', ['tab' => 'periods']) }}"
+            class="px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 {{ $tab === 'periods' ? 'bg-brand-navy text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
+            <i data-lucide="calendar" class="w-4 h-4 text-sky-400"></i>
+            <span>Master Periode Akademik</span>
+        </a>
+
+        <a href="{{ route('master-data.index', ['tab' => 'portals']) }}"
+            class="px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 {{ $tab === 'portals' ? 'bg-brand-navy text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
+            <i data-lucide="shield-alert" class="w-4 h-4 text-amber-400"></i>
+            <span>Kontrol Portal Publik</span>
+        </a>
+
         <a href="{{ route('master-data.index', ['tab' => 'wilayah']) }}"
             class="px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 {{ $tab === 'wilayah' ? 'bg-brand-navy text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
             <i data-lucide="map-pin" class="w-4 h-4 text-amber-400"></i>
@@ -36,6 +54,403 @@
             <span>Scoring Criteria &amp; Bobot</span>
         </a>
     </div>
+
+    <!-- Tab: Master Kampus -->
+    @if($tab === 'campuses')
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-8 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-soft">
+                <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                            <i data-lucide="graduation-cap" class="w-4 h-4 text-emerald-600"></i>
+                            <span>Daftar Kampus Operasional</span>
+                        </h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Seluruh data sekolah, kunjungan, dan prospek diklasifikasikan berdasarkan kampus.</p>
+                    </div>
+                    <span class="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-lg border border-emerald-200">
+                        Total: {{ $campuses->count() }} Kampus
+                    </span>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead class="bg-slate-900 text-white font-bold uppercase text-[10px]">
+                            <tr>
+                                <th class="py-3 px-3.5">Kode</th>
+                                <th class="py-3 px-3.5">Nama Kampus &amp; Kota</th>
+                                <th class="py-3 px-3.5">Data Terkait</th>
+                                <th class="py-3 px-3.5 text-center">Status</th>
+                                <th class="py-3 px-3.5 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @forelse($campuses as $campus)
+                                <tr class="hover:bg-slate-50 transition">
+                                    <td class="py-3 px-3.5 font-bold text-slate-900 whitespace-nowrap">
+                                        <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-800 font-mono text-[11px]">
+                                            {{ $campus->code }}
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-3.5">
+                                        <p class="font-bold text-slate-900">{{ $campus->name }}</p>
+                                        <p class="text-[11px] text-slate-500">{{ $campus->city ?? '-' }} &bull; {{ $campus->phone ?? '-' }}</p>
+                                    </td>
+                                    <td class="py-3 px-3.5 whitespace-nowrap">
+                                        <span class="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700">
+                                            {{ $campus->schools_count }} Sekolah
+                                        </span>
+                                        <span class="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-50 text-purple-700 ml-1">
+                                            {{ $campus->prospects_count }} Prospek
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-3.5 text-center whitespace-nowrap">
+                                        @if($campus->is_default)
+                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-200">
+                                                DEFAULT
+                                            </span>
+                                        @endif
+                                        @if($campus->is_active)
+                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 ml-1">
+                                                Aktif
+                                            </span>
+                                        @else
+                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 ml-1">
+                                                Nonaktif
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td class="py-3 px-3.5 text-center whitespace-nowrap">
+                                        <div class="flex items-center justify-center space-x-1">
+                                            @if(auth()->user()->isAdmin() || auth()->user()->campus_id === $campus->id)
+                                                <button type="button" 
+                                                    onclick="openEditCampusModal({{ json_encode($campus) }})"
+                                                    class="p-1.5 text-amber-600 hover:text-amber-800 hover:bg-amber-50 rounded-lg transition" 
+                                                    title="Edit Data Kampus">
+                                                    <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                                </button>
+                                            @endif
+
+                                            @if(auth()->user()->isAdmin())
+                                                @if($campus->schools_count == 0 && $campus->prospects_count == 0 && !$campus->is_default)
+                                                    <form method="POST" action="{{ route('master-data.campuses.destroy', $campus->id) }}" onsubmit="return confirm('Hapus kampus {{ $campus->name }}?')">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition" title="Hapus">
+                                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                        </button>
+                                                    </form>
+                                                @else
+                                                    <span class="text-[10px] text-slate-400 italic">Terkunci</span>
+                                                @endif
+                                            @else
+                                                <span class="text-[10px] text-emerald-600 font-semibold">Kampus Anda</span>
+                                            @endif
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="5" class="py-8 text-center text-slate-400">Belum ada data kampus.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            @if(auth()->user()->isAdmin())
+                <div class="lg:col-span-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-soft">
+                    <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4 pb-2 border-b border-slate-100 flex items-center gap-2">
+                        <i data-lucide="plus-circle" class="w-4 h-4 text-emerald-600"></i>
+                        <span>Tambah Kampus Baru</span>
+                    </h3>
+                    <form method="POST" action="{{ route('master-data.campuses.store') }}" class="space-y-3">
+                        @csrf
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Kode Kampus (Singkatan)</label>
+                            <input type="text" name="code" required class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 font-mono uppercase" placeholder="KRW, CKP, CKR">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Nama Kampus</label>
+                            <input type="text" name="name" required class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300" placeholder="UBSI Kampus Karawang">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Kota / Kabupaten</label>
+                            <input type="text" name="city" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300" placeholder="Karawang">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Alamat Lengkap</label>
+                            <textarea name="address" rows="2" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300" placeholder="Jl. Banten No. 1..."></textarea>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Latitude (GPS)</label>
+                                <input type="number" step="0.00000001" name="latitude" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 font-mono" placeholder="-6.305400">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Longitude (GPS)</label>
+                                <input type="number" step="0.00000001" name="longitude" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 font-mono" placeholder="107.299500">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Telepon</label>
+                                <input type="text" name="phone" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300" placeholder="0812xxx">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Email</label>
+                                <input type="email" name="email" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300" placeholder="info@bsi.ac.id">
+                            </div>
+                        </div>
+                        <div class="pt-2 space-y-2 border-t border-slate-100">
+                            <label class="flex items-center space-x-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                                <input type="checkbox" name="is_active" value="1" checked class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                                <span>Status Kampus Aktif</span>
+                            </label>
+                            <label class="flex items-center space-x-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                                <input type="checkbox" name="is_default" value="1" class="rounded border-slate-300 text-amber-600 focus:ring-amber-500">
+                                <span>Jadikan Kampus Utama (Default)</span>
+                            </label>
+                        </div>
+                        <button type="submit" class="w-full mt-2 py-2.5 bg-brand-navy hover:bg-slate-900 text-white font-bold text-xs rounded-xl shadow-md transition">
+                            Simpan Kampus Baru
+                        </button>
+                    </form>
+                </div>
+            @else
+                <div class="lg:col-span-4 bg-gradient-to-br from-slate-900 to-brand-navy text-white p-5 rounded-2xl shadow-soft">
+                    <div class="flex items-center space-x-2 text-emerald-400 font-bold text-xs uppercase tracking-wider mb-3">
+                        <i data-lucide="shield-check" class="w-4 h-4"></i>
+                        <span>Isolasi Kampus Aktif</span>
+                    </div>
+                    <h4 class="text-sm font-bold text-white mb-2">{{ auth()->user()->campus?->name ?? 'Kampus Penugasan' }}</h4>
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        Akun Anda dikhususkan untuk mengelola operasional, data sekolah, kunjungan, prospek, dan staf pada kampus penugasan Anda. Data master antar kampus terisolasi sepenuhnya dan tidak tercampur.
+                    </p>
+                    <div class="mt-4 pt-4 border-t border-white/10 text-[11px] text-slate-400 flex items-center justify-between">
+                        <span>Hak Akses:</span>
+                        <span class="font-bold text-amber-300">{{ auth()->user()->role?->name ?? 'Pimpinan' }}</span>
+                    </div>
+                </div>
+            @endif
+        </div>
+    @endif
+
+    <!-- Tab: Master Periode Akademik -->
+    @if($tab === 'periods')
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-8 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-soft">
+                <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                            <i data-lucide="calendar" class="w-4 h-4 text-sky-600"></i>
+                            <span>Daftar Periode Akademik / Intake</span>
+                        </h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Sistem memfilter prospek, kunjungan, dan data follow-up sesuai periode yang aktif.</p>
+                    </div>
+                    <span class="px-2.5 py-1 bg-sky-50 text-sky-700 text-xs font-bold rounded-lg border border-sky-200">
+                        Total: {{ $academicPeriods->count() }} Periode
+                    </span>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead class="bg-slate-900 text-white font-bold uppercase text-[10px]">
+                            <tr>
+                                <th class="py-3 px-3.5">Nama Periode</th>
+                                <th class="py-3 px-3.5">Rentang Tanggal</th>
+                                <th class="py-3 px-3.5">Data Terkait</th>
+                                <th class="py-3 px-3.5 text-center">Status</th>
+                                <th class="py-3 px-3.5 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @forelse($academicPeriods as $period)
+                                <tr class="hover:bg-slate-50 transition">
+                                    <td class="py-3 px-3.5 font-bold text-slate-900 whitespace-nowrap">
+                                        <span class="text-sm font-extrabold text-brand-600">{{ $period->name }}</span>
+                                        @if($period->notes)
+                                            <p class="text-[10px] text-slate-400 mt-0.5">{{ $period->notes }}</p>
+                                        @endif
+                                    </td>
+                                    <td class="py-3 px-3.5 whitespace-nowrap text-slate-600">
+                                        {{ $period->start_date ? $period->start_date->format('d M Y') : '-' }} s/d {{ $period->end_date ? $period->end_date->format('d M Y') : '-' }}
+                                    </td>
+                                    <td class="py-3 px-3.5 whitespace-nowrap">
+                                        <span class="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-50 text-purple-700">
+                                            {{ $period->prospects_count }} Prospek
+                                        </span>
+                                        <span class="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 ml-1">
+                                            {{ $period->school_visits_count }} Kunjungan
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-3.5 text-center whitespace-nowrap">
+                                        @if($period->is_current)
+                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                                SEDANG BERJALAN
+                                            </span>
+                                        @endif
+                                        @if($period->is_active)
+                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-800 ml-1">
+                                                Aktif
+                                            </span>
+                                        @else
+                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 ml-1">
+                                                Nonaktif
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td class="py-3 px-3.5 text-center whitespace-nowrap">
+                                        <div class="flex items-center justify-center space-x-1">
+                                            @if(auth()->user()->isAdmin())
+                                                <button type="button" 
+                                                    onclick="openEditPeriodModal({{ json_encode($period) }})"
+                                                    class="p-1.5 text-amber-600 hover:text-amber-800 hover:bg-amber-50 rounded-lg transition" 
+                                                    title="Edit Periode">
+                                                    <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                                </button>
+
+                                                @if($period->prospects_count == 0 && $period->school_visits_count == 0 && !$period->is_current)
+                                                    <form method="POST" action="{{ route('master-data.academic-periods.destroy', $period->id) }}" onsubmit="return confirm('Hapus periode {{ $period->name }}?')">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition" title="Hapus">
+                                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                        </button>
+                                                    </form>
+                                                @else
+                                                    <span class="text-[10px] text-slate-400 italic">Terkunci</span>
+                                                @endif
+                                            @else
+                                                <span class="text-[10px] text-slate-400 italic">Hanya Lihat</span>
+                                            @endif
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="5" class="py-8 text-center text-slate-400">Belum ada periode akademik.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="lg:col-span-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-soft">
+                <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4 pb-2 border-b border-slate-100 flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-4 h-4 text-sky-600"></i>
+                    <span>Tambah Periode Baru</span>
+                </h3>
+                <form method="POST" action="{{ route('master-data.academic-periods.store') }}" class="space-y-3">
+                    @csrf
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Nama Periode Akademik</label>
+                        <input type="text" name="name" required class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 font-semibold" placeholder="Contoh: 2027/2028">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Tanggal Mulai</label>
+                            <input type="date" name="start_date" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Tanggal Selesai</label>
+                            <input type="date" name="end_date" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Catatan Tambahan</label>
+                        <input type="text" name="notes" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300" placeholder="Penerimaan Maba Gelombang Utama...">
+                    </div>
+                    <div class="pt-2 space-y-2 border-t border-slate-100">
+                        <label class="flex items-center space-x-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                            <input type="checkbox" name="is_active" value="1" checked class="rounded border-slate-300 text-sky-600 focus:ring-sky-500">
+                            <span>Status Periode Aktif</span>
+                        </label>
+                        <label class="flex items-center space-x-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                            <input type="checkbox" name="is_current" value="1" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                            <span>Jadikan Periode Berjalan (Current)</span>
+                        </label>
+                    </div>
+                    <button type="submit" class="w-full mt-2 py-2.5 bg-brand-navy hover:bg-slate-900 text-white font-bold text-xs rounded-xl shadow-md transition">
+                        Simpan Periode Baru
+                    </button>
+                </form>
+            </div>
+        </div>
+    @endif
+
+    <!-- Tab: Kontrol Portal Publik (Tanpa Login) -->
+    @if($tab === 'portals')
+        <div class="space-y-6">
+            <div class="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-200/80 rounded-2xl p-5 flex items-start space-x-4">
+                <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+                    <i data-lucide="shield-alert" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-slate-900">Kontrol Keamanan Akses Formulir Publik (Tanpa Login)</h3>
+                    <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+                        Halaman publik dapat diakses langsung oleh masyarakat/siswa sekolah luar tanpa login.
+                        Hak akses kontrol aktif/tidak aktif ini diberikan secara khusus kepada <strong>Admin, Pimpinan, dan Koordinator Marketing</strong>
+                        untuk mencegah terjadinya pengisian otomatis liar (spam) dan menutup akses saat masa kunjungan atau periode event telah berakhir.
+                    </p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                @foreach($publicPortals as $key => $portal)
+                    <div class="bg-white rounded-2xl border {{ $portal['is_active'] ? 'border-emerald-200 shadow-soft' : 'border-slate-200 bg-slate-50/50' }} p-5 flex flex-col justify-between transition-all">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-[10px] font-mono px-2 py-0.5 rounded {{ $portal['is_active'] ? 'bg-emerald-50 text-emerald-700 font-bold' : 'bg-slate-100 text-slate-500' }}">
+                                    KEY: {{ $key }}
+                                </span>
+                                @if($portal['is_active'])
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800">
+                                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping mr-1.5"></span>
+                                        PORTAL AKTIF
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-800">
+                                        <span class="w-2 h-2 rounded-full bg-rose-500 mr-1.5"></span>
+                                        PORTAL DITUTUP
+                                    </span>
+                                @endif
+                            </div>
+
+                            <h4 class="text-sm font-extrabold text-slate-900">{{ $portal['name'] }}</h4>
+                            <p class="text-xs text-slate-500 mt-1 mb-3">{{ $portal['description'] }}</p>
+
+                            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between text-xs mb-4">
+                                <span class="text-slate-400 font-mono text-[11px] truncate mr-2">{{ $portal['url'] }}</span>
+                                <a href="{{ $portal['url'] }}" target="_blank" class="text-brand-600 hover:text-brand-800 shrink-0 font-bold inline-flex items-center gap-1">
+                                    <span>Buka</span>
+                                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                                </a>
+                            </div>
+                        </div>
+
+                        <form method="POST" action="{{ route('portal-status.toggle') }}" class="pt-3 border-t border-slate-100">
+                            @csrf
+                            <input type="hidden" name="portal_key" value="{{ $key }}">
+                            <input type="hidden" name="is_active" value="{{ $portal['is_active'] ? 0 : 1 }}">
+                            @if($portal['is_active'])
+                                <button type="submit" class="w-full py-2.5 px-4 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 transition flex items-center justify-center space-x-2">
+                                    <i data-lucide="power" class="w-4 h-4 text-rose-600"></i>
+                                    <span>Tutup / Nonaktifkan Akses Publik</span>
+                                </button>
+                            @else
+                                <button type="submit" class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center space-x-2">
+                                    <i data-lucide="check-circle" class="w-4 h-4"></i>
+                                    <span>Buka / Aktifkan Kembali Akses Publik</span>
+                                </button>
+                            @endif
+                        </form>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
 
     <!-- Tab 1: Master Wilayah (Kecamatan & Desa) -->
     @if($tab === 'wilayah')
@@ -482,4 +897,222 @@
             </div>
         </div>
     @endif
+
+    <!-- Modal Edit Kampus -->
+    <div id="modalEditCampus" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    <i data-lucide="edit-3" class="w-4 h-4 text-amber-600"></i>
+                    <span>Edit Profil Kampus</span>
+                </h3>
+                <button type="button" onclick="closeEditCampusModal()" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form id="formEditCampus" method="POST" action="" class="space-y-3">
+                @csrf
+                @method('PUT')
+
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Kode</label>
+                        <input type="text" id="edit_campus_code" name="code" required 
+                            @if(!auth()->user()->isAdmin()) readonly @endif
+                            class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 font-mono uppercase bg-slate-50">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Nama Kampus</label>
+                        <input type="text" id="edit_campus_name" name="name" required class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Kota / Kabupaten</label>
+                    <input type="text" id="edit_campus_city" name="city" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Alamat Lengkap</label>
+                    <textarea id="edit_campus_address" name="address" rows="2" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300"></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Latitude (GPS)</label>
+                        <input type="number" step="0.00000001" id="edit_campus_latitude" name="latitude" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Longitude (GPS)</label>
+                        <input type="number" step="0.00000001" id="edit_campus_longitude" name="longitude" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 font-mono">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Nomor Telepon</label>
+                        <input type="text" id="edit_campus_phone" name="phone" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Email</label>
+                        <input type="email" id="edit_campus_email" name="email" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300">
+                    </div>
+                </div>
+
+                @if(auth()->user()->isAdmin())
+                    <div class="pt-2 space-y-2 border-t border-slate-100">
+                        <label class="flex items-center space-x-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                            <input type="checkbox" id="edit_campus_is_active" name="is_active" value="1" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                            <span>Status Kampus Aktif</span>
+                        </label>
+                        <label class="flex items-center space-x-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                            <input type="checkbox" id="edit_campus_is_default" name="is_default" value="1" class="rounded border-slate-300 text-amber-600 focus:ring-amber-500">
+                            <span>Jadikan Kampus Utama (Default)</span>
+                        </label>
+                    </div>
+                @endif
+
+                <div class="flex items-center justify-end space-x-2 pt-4 border-t border-slate-100">
+                    <button type="button" onclick="closeEditCampusModal()" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-5 py-2 text-xs font-bold bg-brand-navy hover:bg-slate-900 text-white rounded-xl shadow-soft transition">
+                        Simpan Perubahan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Edit Periode Akademik -->
+    <div id="modalEditPeriod" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    <i data-lucide="edit-3" class="w-4 h-4 text-sky-600"></i>
+                    <span>Edit Periode Akademik</span>
+                </h3>
+                <button type="button" onclick="closeEditPeriodModal()" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form id="formEditPeriod" method="POST" action="" class="space-y-3">
+                @csrf
+                @method('PUT')
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Nama Periode / Intake PMB <span class="text-red-500">*</span></label>
+                    <input type="text" id="edit_period_name" name="name" required class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 font-bold" placeholder="2026/2027">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Tanggal Mulai</label>
+                        <input type="date" id="edit_period_start_date" name="start_date" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Tanggal Selesai</label>
+                        <input type="date" id="edit_period_end_date" name="end_date" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Catatan / Keterangan</label>
+                    <textarea id="edit_period_notes" name="notes" rows="2" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300"></textarea>
+                </div>
+
+                <div class="pt-2 space-y-2 border-t border-slate-100">
+                    <label class="flex items-center space-x-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                        <input type="checkbox" id="edit_period_is_active" name="is_active" value="1" class="rounded border-slate-300 text-sky-600 focus:ring-sky-500">
+                        <span>Status Periode Aktif</span>
+                    </label>
+                    <label class="flex items-center space-x-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                        <input type="checkbox" id="edit_period_is_current" name="is_current" value="1" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                        <span>Jadikan Periode Sedang Berjalan (Current)</span>
+                    </label>
+                </div>
+
+                <div class="flex items-center justify-end space-x-2 pt-4 border-t border-slate-100">
+                    <button type="button" onclick="closeEditPeriodModal()" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-5 py-2 text-xs font-bold bg-brand-navy hover:bg-slate-900 text-white rounded-xl shadow-soft transition">
+                        Simpan Perubahan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @push('scripts')
+    <script>
+        function openEditCampusModal(campus) {
+            const form = document.getElementById('formEditCampus');
+            form.action = `/master-data/campuses/${campus.id}`;
+
+            document.getElementById('edit_campus_code').value = campus.code || '';
+            document.getElementById('edit_campus_name').value = campus.name || '';
+            document.getElementById('edit_campus_city').value = campus.city || '';
+            document.getElementById('edit_campus_address').value = campus.address || '';
+            document.getElementById('edit_campus_latitude').value = campus.latitude || '';
+            document.getElementById('edit_campus_longitude').value = campus.longitude || '';
+            document.getElementById('edit_campus_phone').value = campus.phone || '';
+            document.getElementById('edit_campus_email').value = campus.email || '';
+
+            const isActiveCheckbox = document.getElementById('edit_campus_is_active');
+            if (isActiveCheckbox) {
+                isActiveCheckbox.checked = Boolean(campus.is_active);
+            }
+
+            const isDefaultCheckbox = document.getElementById('edit_campus_is_default');
+            if (isDefaultCheckbox) {
+                isDefaultCheckbox.checked = Boolean(campus.is_default);
+            }
+
+            document.getElementById('modalEditCampus').classList.remove('hidden');
+        }
+
+        function closeEditCampusModal() {
+            document.getElementById('modalEditCampus').classList.add('hidden');
+        }
+
+        function openEditPeriodModal(period) {
+            const form = document.getElementById('formEditPeriod');
+            form.action = `/master-data/academic-periods/${period.id}`;
+
+            document.getElementById('edit_period_name').value = period.name || '';
+            document.getElementById('edit_period_notes').value = period.notes || '';
+
+            if (period.start_date) {
+                document.getElementById('edit_period_start_date').value = period.start_date.split('T')[0];
+            } else {
+                document.getElementById('edit_period_start_date').value = '';
+            }
+
+            if (period.end_date) {
+                document.getElementById('edit_period_end_date').value = period.end_date.split('T')[0];
+            } else {
+                document.getElementById('edit_period_end_date').value = '';
+            }
+
+            const isActiveCheckbox = document.getElementById('edit_period_is_active');
+            if (isActiveCheckbox) {
+                isActiveCheckbox.checked = Boolean(period.is_active);
+            }
+
+            const isCurrentCheckbox = document.getElementById('edit_period_is_current');
+            if (isCurrentCheckbox) {
+                isCurrentCheckbox.checked = Boolean(period.is_current);
+            }
+
+            document.getElementById('modalEditPeriod').classList.remove('hidden');
+        }
+
+        function closeEditPeriodModal() {
+            document.getElementById('modalEditPeriod').classList.add('hidden');
+        }
+    </script>
+    @endpush
 </x-app-layout>

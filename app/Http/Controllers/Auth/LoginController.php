@@ -47,6 +47,15 @@ class LoginController extends Controller
                 ]);
             }
 
+            \App\Services\ActivityLogService::log(
+                'LOGIN',
+                'auth',
+                $user->id,
+                "Pengguna {$user->name} ({$user->role?->name}) berhasil masuk ke sistem.",
+                null,
+                ['email' => $user->email]
+            );
+
             return redirect()->intended(route('dashboard'))
                 ->with('toast', [
                     'type' => 'success',

@@ -131,10 +131,12 @@
                         class="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500">
                 </div>
 
-                <select name="school_id" onchange="this.form.submit()" class="py-2 px-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white">
-                    <option value="">Semua Sekolah Asal</option>
+                <select name="school_id" onchange="this.form.submit()" class="select2-school-filter py-2 px-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white text-xs font-semibold">
+                    <option value="">-- Semua Sekolah (Ketik / Cari) --</option>
                     @foreach($schools as $s)
-                        <option value="{{ $s->id }}" {{ request('school_id') == $s->id ? 'selected' : '' }}>{{ $s->name }}</option>
+                        <option value="{{ $s->id }}" {{ request('school_id') == $s->id ? 'selected' : '' }}>
+                            {{ $s->name }} {{ $s->district ? '(' . $s->district->name . ')' : '' }}
+                        </option>
                     @endforeach
                 </select>
 

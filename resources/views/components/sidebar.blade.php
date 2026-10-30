@@ -9,7 +9,7 @@
     // Check active states for auto-expanding current menu
     $isSchoolActive = request()->routeIs('map.*', 'schools.*', 'priorities.*');
     $isFieldActive = request()->routeIs('visit-plans.*', 'visits.*', 'follow-ups.*', 'socializations.completed.*', 'marketing-routes.*', 'activities.*');
-    $isCrmActive = request()->routeIs('prospects.*', 'new-students.*', 'student-questionnaires.*', 'student-follow-ups.*', 'study-programs.*', 'reports.*');
+    $isCrmActive = request()->routeIs('prospects.*', 'new-students.*', 'student-questionnaires.*', 'student-follow-ups.*', 'study-programs.*', 'reports.*', 'comprehensive-reports.*');
     $isEventActive = request()->routeIs('event-proposals.*', 'event-reports.*', 'school-events.*', 'event-students.*');
     $isPmbActive = request()->routeIs('pmb.*', 'e-brochures.*');
     $canAccessPeriodClosing = auth()->user()->isAdmin() 
@@ -17,7 +17,7 @@
         || auth()->user()->isKoordinator() 
         || auth()->user()->isCustomerService();
     $hasPendingPeriodNotice = \App\Services\PeriodClosingService::pendingForUser(auth()->user());
-    $isMasterActive = request()->routeIs('master-data.*', 'users.*', 'settings.*', 'whatsapp-notifications.*', 'period-closing.*') || (!auth()->user()->isCustomerService() && request()->routeIs('qr-codes.*'));
+    $isMasterActive = request()->routeIs('master-data.*', 'users.*', 'settings.*', 'whatsapp-notifications.*', 'period-closing.*', 'activity-logs.*') || (!auth()->user()->isCustomerService() && request()->routeIs('qr-codes.*'));
 @endphp
 
     <!-- Sidebar Header -->
@@ -188,7 +188,7 @@
                 <a href="{{ route('activities.index') }}"
                     class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('activities.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <i data-lucide="megaphone" class="w-3.5 h-3.5 text-amber-400"></i>
-                    <span>{{ $lbl('submenu_activities', 'Aktivitas Marketing') }}</span>
+                    <span>{{ $lbl('submenu_activities', 'Aktivitas Sosialisasi') }}</span>
                 </a>
             </div>
         </div>
@@ -258,6 +258,15 @@
                     <i data-lucide="bar-chart-3" class="w-3.5 h-3.5"></i>
                     <span>{{ $lbl('submenu_reports', 'Laporan & Analytics') }}</span>
                 </a>
+
+                <a href="{{ route('comprehensive-reports.index') }}"
+                    class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('comprehensive-reports.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30 font-bold' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <div class="flex items-center space-x-2.5">
+                        <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-emerald-400"></i>
+                        <span>Laporan Khusus &amp; Ekspor</span>
+                    </div>
+                    <span class="px-1.5 py-0.2 text-[9px] font-bold bg-emerald-500/20 text-emerald-300 rounded">XLSX</span>
+                </a>
             </div>
         </div>
 
@@ -271,7 +280,12 @@
                 </div>
                 <div class="flex items-center space-x-1.5">
                     @php
-                        $pendingProposalsCount = \App\Models\SchoolEventProposal::where('status', \App\Models\SchoolEventProposal::STATUS_MENUNGGU_REVIEW)->count();
+                        $activeCampusId = \App\Services\AppContextService::getActiveCampus()?->id;
+                        $pendingProposalsQuery = \App\Models\SchoolEventProposal::where('status', \App\Models\SchoolEventProposal::STATUS_MENUNGGU_REVIEW);
+                        if ($activeCampusId) {
+                            $pendingProposalsQuery->where('campus_id', $activeCampusId);
+                        }
+                        $pendingProposalsCount = $pendingProposalsQuery->count();
                     @endphp
                     @if($pendingProposalsCount > 0)
                         <span class="px-1.5 py-0.2 text-[9px] font-bold bg-amber-400 text-slate-900 rounded-full animate-pulse">{{ $pendingProposalsCount }}</span>
@@ -292,6 +306,7 @@
                 x-transition:leave-end="opacity-0 -translate-y-1"
                 class="pl-4 ml-4 border-l border-slate-800 space-y-1 pt-1" style="display: none;">
                 
+                <!-- 1. Proposal Masuk -->
                 <a href="{{ route('event-proposals.index') }}"
                     class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('event-proposals.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <div class="flex items-center space-x-2.5">
@@ -303,20 +318,7 @@
                     @endif
                 </a>
 
-                <a href="{{ route('event-reports.index') }}"
-                    class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('event-reports.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                    <div class="flex items-center space-x-2.5">
-                        <i data-lucide="clipboard-check" class="w-3.5 h-3.5 text-emerald-400"></i>
-                        <span>{{ $lbl('submenu_event_reports', 'Laporan Suport Kegiatan') }}</span>
-                    </div>
-                    @php
-                        $approvedEventsCount = \App\Models\SchoolEventProposal::where('status', \App\Models\SchoolEventProposal::STATUS_DISETUJUI)->count();
-                    @endphp
-                    @if($approvedEventsCount > 0)
-                        <span class="px-1.5 py-0.2 text-[9px] font-bold bg-emerald-500/20 text-emerald-300 rounded">{{ $approvedEventsCount }}</span>
-                    @endif
-                </a>
-
+                <!-- 2. Hasil Support Event (Ditaruh Sebelum Laporan Kegiatan) -->
                 <a href="{{ route('event-students.index') }}"
                     class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('event-students.index') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <div class="flex items-center space-x-2.5">
@@ -324,12 +326,39 @@
                         <span>{{ $lbl('submenu_event_students', 'Hasil Support Event') }}</span>
                     </div>
                     @php
-                        $eventStudentsCount = \App\Models\StudentQuestionnaire::where(function ($q) {
+                        $eventStudentsQuery = \App\Models\StudentQuestionnaire::where(function ($q) {
                             $q->where('source', 'support_event')->orWhereNotNull('school_event_proposal_id')->orWhere('college_interest_notes', 'like', '%Support Event%');
-                        })->count();
+                        });
+                        if ($activeCampusId) {
+                            $eventStudentsQuery->where(function ($q) use ($activeCampusId) {
+                                $q->where('campus_id', $activeCampusId)
+                                  ->orWhereHas('school', fn($sq) => $sq->where('campus_id', $activeCampusId))
+                                  ->orWhereHas('eventProposal', fn($ep) => $ep->where('campus_id', $activeCampusId));
+                            });
+                        }
+                        $eventStudentsCount = $eventStudentsQuery->count();
                     @endphp
                     @if($eventStudentsCount > 0)
                         <span class="px-1.5 py-0.2 text-[9px] font-bold bg-purple-500/20 text-purple-300 rounded">{{ $eventStudentsCount }}</span>
+                    @endif
+                </a>
+
+                <!-- 3. Laporan Support Kegiatan -->
+                <a href="{{ route('event-reports.index') }}"
+                    class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('event-reports.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <div class="flex items-center space-x-2.5">
+                        <i data-lucide="clipboard-check" class="w-3.5 h-3.5 text-emerald-400"></i>
+                        <span>{{ $lbl('submenu_event_reports', 'Laporan Suport Kegiatan') }}</span>
+                    </div>
+                    @php
+                        $approvedEventsQuery = \App\Models\SchoolEventProposal::where('status', \App\Models\SchoolEventProposal::STATUS_DISETUJUI);
+                        if ($activeCampusId) {
+                            $approvedEventsQuery->where('campus_id', $activeCampusId);
+                        }
+                        $approvedEventsCount = $approvedEventsQuery->count();
+                    @endphp
+                    @if($approvedEventsCount > 0)
+                        <span class="px-1.5 py-0.2 text-[9px] font-bold bg-emerald-500/20 text-emerald-300 rounded">{{ $approvedEventsCount }}</span>
                     @endif
                 </a>
             </div>
@@ -426,8 +455,8 @@
             </div>
         </div>
 
-        @if(auth()->user()->isAdmin() || auth()->user()->hasRole('Pimpinan') || $canAccessPeriodClosing)
-        <!-- 5. Sistem & Master (Admin & Pimpinan & Otorisator Tutup Periode) -->
+        @if(auth()->user()->isAdmin() || auth()->user()->hasRole('Pimpinan') || auth()->user()->hasRole('Koordinator Marketing') || $canAccessPeriodClosing)
+        <!-- 5. Sistem & Master (Admin & Pimpinan & Koordinator & Otorisator Tutup Periode) -->
         <div x-data="{ expanded: {{ $isMasterActive ? 'true' : 'false' }} }" class="space-y-1">
             <button @click="expanded = !expanded" type="button"
                 class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition duration-150 {{ $isMasterActive ? 'text-white bg-slate-800/80 font-bold border-l-2 border-brand-500' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
@@ -460,7 +489,7 @@
                 </a>
                 @endif
 
-                @if(auth()->user()->isAdmin())
+                @if(auth()->user()->isAdmin() || auth()->user()->hasRole('Pimpinan'))
                 <a href="{{ route('users.index') }}"
                     class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('users.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
@@ -500,6 +529,14 @@
                 </a>
                 @endif
 
+                @if(auth()->user()->isAdmin() || auth()->user()->hasRole('Pimpinan') || auth()->user()->hasRole('Koordinator Marketing'))
+                <a href="{{ route('activity-logs.index') }}"
+                    class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('activity-logs.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <i data-lucide="activity" class="w-3.5 h-3.5 text-cyan-400"></i>
+                    <span>{{ $lbl('submenu_activity_logs', 'Log Aktivitas Sistem') }}</span>
+                </a>
+                @endif
+
                 @if($canAccessPeriodClosing)
                 <a href="{{ route('period-closing.index') }}"
                     class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('period-closing.*') ? 'bg-red-600 text-white shadow-sm shadow-red-600/30 font-bold' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
@@ -524,10 +561,10 @@
             <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-brand-600 to-amber-500 flex items-center justify-center text-white font-bold text-sm shrink-0">
                 {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
             </div>
-            <div class="flex-1 min-w-0">
+            <a href="{{ route('profile.show') }}" class="flex-1 min-w-0 hover:opacity-80 transition" title="Buka Profil & Ganti Password Mandiri">
                 <p class="text-xs font-semibold text-white truncate">{{ auth()->user()->name }}</p>
                 <p class="text-[10px] text-amber-400 font-medium truncate">{{ auth()->user()->role ? auth()->user()->role->name : 'Marketing' }}</p>
-            </div>
+            </a>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button type="submit" title="Logout" class="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-lg transition duration-150">

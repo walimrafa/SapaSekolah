@@ -205,6 +205,55 @@ class GoogleCalendarNotificationService
     }
 
     /**
+     * Dispatch notification & calendar invite for SchoolVisit (Data Kunjungan).
+     */
+    public static function notifySchoolVisit(\App\Models\SchoolVisit $visit): array
+    {
+        $schoolName = $visit->school?->name ?: 'Sekolah Target';
+        $location = $schoolName . ($visit->school?->address ? ', ' . $visit->school->address : '');
+        $title = "Kunjungan Lapangan: {$schoolName}";
+
+        $visitDate = $visit->visit_date ?: Carbon::today();
+        $startDate = Carbon::parse($visitDate)->setTime(9, 0, 0);
+        $endDate = Carbon::parse($visitDate)->setTime(11, 30, 0);
+
+        $driveLink = $visit->drive_folder_url;
+
+        $targetDateStr = $visit->target_date ? Carbon::parse($visit->target_date)->translatedFormat('d F Y') : ($visit->target_month_year ?: '-');
+        $totalSiswa = ($visit->grade_12_class_count && $visit->students_per_class) ? ($visit->grade_12_class_count * $visit->students_per_class) . ' Siswa' : '-';
+
+        $details = "Laporan Kunjungan Lapangan SAPA Sekolah UBSI:\n"
+            . "Sekolah: {$schoolName}\n"
+            . "Petugas: " . ($visit->user?->name ?: 'Marketing Officer') . " (Telp: " . ($visit->user?->phone ?: '-') . ")\n"
+            . "Penerima: {$visit->recipient_name} ({$visit->recipient_position}) - Telp: {$visit->recipient_phone}\n"
+            . "Target Sosialisasi: {$targetDateStr} (Pukul {$visit->target_time})\n"
+            . "Estimasi Siswa: {$totalSiswa}\n"
+            . "Metode: {$visit->socialization_method}\n"
+            . "Status: " . ucfirst($visit->status) . "\n"
+            . "Dokumentasi Google Drive: {$driveLink}\n\n"
+            . "Detail Kunjungan: " . url('/visits');
+
+        $recipients = self::getRelevantEmails([
+            $visit->user?->email,
+            'karawangmarkom@gmail.com',
+            'walimsaja@gmail.com',
+            'walim.wam@bsi.ac.id',
+            'mohammad.myz@bsi.ac.id',
+        ]);
+
+        return self::dispatchCalendarInvite(
+            $recipients,
+            $title,
+            $startDate,
+            $endDate,
+            $details,
+            $location,
+            'kunjungan_data',
+            'SV-' . $visit->id
+        );
+    }
+
+    /**
      * Dispatch notification & calendar invite for Socialization (FollowUp H-5).
      */
     public static function notifySocialization(FollowUp $fu): array

@@ -226,16 +226,17 @@ class RouteExportService
         $sheet->setCellValue('D4', 'Jumlah Sasaran Sekolah:');
         $sheet->setCellValue('E4', count($schoolsData) . ' Sekolah');
         $sheet->setCellValue('D5', 'Total Estimasi Jarak:');
-        $sheet->setCellValue('E5', number_format($route->total_distance, 1) . ' km');
+        $sheet->setCellValue('E5', number_format((float) ($route->total_distance ?? 0), 1) . ' km');
         $sheet->setCellValue('D6', 'Estimasi Durasi Total:');
-        $sheet->setCellValue('E6', number_format($route->estimated_duration) . ' Menit');
+        $sheet->setCellValue('E6', number_format((int) ($route->estimated_duration ?? 0)) . ' Menit');
         $sheet->setCellValue('D7', 'Titik Berangkat / Selesai:');
         $sheet->setCellValue('E7', ($route->start_location ?? 'Kampus UBSI') . ' -> ' . ($route->end_location ?? 'Kampus UBSI'));
 
         $sheet->setCellValue('H4', 'Link Navigasi Google Maps Driving:');
         $sheet->setCellValue('H5', $gmapsUrl);
         $sheet->getCell('H5')->getHyperlink()->setUrl($gmapsUrl);
-        $sheet->getStyle('H5')->getFont()->getColor()->setRGB('2563EB')->setUnderline(true);
+        $sheet->getStyle('H5')->getFont()->getColor()->setRGB('2563EB');
+        $sheet->getStyle('H5')->getFont()->setUnderline(true);
 
         $sheet->getStyle('A4:A7')->getFont()->setBold(true);
         $sheet->getStyle('D4:D7')->getFont()->setBold(true);
@@ -337,7 +338,8 @@ class RouteExportService
             if ($schoolGmaps) {
                 $sheet->setCellValue("T{$currentRow}", 'Buka Maps');
                 $sheet->getCell("T{$currentRow}")->getHyperlink()->setUrl($schoolGmaps);
-                $sheet->getStyle("T{$currentRow}")->getFont()->getColor()->setRGB('2563EB')->setUnderline(true);
+                $sheet->getStyle("T{$currentRow}")->getFont()->getColor()->setRGB('2563EB');
+                $sheet->getStyle("T{$currentRow}")->getFont()->setUnderline(true);
             } else {
                 $sheet->setCellValue("T{$currentRow}", '-');
             }

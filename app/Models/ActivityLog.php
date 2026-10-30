@@ -12,12 +12,15 @@ class ActivityLog extends Model
     protected $fillable = [
         'user_id',
         'action',
+        'description',
         'module',
         'record_id',
         'old_data',
         'new_data',
         'ip_address',
         'user_agent',
+        'campus_id',
+        'academic_period_id',
     ];
 
     protected $casts = [
@@ -32,5 +35,15 @@ class ActivityLog extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function campus(): BelongsTo
+    {
+        return $this->belongsTo(Campus::class);
+    }
+
+    public function academicPeriod(): BelongsTo
+    {
+        return $this->belongsTo(AcademicPeriod::class);
     }
 }

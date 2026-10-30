@@ -150,6 +150,34 @@ class PeriodClosingService
      */
     public static function executeReset(PeriodClosingRequest $request, ?User $executor = null): void
     {
+        // 0. Auto-archive snapshot cadangan sebelum reset
+        try {
+            $snapshotData = [
+                'timestamp' => now()->toIso8601String(),
+                'executed_by' => $executor ? $executor->name : 'System',
+                'counts' => [
+                    'prospects' => DB::table('prospects')->count(),
+                    'student_questionnaires' => DB::table('student_questionnaires')->count(),
+                    'student_follow_ups' => DB::table('student_follow_ups')->count(),
+                    'school_visits' => DB::table('school_visits')->count(),
+                    'visit_plans' => DB::table('visit_plans')->count(),
+                    'follow_ups' => DB::table('follow_ups')->count(),
+                    'school_event_proposals' => DB::table('school_event_proposals')->count(),
+                ],
+                'prospects' => DB::table('prospects')->get(),
+                'student_questionnaires' => DB::table('student_questionnaires')->get(),
+                'school_visits' => DB::table('school_visits')->get(),
+            ];
+            $archiveDir = storage_path('app/period_archives');
+            if (!is_dir($archiveDir)) {
+                @mkdir($archiveDir, 0755, true);
+            }
+            $filename = 'period_archive_' . date('Y_m_d_His') . '.json';
+            @file_put_contents($archiveDir . '/' . $filename, json_encode($snapshotData, JSON_PRETTY_PRINT));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Period closing snapshot archive failed: ' . $e->getMessage());
+        }
+
         Schema::disableForeignKeyConstraints();
 
         // 1. Follow Up & Kuisioner Siswa (Reset ke 0)

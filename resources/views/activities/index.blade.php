@@ -1,8 +1,19 @@
-<x-app-layout title="Aktivitas Marketing">
+<x-app-layout title="Aktivitas Sosialisasi & Event Marketing">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-            <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Aktivitas &amp; Event Marketing</h1>
-            <p class="text-xs text-slate-500 mt-0.5">Kelola Seminar, Workshop, Expo, Try Out, Sosialisasi PMB &amp; Beasiswa UBSI</p>
+            <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Aktivitas Sosialisasi &amp; Event Marketing</h1>
+            <p class="text-xs text-slate-500 mt-0.5">Daftar kegiatan sosialisasi sekolah yang terlaksana otomatis tercopy ke sini, serta Seminar, Expo &amp; Event PMB UBSI</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <!-- Tombol Buka Root Google Drive Dokumentasi -->
+            <a href="https://drive.google.com/drive/folders/1DQkSEomL8cacePKG8Ex72JldQABKndiD?usp=sharing"
+                target="_blank"
+                class="px-3.5 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold rounded-xl text-xs shadow-soft flex items-center space-x-1.5 transition"
+                title="Buka Folder Induk Dokumentasi di Google Drive">
+                <i data-lucide="folder" class="w-4 h-4 text-amber-500"></i>
+                <span>Google Drive Cloud</span>
+                <i data-lucide="external-link" class="w-3 h-3 text-slate-400"></i>
+            </a>
         </div>
     </div>
 
@@ -10,17 +21,17 @@
         <!-- Table List (8 Cols) -->
         <div class="lg:col-span-8 bg-white rounded-2xl border border-slate-200/80 shadow-soft overflow-hidden">
             <div class="p-4 border-b border-slate-100 flex items-center justify-between">
-                <h3 class="text-sm font-bold text-slate-800">Daftar Event / Aktivitas Marketing</h3>
-                <span class="px-2.5 py-1 text-xs font-bold bg-brand-50 text-brand-700 rounded-lg">{{ $activities->total() }} Event</span>
+                <h3 class="text-sm font-bold text-slate-800">Daftar Event / Aktivitas Marketing &amp; Sosialisasi</h3>
+                <span class="px-2.5 py-1 text-xs font-bold bg-brand-50 text-brand-700 rounded-lg">{{ $activities->total() }} Kegiatan</span>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs">
                     <thead class="bg-slate-900 text-white font-bold uppercase">
                         <tr>
-                            <th class="py-3.5 px-4">Nama Event</th>
+                            <th class="py-3.5 px-4">Nama Aktivitas / Kegiatan</th>
                             <th class="py-3.5 px-4">Jenis Event</th>
                             <th class="py-3.5 px-4">Tanggal Pelaksanaan</th>
-                            <th class="py-3.5 px-4 text-center">Dokumen Lampiran</th>
+                            <th class="py-3.5 px-4 text-center whitespace-nowrap">Dokumentasi &amp; Drive</th>
                             <th class="py-3.5 px-4 text-center">Keterangan</th>
                             <th class="py-3.5 px-4 text-center">Aksi</th>
                         </tr>
@@ -28,8 +39,29 @@
                     <tbody class="divide-y divide-slate-100">
                         @forelse($activities as $a)
                             <tr class="hover:bg-slate-50 transition">
-                                <td class="py-3.5 px-4 font-bold text-slate-900">
-                                    {{ $a->name }}
+                                <td class="py-3.5 px-4">
+                                    <div class="font-bold text-slate-900">{{ $a->name }}</div>
+                                    @if($a->schoolActivities->isNotEmpty())
+                                        <div class="mt-1 flex flex-wrap items-center gap-1.5">
+                                            @foreach($a->schoolActivities as $sa)
+                                                @if($sa->school)
+                                                    <a href="{{ route('schools.show', $sa->school_id) }}" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 text-[10px] font-bold border border-emerald-200 hover:bg-emerald-100 transition">
+                                                        <i data-lucide="school" class="w-3 h-3 text-emerald-600"></i>
+                                                        <span>{{ $sa->school->name }}</span>
+                                                        @if($sa->school->district)
+                                                            <span class="text-emerald-600 font-normal">({{ $sa->school->district->name }})</span>
+                                                        @endif
+                                                    </a>
+                                                    @if($sa->participants > 0)
+                                                        <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 text-[10px] font-bold border border-blue-100">
+                                                            <i data-lucide="users" class="w-2.5 h-2.5 text-blue-500"></i>
+                                                            <span>{{ $sa->participants }} Siswa</span>
+                                                        </span>
+                                                    @endif
+                                                @endif
+                                            @endforeach
+                                        </div>
+                                    @endif
                                 </td>
                                 <td class="py-3.5 px-4">
                                     <span class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-purple-50 text-purple-700 border border-purple-100">
@@ -39,16 +71,19 @@
                                 <td class="py-3.5 px-4 text-slate-600 font-semibold">
                                     {{ \Carbon\Carbon::parse($a->start_date)->format('d M Y') }}
                                 </td>
-                                <td class="py-3.5 px-4 text-center">
-                                    @if($a->document_path)
-                                        @php
-                                            $ext = $a->document_extension;
-                                            $isArchive = in_array($ext, ['rar', 'zip', '7z']);
-                                            $isPdf = ($ext === 'pdf');
-                                            $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'webp']);
-                                        @endphp
-                                        <div class="inline-flex flex-col items-center gap-1">
-                                            <a href="{{ $a->document_url }}" target="_blank" download class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl {{ $isArchive ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-200' : ($isPdf ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200' : 'bg-brand-50 hover:bg-brand-100 text-brand-700 border-brand-200') }} border font-bold text-[11px] shadow-2xs transition" title="Klik untuk mengunduh dokumen: {{ $a->document_name }}">
+                                <td class="py-3.5 px-4 text-center whitespace-nowrap">
+                                    @php
+                                        $hasDoc = !empty($a->document_path);
+                                        $ext = $a->document_extension;
+                                        $isArchive = in_array($ext, ['rar', 'zip', '7z']);
+                                        $isPdf = ($ext === 'pdf');
+                                        $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif']);
+                                        $docUrl = $hasDoc ? route('activities.document', $a->id, false) : null;
+                                        $driveFolderUrl = $a->drive_folder_url;
+                                    @endphp
+                                    <div class="flex flex-col items-center gap-1.5">
+                                        @if($hasDoc)
+                                            <a href="{{ $docUrl }}" target="_blank" download class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl {{ $isArchive ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-200' : ($isPdf ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200' : ($isImage ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-brand-50 hover:bg-brand-100 text-brand-700 border-brand-200')) }} border font-bold text-[11px] shadow-2xs transition" title="Buka / Unduh Berkas: {{ $a->document_name }}">
                                                 @if($isArchive)
                                                     <i data-lucide="archive" class="w-3.5 h-3.5 text-amber-600"></i>
                                                     <span class="uppercase text-[9px] font-black bg-amber-200/80 px-1 py-0.2 rounded">{{ $ext }}</span>
@@ -62,13 +97,20 @@
                                                     <i data-lucide="file" class="w-3.5 h-3.5 text-brand-600"></i>
                                                     <span class="uppercase text-[9px] font-black bg-slate-200 px-1 py-0.2 rounded">{{ $ext ?: 'DOC' }}</span>
                                                 @endif
-                                                <span class="max-w-[120px] truncate">{{ $a->document_name ?: 'Unduh Berkas' }}</span>
-                                                <i data-lucide="download" class="w-3 h-3 opacity-60"></i>
+                                                <span class="max-w-[110px] truncate">{{ $a->document_name ?: 'Unduh Berkas' }}</span>
+                                                <i data-lucide="external-link" class="w-3 h-3 opacity-60"></i>
                                             </a>
-                                        </div>
-                                    @else
-                                        <span class="text-slate-400 text-xs italic">-</span>
-                                    @endif
+                                        @endif
+
+                                        <!-- Tombol Link Google Drive Kegiatan / Sekolah Realtime -->
+                                        <a href="{{ $driveFolderUrl }}" target="_blank"
+                                            title="Buka Folder Google Drive untuk Kegiatan / Sekolah Ini"
+                                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold transition shadow-2xs">
+                                            <i data-lucide="folder" class="w-3 h-3 text-amber-600"></i>
+                                            <span>Folder Drive</span>
+                                            <i data-lucide="external-link" class="w-2.5 h-2.5 text-amber-700"></i>
+                                        </a>
+                                    </div>
                                 </td>
                                 <td class="py-3.5 px-4 text-slate-500 max-w-xs truncate">
                                     {{ $a->description ?? '-' }}
@@ -145,6 +187,10 @@
                         <span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold border border-emerald-200">Foto</span>
                         <span class="text-slate-400">(Maks. 50 MB)</span>
                     </div>
+                    <p class="mt-1 text-[10px] text-amber-700 flex items-center gap-1">
+                        <i data-lucide="cloud" class="w-3 h-3 text-amber-600"></i>
+                        <span>Berkas akan otomatis disimpan &amp; disinkronkan ke Google Drive Cloud.</span>
+                    </p>
                     @error('document')
                         <p class="text-xs text-rose-600 mt-1 font-semibold">{{ $message }}</p>
                     @enderror

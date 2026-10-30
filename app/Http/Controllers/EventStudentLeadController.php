@@ -16,15 +16,33 @@ class EventStudentLeadController extends Controller
      */
     public function publicCreate(Request $request): View
     {
-        $schools = School::query()
-            ->select('id', 'name', 'district_id')
-            ->with('district:id,name')
-            ->orderBy('name')
-            ->get();
+        if (!\App\Services\AppContextService::isPortalActive(\App\Services\AppContextService::PORTAL_EVENT_STUDENT_LEAD)) {
+            return view('errors.portal-disabled', [
+                'portalName' => 'Portal Pendaftaran Siswa Event',
+            ]);
+        }
 
-        $events = SchoolEventProposal::where('status', SchoolEventProposal::STATUS_DISETUJUI)
-            ->orderByDesc('event_date')
-            ->get(['id', 'event_name', 'school_name', 'school_id', 'event_date', 'event_location']);
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $schoolsQuery = School::query()
+            ->select('id', 'name', 'district_id')
+            ->with('district:id,name');
+
+        if ($activeCampus) {
+            $schoolsQuery->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)->orWhereNull('campus_id');
+            });
+        }
+
+        $schools = $schoolsQuery->orderBy('name')->get();
+
+        $eventsQuery = SchoolEventProposal::where('status', SchoolEventProposal::STATUS_DISETUJUI)
+            ->orderByDesc('event_date');
+
+        if ($activeCampus) {
+            $eventsQuery->where('campus_id', $activeCampus->id);
+        }
+
+        $events = $eventsQuery->get(['id', 'event_name', 'school_name', 'school_id', 'event_date', 'event_location']);
 
         $selectedEventId = $request->query('event_id');
         $selectedEvent = $selectedEventId ? SchoolEventProposal::find($selectedEventId) : null;
@@ -38,6 +56,10 @@ class EventStudentLeadController extends Controller
      */
     public function publicStore(Request $request): RedirectResponse
     {
+        if (!\App\Services\AppContextService::isPortalActive(\App\Services\AppContextService::PORTAL_EVENT_STUDENT_LEAD)) {
+            return back()->with('error', 'Portal Pendaftaran Siswa Event saat ini sedang ditutup atau dinonaktifkan.');
+        }
+
         $request->validate([
             'student_name' => 'required|string|max:150',
             'school_id' => 'required',
@@ -95,9 +117,16 @@ class EventStudentLeadController extends Controller
             ? 'Berminat Program Beasiswa UBSI' 
             : 'Non-Beasiswa / Jalur Mandiri';
 
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $activePeriod = \App\Services\AppContextService::getActivePeriod();
+
+        $targetCampusId = $event?->campus_id ?: ($school?->campus_id ?: ($activeCampus?->id ?? 1));
+
         // Simpan ke database student_questionnaires agar tersinkronisasi otomatis ke CRM Follow Up Siswa
         $lead = StudentQuestionnaire::create([
             'school_id' => $schoolId,
+            'campus_id' => $targetCampusId,
+            'academic_period_id' => $activePeriod?->id,
             'school_event_proposal_id' => $request->school_event_proposal_id,
             'school_name' => $schoolName,
             'student_name' => $request->student_name,
@@ -116,6 +145,15 @@ class EventStudentLeadController extends Controller
             'college_interest_notes' => $collegeNotes,
             'scholarship_notes' => $scholarshipNotes,
         ]);
+
+        \App\Services\ActivityLogService::log(
+            'CREATE',
+            'event_student',
+            $lead->id,
+            "Pendaftaran Siswa Event: {$lead->student_name} ({$schoolName})",
+            null,
+            ['student_name' => $lead->student_name, 'school' => $schoolName, 'event' => $eventTitle]
+        );
 
         return redirect()->route('event-students.success')
             ->with('student_name', $lead->student_name)
@@ -138,6 +176,8 @@ class EventStudentLeadController extends Controller
         $user = auth()->user();
         $canPlot = $user && $user->canPlotFollowUps();
 
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+
         $query = StudentQuestionnaire::query()
             ->where(function ($q) {
                 $q->where('source', 'support_event')
@@ -146,6 +186,14 @@ class EventStudentLeadController extends Controller
             })
             ->with(['school.district', 'eventProposal', 'assignedUser', 'assignedBy', 'lastFollowedUpBy', 'followUps'])
             ->latest();
+
+        if ($activeCampus) {
+            $query->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)
+                  ->orWhereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id))
+                  ->orWhereHas('eventProposal', fn($ep) => $ep->where('campus_id', $activeCampus->id));
+            });
+        }
 
         // Staf Marketing murni hanya melihat data hasil support event yang di-ploting ke dirinya
         if ($user && $user->isMarketing() && !$canPlot) {
@@ -187,15 +235,26 @@ class EventStudentLeadController extends Controller
 
         $students = $query->paginate(15)->withQueryString();
 
-        $events = SchoolEventProposal::where('status', SchoolEventProposal::STATUS_DISETUJUI)
-            ->orderByDesc('event_date')
-            ->get(['id', 'event_name', 'school_name', 'event_date']);
+        $eventsQuery = SchoolEventProposal::where('status', SchoolEventProposal::STATUS_DISETUJUI)
+            ->orderByDesc('event_date');
+        if ($activeCampus) {
+            $eventsQuery->where('campus_id', $activeCampus->id);
+        }
+        $events = $eventsQuery->get(['id', 'event_name', 'school_name', 'event_date']);
 
         $baseCount = StudentQuestionnaire::where(function ($q) {
             $q->where('source', 'support_event')
               ->orWhereNotNull('school_event_proposal_id')
               ->orWhere('college_interest_notes', 'like', '%Support Event%');
         });
+
+        if ($activeCampus) {
+            $baseCount->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)
+                  ->orWhereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id))
+                  ->orWhereHas('eventProposal', fn($ep) => $ep->where('campus_id', $activeCampus->id));
+            });
+        }
 
         $metrics = [
             'total' => (clone $baseCount)->count(),
@@ -207,11 +266,19 @@ class EventStudentLeadController extends Controller
             'assigned' => (clone $baseCount)->whereNotNull('assigned_to')->count(),
         ];
 
-        $assignableOfficers = \App\Models\User::query()
+        $assignableOfficersQuery = \App\Models\User::query()
             ->whereHas('role', function ($q) {
                 $q->whereIn('name', ['Marketing', 'Customer Service', 'Koordinator Marketing']);
             })
-            ->active()
+            ->active();
+
+        if ($activeCampus) {
+            $assignableOfficersQuery->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)->orWhereNull('campus_id');
+            });
+        }
+
+        $assignableOfficers = $assignableOfficersQuery
             ->orderBy('name')
             ->withCount([
                 'assignedStudentQuestionnaires as total_assigned_count',
@@ -221,7 +288,7 @@ class EventStudentLeadController extends Controller
             ])
             ->get(['id', 'name', 'email', 'role_id']);
 
-        return view('event-students.index', compact('students', 'events', 'metrics', 'canPlot', 'assignableOfficers'));
+        return view('event-students.index', compact('students', 'events', 'metrics', 'canPlot', 'assignableOfficers', 'activeCampus'));
     }
 
     /**

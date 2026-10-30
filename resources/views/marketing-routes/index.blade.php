@@ -3,37 +3,72 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
     <style>
         #route-map {
-            height: 400px;
+            height: 440px;
             width: 100%;
             border-radius: 1.25rem;
             z-index: 1;
         }
         .seq-icon {
-            background: #1e3a5f;
-            color: white;
-            border-radius: 12px;
-            font-weight: 700;
-            font-size: 10px;
-            display: flex;
+            background: #0f172a;
+            color: #ffffff;
+            border-radius: 9999px;
+            font-weight: 800;
+            font-size: 11px;
+            display: inline-flex;
+            align-items: center;
+            border: 2px solid #ffffff;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.4);
+            white-space: nowrap;
+            padding: 2px 10px 2px 4px;
+            line-height: 1.3;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .seq-icon:hover {
+            transform: scale(1.08);
+            background: #1e3a8a;
+            z-index: 1000 !important;
+        }
+        .seq-icon .badge-num {
+            background: #f59e0b;
+            color: #0f172a;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            border: 2px solid white;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.35);
-            white-space: nowrap;
-            padding: 2px 8px;
-            line-height: 1.3;
+            font-size: 10px;
+            font-weight: 900;
+            margin-right: 6px;
+            flex-shrink: 0;
+        }
+        .school-map-tooltip {
+            background: #0f172a !important;
+            color: #ffffff !important;
+            border-radius: 8px !important;
+            border: 1px solid #334155 !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            padding: 5px 9px !important;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.3) !important;
+        }
+        .school-map-tooltip::before {
+            border-top-color: #0f172a !important;
         }
         .ubsi-icon {
             background: #f59e0b;
-            color: white;
-            border-radius: 50%;
+            color: #0f172a;
+            border-radius: 9999px;
             font-weight: 900;
-            font-size: 12px;
+            font-size: 11px;
             display: flex;
             align-items: center;
             justify-content: center;
             border: 2px solid white;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            padding: 3px 10px;
+            white-space: nowrap;
         }
     </style>
     @endpush
@@ -65,13 +100,25 @@
                         <i data-lucide="navigation" class="w-4 h-4 text-brand-600"></i>
                         <span>Visualisasi Peta Rute Mobil (Driving Route)</span>
                     </h3>
-                    <p class="text-[11px] text-slate-500 mt-0.5">Start: Kampus UBSI Karawang &rarr; 10 Sekolah &rarr; Kampus UBSI Karawang</p>
+                    <p class="text-[11px] text-slate-500 mt-0.5">Start: Kampus UBSI Karawang &rarr; Sekolah Terpilih &rarr; Kampus UBSI Karawang</p>
                 </div>
 
                 <div x-show="routePreview" class="text-right">
                     <span class="text-xs font-bold text-brand-600 block" x-text="routePreview.total_distance_km + ' km'"></span>
-                    <span class="text-[10px] text-slate-500" x-text="'Drive: ' + routePreview.driving_minutes + ' mnt | Total: ' + routePreview.estimated_duration_minutes + ' mnt'"></span>
+                    <span class="text-[10px] text-slate-500" x-text="'Drive: ' + (routePreview.driving_minutes || Math.round((routePreview.total_distance_km / 30) * 60)) + ' mnt | Total: ' + routePreview.estimated_duration_minutes + ' mnt'"></span>
                 </div>
+            </div>
+
+            <!-- Mode Banner: Viewing Saved Route -->
+            <div x-show="activeSavedRoute" x-transition style="display: none;" class="mb-3 p-3 bg-indigo-50 border border-indigo-200 rounded-2xl flex items-center justify-between text-xs text-indigo-950">
+                <div class="flex items-center gap-2 truncate pr-2">
+                    <span class="px-2 py-0.5 bg-indigo-600 text-white font-extrabold rounded-md text-[10px] shrink-0">MODE LIHAT RUTE</span>
+                    <span class="truncate">Menampilkan: <b x-text="activeSavedRoute ? activeSavedRoute.name : ''"></b> (<span x-text="activeSavedRoute && activeSavedRoute.sequence ? activeSavedRoute.sequence.length : 0"></span> Sekolah)</span>
+                </div>
+                <button type="button" @click="resetToBuilderMode()" class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 font-bold rounded-xl border border-slate-300 text-[10px] shrink-0 transition flex items-center gap-1 shadow-2xs cursor-pointer">
+                    <i data-lucide="x" class="w-3 h-3 text-red-500"></i>
+                    <span>Tutup &amp; Buat Rute</span>
+                </button>
             </div>
 
             <div id="route-map" class="shadow-inner border border-slate-200"></div>
@@ -251,6 +298,47 @@
                         <p class="text-[10px] text-amber-600 font-medium mt-1">Silakan centang satu atau lebih kecamatan di atas untuk menampilkan rute sekolah.</p>
                     </div>
 
+                    <!-- 3. Pilihan Sekolah Target Spesifik (Berdasarkan Kecamatan Terpilih) -->
+                    <div x-show="selectedDistricts.length > 0" class="space-y-2 pt-2 border-t border-slate-100">
+                        <div class="flex items-center justify-between">
+                            <label class="block text-xs font-bold text-slate-700">
+                                🏫 Sekolah Target Rute <span class="text-amber-600 font-normal">— Centang sekolah</span>
+                            </label>
+                            <span class="text-[10px] font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded-full border border-brand-200" 
+                                  x-text="selectedSchoolIds.length > 0 ? (selectedSchoolIds.length + ' dipilih') : 'Semua di Kec. Terpilih (' + filteredSchoolsForPoint.length + ')'"></span>
+                        </div>
+                        <div class="flex items-center justify-between text-[10px] text-slate-500 mb-1">
+                            <span x-text="filteredSchoolsForPoint.length + ' sekolah berkoordinat di kecamatan terpilih'"></span>
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" @click="selectAllSchoolsInPoint()" class="text-brand-600 font-bold hover:underline cursor-pointer">Pilih Semua</button>
+                                <span class="text-slate-300">|</span>
+                                <button type="button" @click="clearSchoolSelection()" class="text-slate-500 hover:text-slate-700 hover:underline cursor-pointer">Otomatis (Semua)</button>
+                            </div>
+                        </div>
+
+                        <!-- School Search within selected districts -->
+                        <div class="relative mb-1.5" x-show="filteredSchoolsForPoint.length > 5">
+                            <input type="text" x-model="schoolSearchInDistricts" placeholder="Cari nama sekolah target..." class="w-full pl-7 pr-3 py-1 text-[11px] rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-brand-500">
+                            <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2 top-1.5 pointer-events-none"></i>
+                        </div>
+
+                        <div class="max-h-40 overflow-y-auto space-y-1 p-2 bg-slate-50/70 rounded-xl border border-slate-200 text-xs">
+                            <template x-for="s in displayedSchoolsInDistricts" :key="'sch-chk-' + s.id">
+                                <label class="flex items-center justify-between p-1.5 rounded-lg border transition cursor-pointer select-none"
+                                       :class="selectedSchoolIds.includes(String(s.id)) ? 'bg-amber-50 border-amber-300 text-amber-950 font-bold shadow-2xs' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'">
+                                    <div class="flex items-center space-x-2 truncate pr-1">
+                                        <input type="checkbox" :value="String(s.id)" x-model="selectedSchoolIds" @change="previewCluster()" class="w-3.5 h-3.5 rounded border-slate-300 text-amber-600 focus:ring-amber-500">
+                                        <span class="truncate" x-text="s.name"></span>
+                                    </div>
+                                    <span class="text-[9px] font-mono text-slate-400 shrink-0" x-text="s.district ? s.district.name : ''"></span>
+                                </label>
+                            </template>
+                        </div>
+                        <template x-for="id in selectedSchoolIds" :key="'hidden-sch-' + id">
+                            <input type="hidden" name="school_ids[]" :value="id">
+                        </template>
+                    </div>
+
                     <!-- Sequence Preview -->
                     <div x-show="routePreview && routePreview.sequence && routePreview.sequence.length > 0" class="space-y-2 pt-2 border-t border-slate-100">
                         <p class="text-[11px] font-bold text-slate-700">Urutan <span x-text="routePreview.sequence.length"></span> Sekolah Rute Mobil:</p>
@@ -328,10 +416,34 @@
                                     $ubsiStr = \App\Services\SchoolScoringService::UBSI_LATITUDE . ',' . \App\Services\SchoolScoringService::UBSI_LONGITUDE;
                                     $navUrl = "https://www.google.com/maps/dir/?api=1&origin={$ubsiStr}&destination={$ubsiStr}&waypoints=" . ltrim($seqStr, '|') . "&travelmode=driving";
                                 @endphp
-                                <a href="{{ $navUrl }}" target="_blank" class="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg text-[10px] transition inline-flex items-center gap-1">
-                                    <i data-lucide="navigation-2" class="w-3 h-3"></i>
-                                    <span>Navigasi Mobil 🚗</span>
-                                </a>
+                                <div class="inline-flex items-center gap-1.5 justify-center">
+                                    <button type="button" @click="viewSavedRoute({{ json_encode([
+                                        'id' => $r->id,
+                                        'name' => $r->name,
+                                        'total_distance_km' => (float)$r->total_distance,
+                                        'estimated_duration_minutes' => (int)$r->estimated_duration,
+                                        'driving_minutes' => round(((float)$r->total_distance / 30) * 60),
+                                        'google_maps_driving_url' => $navUrl,
+                                        'sequence' => $r->routeSchools->map(fn($rs, $idx) => [
+                                            'id' => $rs->school_id,
+                                            'name' => $rs->school?->name ?? 'Sekolah',
+                                            'latitude' => (float)($rs->school?->latitude ?? 0),
+                                            'longitude' => (float)($rs->school?->longitude ?? 0),
+                                            'npsn' => $rs->school?->npsn ?? '-',
+                                            'district' => $rs->school?->district ? ['name' => $rs->school->district->name] : null,
+                                            'regency' => $rs->school?->regency ? ['name' => $rs->school->regency->name] : null,
+                                            'leg_distance' => $rs->leg_distance ?? 0,
+                                        ])->values()
+                                    ]) }})" class="px-2.5 py-1 bg-brand-navy hover:bg-slate-900 text-white font-bold rounded-lg text-[10px] transition inline-flex items-center gap-1 shadow-2xs cursor-pointer" title="Tampilkan rute dan koordinat sekolah pada peta di atas">
+                                        <i data-lucide="map" class="w-3 h-3 text-amber-400"></i>
+                                        <span>Lihat di Peta</span>
+                                    </button>
+
+                                    <a href="{{ $navUrl }}" target="_blank" class="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg text-[10px] transition inline-flex items-center gap-1 shadow-2xs" title="Buka navigasi Google Maps">
+                                        <i data-lucide="navigation-2" class="w-3 h-3"></i>
+                                        <span>Google Maps</span>
+                                    </a>
+                                </div>
                             </td>
                             <td class="py-3.5 px-4 text-center">
                                 <form method="POST" action="{{ route('marketing-routes.destroy', $r->id) }}" onsubmit="return confirm('Hapus rute {{ $r->name }}?')" class="inline">
@@ -371,6 +483,9 @@
                 selectedRegency: '{{ $regencies->firstWhere('schools_count', '>', 0)?->id ?? ($regencies->first()?->id ?? 'ALL') }}',
                 districtSearch: '',
                 selectedDistricts: [],
+                selectedSchoolIds: [],
+                schoolSearchInDistricts: '',
+                activeSavedRoute: null,
                 allDistricts: {!! json_encode($districts->map(fn($d) => [
                     'id' => (string) $d->id,
                     'name' => $d->name,
@@ -387,6 +502,7 @@
                 routePreview: null,
                 markers: [],
                 polyline: null,
+                roadPolylines: [],
 
                 get availableDistricts() {
                     if (!this.selectedRegency || this.selectedRegency === 'ALL') {
@@ -413,11 +529,31 @@
                     return list;
                 },
 
+                get displayedSchoolsInDistricts() {
+                    let list = this.filteredSchoolsForPoint;
+                    if (!this.schoolSearchInDistricts) return list;
+                    let q = this.schoolSearchInDistricts.toLowerCase().trim();
+                    return list.filter(s => s.name.toLowerCase().includes(q) || (s.district && s.district.name.toLowerCase().includes(q)));
+                },
+
+                selectAllSchoolsInPoint() {
+                    this.selectedSchoolIds = this.filteredSchoolsForPoint.map(s => String(s.id));
+                    this.previewCluster();
+                },
+
+                clearSchoolSelection() {
+                    this.selectedSchoolIds = [];
+                    this.previewCluster();
+                },
+
                 onRegencyChange() {
                     this.selectedDistricts = [];
+                    this.selectedSchoolIds = [];
                     this.districtSearch = '';
+                    this.schoolSearchInDistricts = '';
                     this.startSchoolId = 'ubsi';
                     this.endSchoolId = 'ubsi';
+                    this.activeSavedRoute = null;
                     this.previewCluster();
                 },
 
@@ -473,12 +609,14 @@
                 selectAllDistricts() {
                     let ids = this.availableDistricts.map(d => String(d.id));
                     this.selectedDistricts = Array.from(new Set([...this.selectedDistricts, ...ids]));
+                    this.selectedSchoolIds = [];
                     this.previewCluster();
                 },
 
                 clearAllDistricts() {
                     let availIds = new Set(this.availableDistricts.map(d => String(d.id)));
                     this.selectedDistricts = this.selectedDistricts.filter(id => !availIds.has(String(id)));
+                    this.selectedSchoolIds = [];
                     this.previewCluster();
                 },
 
@@ -511,10 +649,27 @@
                     googleRoadmap.addTo(this.map);
                 },
 
+                viewSavedRoute(savedRoute) {
+                    this.activeSavedRoute = savedRoute;
+                    this.routePreview = savedRoute;
+                    this.drawRoute();
+                    document.getElementById('route-map')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                },
+
+                resetToBuilderMode() {
+                    this.activeSavedRoute = null;
+                    this.previewCluster();
+                },
+
                 previewCluster() {
+                    if (this.activeSavedRoute) {
+                        this.activeSavedRoute = null;
+                    }
+
                     if (this.selectedDistricts.length === 0) {
                         this.startSchoolId = 'ubsi';
                         this.endSchoolId = 'ubsi';
+                        this.selectedSchoolIds = [];
                         this.routePreview = null;
                         this.drawRoute();
                         return;
@@ -544,6 +699,9 @@
                     this.selectedDistricts.forEach(id => {
                         params.append('district_ids[]', id);
                     });
+                    this.selectedSchoolIds.forEach(id => {
+                        params.append('school_ids[]', id);
+                    });
 
                     fetch(`/api/marketing-routes/cluster-preview?${params.toString()}`)
                         .then(res => res.json())
@@ -571,53 +729,175 @@
 
                     // UBSI Marker
                     let ubsiIcon = L.divIcon({
-                        html: '🚩 UBSI',
-                        className: 'ubsi-icon',
-                        iconSize: [50, 24],
-                        iconAnchor: [25, 12]
+                        html: '<div class="seq-icon" style="background:#0f172a;"><span class="badge-num" style="background:#ef4444;color:#fff;">★</span><span>🚩 Start/End: Kampus UBSI</span></div>',
+                        className: '',
+                        iconSize: [175, 26],
+                        iconAnchor: [20, 13]
                     });
                     let ubsiMarker = L.marker([ubsiLat, ubsiLng], { icon: ubsiIcon }).addTo(this.map);
-                    ubsiMarker.bindPopup("<b>Kampus UBSI Karawang</b><br>Titik Start & End Rute Mobil");
+                    ubsiMarker.bindPopup(`
+                        <div class="p-2 text-xs">
+                            <b class="text-brand-navy text-sm">Kampus UBSI Karawang</b><br>
+                            <span class="text-slate-600">Jl. Banten No.1, Karawang Barat</span><br>
+                            <span class="font-mono text-[11px] text-slate-500">📍 Lat: ${ubsiLat}, Lng: ${ubsiLng}</span><br>
+                            <span class="text-amber-600 font-bold mt-1 inline-block">Titik Start & End Rute Mobil</span>
+                        </div>
+                    `);
+                    ubsiMarker.bindTooltip("🚩 Kampus UBSI (Start & End)", { direction: 'top', className: 'school-map-tooltip' });
                     this.markers.push(ubsiMarker);
 
-                    if (!this.routePreview || !this.routePreview.sequence || this.routePreview.sequence.length === 0) {
-                        this.map.setView([ubsiLat, ubsiLng], 12);
+                    // Case 1: Route Preview (either calculated or saved)
+                    if (this.routePreview && this.routePreview.sequence && this.routePreview.sequence.length > 0) {
+                        let allPoints = [[ubsiLat, ubsiLng]];
+                        this.routePreview.sequence.forEach((s, idx) => {
+                            let lat = parseFloat(s.latitude);
+                            let lng = parseFloat(s.longitude);
+                            let point = [lat, lng];
+                            allPoints.push(point);
+
+                            let shortName = s.name.length > 22 ? s.name.substring(0, 20) + '…' : s.name;
+                            let labelWidth = Math.max(100, Math.min(shortName.length * 7 + 36, 220));
+
+                            let seqIcon = L.divIcon({
+                                html: `<div class="seq-icon"><span class="badge-num">${idx + 1}</span><span class="truncate">${s.name}</span></div>`,
+                                className: '',
+                                iconSize: [labelWidth, 24],
+                                iconAnchor: [15, 12]
+                            });
+
+                            let districtName = s.district ? (s.district.name || '') : '';
+                            let regencyName = s.regency ? (s.regency.name || '') : '';
+
+                            let m = L.marker(point, { icon: seqIcon }).addTo(this.map);
+
+                            // Prominent Tooltip with school name and coordinates
+                            m.bindTooltip(`
+                                <div style="font-weight:bold;font-size:11px;color:#f8fafc;">
+                                    #${idx + 1} ${s.name}
+                                </div>
+                                <div style="font-size:10px;color:#94a3b8;font-family:monospace;margin-top:2px;">
+                                    📍 Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}
+                                </div>
+                                ${districtName ? `<div style="font-size:9px;color:#fbbf24;margin-top:1px;">Kec. ${districtName}</div>` : ''}
+                            `, { direction: 'top', offset: [0, -10], className: 'school-map-tooltip' });
+
+                            // Detailed Popup
+                            m.bindPopup(`
+                                <div class="p-2.5 max-w-[270px] text-xs">
+                                    <div class="inline-block px-2 py-0.5 rounded-full bg-amber-500 text-slate-900 font-black text-[10px] mb-1.5">
+                                        Stop #${idx + 1} Rute Outing
+                                    </div>
+                                    <div class="font-extrabold text-slate-900 text-sm leading-snug mb-1">
+                                        ${s.name}
+                                    </div>
+                                    <div class="text-slate-500 text-[11px] mb-2">
+                                        Kec. ${districtName} ${regencyName ? '• ' + regencyName : ''}
+                                    </div>
+                                    <div class="bg-slate-100 p-2 rounded-xl text-[11px] font-mono text-slate-700 mb-2 border border-slate-200">
+                                        <div class="font-bold text-slate-500 text-[9px] uppercase tracking-wider mb-0.5">Koordinat GPS:</div>
+                                        <div>Latitude: <b>${lat.toFixed(6)}</b></div>
+                                        <div>Longitude: <b>${lng.toFixed(6)}</b></div>
+                                    </div>
+                                    ${s.leg_distance ? `<div class="text-brand-700 font-bold text-[11px] mb-2.5">Jarak Tempuh: ${s.leg_distance} km</div>` : ''}
+                                    <a href="https://www.google.com/maps/search/?api=1&query=${lat},${lng}" target="_blank"
+                                       class="w-full text-center px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg text-[11px] transition inline-flex items-center justify-center gap-1 shadow-2xs">
+                                        <span>Navigasi Google Maps</span> ↗
+                                    </a>
+                                </div>
+                            `);
+
+                            this.markers.push(m);
+                        });
+
+                        // Add return to UBSI unless 'no_return' is selected
+                        if (this.endSchoolId !== 'no_return') {
+                            allPoints.push([ubsiLat, ubsiLng]);
+                        }
+
+                        // Fit map bounds
+                        let bounds = L.latLngBounds(allPoints.map(p => L.latLng(p[0], p[1])));
+                        this.map.fitBounds(bounds, { padding: [30, 30] });
+
+                        // Fetch actual driving route from OSRM
+                        this.fetchDrivingRoute(allPoints);
                         return;
                     }
 
-                    // School Markers
-                    let allPoints = [[ubsiLat, ubsiLng]];
-                    this.routePreview.sequence.forEach((s, idx) => {
-                        let point = [s.latitude, s.longitude];
-                        allPoints.push(point);
-
-                        let shortName = s.name.length > 22 ? s.name.substring(0, 20) + '…' : s.name;
-                        let labelWidth = Math.max(90, Math.min(shortName.length * 7 + 30, 200));
-
-                        let seqIcon = L.divIcon({
-                            html: `<span style="margin-right:4px;background:rgba(255,255,255,0.25);border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;flex-shrink:0;">${idx + 1}</span>${shortName}`,
-                            className: 'seq-icon',
-                            iconSize: [labelWidth, 22],
-                            iconAnchor: [15, 11]
-                        });
-
-                        let districtName = s.district ? s.district.name : '';
-                        let m = L.marker(point, { icon: seqIcon }).addTo(this.map);
-                        m.bindPopup(`<b>Stop #${idx + 1}: ${s.name}</b><br>Kec. ${districtName}<br>Jarak: ${s.leg_distance} km`);
-                        this.markers.push(m);
-                    });
-
-                    // Add return to UBSI unless 'no_return' is selected
-                    if (this.endSchoolId !== 'no_return') {
-                        allPoints.push([ubsiLat, ubsiLng]);
+                    // Case 2: No route sequence yet, but schools are selected or districts are filtered
+                    let schoolsToShow = [];
+                    if (this.selectedSchoolIds.length > 0) {
+                        schoolsToShow = this.allSchools.filter(s => this.selectedSchoolIds.includes(String(s.id)));
+                    } else if (this.selectedDistricts.length > 0) {
+                        schoolsToShow = this.filteredSchoolsForPoint;
                     }
 
-                    // Fit map bounds to all points
-                    let bounds = L.latLngBounds(allPoints.map(p => L.latLng(p[0], p[1])));
-                    this.map.fitBounds(bounds, { padding: [30, 30] });
+                    if (schoolsToShow.length > 0) {
+                        let allPoints = [[ubsiLat, ubsiLng]];
+                        schoolsToShow.forEach((s) => {
+                            let lat = parseFloat(s.latitude);
+                            let lng = parseFloat(s.longitude);
+                            if (!lat || !lng) return;
+                            let point = [lat, lng];
+                            allPoints.push(point);
 
-                    // Fetch actual driving route from OSRM
-                    this.fetchDrivingRoute(allPoints);
+                            let shortName = s.name.length > 20 ? s.name.substring(0, 18) + '…' : s.name;
+                            let isChecked = this.selectedSchoolIds.includes(String(s.id));
+
+                            let iconHtml = `
+                                <div class="seq-icon" style="${isChecked ? 'background:#d97706;border-color:#fef3c7;' : 'background:#334155;'}">
+                                    <span class="badge-num" style="${isChecked ? 'background:#fff;color:#d97706;' : 'background:#64748b;color:#fff;'}">🏫</span>
+                                    <span class="truncate">${s.name}</span>
+                                </div>
+                            `;
+
+                            let icon = L.divIcon({
+                                html: iconHtml,
+                                className: '',
+                                iconSize: [Math.max(100, Math.min(shortName.length * 7 + 36, 220)), 24],
+                                iconAnchor: [15, 12]
+                            });
+
+                            let districtName = s.district ? (s.district.name || '') : '';
+                            let m = L.marker(point, { icon: icon }).addTo(this.map);
+
+                            m.bindTooltip(`
+                                <div style="font-weight:bold;font-size:11px;color:#f8fafc;">
+                                    🏫 ${s.name}
+                                </div>
+                                <div style="font-size:10px;color:#94a3b8;font-family:monospace;margin-top:2px;">
+                                    📍 Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}
+                                </div>
+                                ${districtName ? `<div style="font-size:9px;color:#fbbf24;margin-top:1px;">Kec. ${districtName}</div>` : ''}
+                            `, { direction: 'top', offset: [0, -10], className: 'school-map-tooltip' });
+
+                            m.bindPopup(`
+                                <div class="p-2.5 max-w-[260px] text-xs">
+                                    <div class="font-extrabold text-slate-900 text-sm leading-snug mb-1">
+                                        🏫 ${s.name}
+                                    </div>
+                                    <div class="text-slate-500 text-[11px] mb-2">
+                                        Kec. ${districtName}
+                                    </div>
+                                    <div class="bg-slate-100 p-2 rounded-xl text-[11px] font-mono text-slate-700 mb-2 border border-slate-200">
+                                        <div class="font-bold text-slate-500 text-[9px] uppercase tracking-wider mb-0.5">Koordinat GPS:</div>
+                                        <div>Latitude: <b>${lat.toFixed(6)}</b></div>
+                                        <div>Longitude: <b>${lng.toFixed(6)}</b></div>
+                                    </div>
+                                    <a href="https://www.google.com/maps/search/?api=1&query=${lat},${lng}" target="_blank"
+                                       class="w-full text-center px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg text-[11px] transition inline-flex items-center justify-center gap-1 shadow-2xs">
+                                        <span>Buka di Google Maps</span> ↗
+                                    </a>
+                                </div>
+                            `);
+
+                            this.markers.push(m);
+                        });
+
+                        let bounds = L.latLngBounds(allPoints.map(p => L.latLng(p[0], p[1])));
+                        this.map.fitBounds(bounds, { padding: [30, 30] });
+                    } else {
+                        this.map.setView([ubsiLat, ubsiLng], 12);
+                    }
                 },
 
                 async fetchDrivingRoute(points) {

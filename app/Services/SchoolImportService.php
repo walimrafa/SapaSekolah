@@ -148,6 +148,8 @@ class SchoolImportService
             $studentCount = $studentCountValue === '' ? 0 : (int) $studentCountValue;
             $grade12Count = $grade12CountValue === '' ? 0 : (int) $grade12CountValue;
 
+            $activeCampus = \App\Services\AppContextService::getActiveCampus();
+
             // Find or create school
             $school = School::withTrashed()
                 ->where('npsn', $npsn)
@@ -155,6 +157,7 @@ class SchoolImportService
                 ->first();
 
             $data = [
+                'campus_id' => $activeCampus?->id,
                 'npsn' => $npsn,
                 'name' => strtoupper($name),
                 'status' => $status,

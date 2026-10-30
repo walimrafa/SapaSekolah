@@ -1,4 +1,4 @@
-<x-app-layout title="Prioritas Sekolah SLTA Karawang">
+<x-app-layout :title="'Prioritas Sekolah SLTA ' . ($activeCampus ? ($activeCampus->short_name ?: $activeCampus->name) : 'Semua Kampus')">
     <!-- Header Title & Calculation Info -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6" x-data="{ showIntakeImport: {{ $errors->has('intake_file') ? 'true' : 'false' }} }">
         <div>
@@ -93,9 +93,9 @@
                 <div>
                     <div class="flex items-center space-x-2 mb-1">
                         <span class="px-2 py-0.5 text-[10px] font-extrabold bg-amber-400 text-slate-950 rounded uppercase">Sistem Prioritas UBSI</span>
-                        <span class="text-xs text-slate-400 font-medium">Titik Acuan Kampus UBSI Karawang</span>
+                        <span class="text-xs text-slate-400 font-medium">Titik Acuan {{ $activeCampus ? $activeCampus->name : 'Kampus UBSI' }}</span>
                     </div>
-                    <h2 class="text-lg font-bold text-white leading-tight">Parameter Sekolah Prioritas Marketing UBSI Karawang</h2>
+                    <h2 class="text-lg font-bold text-white leading-tight">Parameter Sekolah Prioritas Marketing {{ $activeCampus ? $activeCampus->name : 'UBSI' }}</h2>
                     <p class="text-xs text-slate-300 mt-1 flex items-center gap-1.5">
                         <i data-lucide="map-pin" class="w-3.5 h-3.5 text-amber-400"></i>
                         <span>{{ $ubsiCampusAddress }}</span>
@@ -180,7 +180,7 @@
     <div class="bg-white rounded-2xl border border-slate-200/80 shadow-soft overflow-hidden">
         <div class="p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
             <div>
-                <h3 class="text-sm font-bold text-slate-900">Leaderboard Prioritas Sekolah SLTA Karawang</h3>
+                <h3 class="text-sm font-bold text-slate-900">Leaderboard Prioritas Sekolah SLTA {{ $activeCampus ? $activeCampus->name : 'Semua Kampus' }}</h3>
                 <p class="text-xs text-slate-500">Terurut berdasarkan Total Skor Potensi Konversi PMB UBSI</p>
             </div>
 

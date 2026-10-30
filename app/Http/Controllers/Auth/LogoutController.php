@@ -14,6 +14,16 @@ class LogoutController extends Controller
      */
     public function logout(Request $request): RedirectResponse
     {
+        $user = Auth::user();
+        if ($user) {
+            \App\Services\ActivityLogService::log(
+                'LOGOUT',
+                'auth',
+                $user->id,
+                "Pengguna {$user->name} keluar dari sistem."
+            );
+        }
+
         Auth::logout();
 
         $request->session()->invalidate();

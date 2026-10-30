@@ -65,6 +65,11 @@ class EBrochureController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        $user = auth()->user();
+        if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator())) {
+            abort(403, 'Akses ditolak. Pengunggahan E-Brosur resmi hanya dapat dilakukan oleh Admin, Pimpinan, dan Koordinator Marketing.');
+        }
+
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:200'],
             'category' => ['required', 'string', 'max:100'],
@@ -150,6 +155,11 @@ class EBrochureController extends Controller
      */
     public function destroy(EBrochure $eBrochure): RedirectResponse
     {
+        $user = auth()->user();
+        if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator())) {
+            abort(403, 'Akses ditolak. Penghapusan E-Brosur resmi hanya dapat dilakukan oleh Admin, Pimpinan, dan Koordinator Marketing.');
+        }
+
         $title = $eBrochure->title;
 
         // Delete the physical file if it exists

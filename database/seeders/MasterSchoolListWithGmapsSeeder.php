@@ -209,6 +209,7 @@ class MasterSchoolListWithGmapsSeeder extends Seeder
                 ->first();
 
             $data = [
+                'campus_id' => 1, // UBSI Kampus Karawang
                 'npsn' => $npsn,
                 'name' => $name,
                 'district_id' => $districtId,

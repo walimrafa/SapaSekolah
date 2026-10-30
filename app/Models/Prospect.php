@@ -4,9 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Prospect extends Model
 {
+    use SoftDeletes;
     public const STATUS_DAFTAR_AKUN = 'daftar_akun';
     public const STATUS_BAYAR_REGISTRASI = 'bayar_registrasi';
     public const STATUS_UJIAN_SARINGAN = 'ujian_saringan';
@@ -31,6 +33,8 @@ class Prospect extends Model
     protected $fillable = [
         'nim',
         'school_id',
+        'campus_id',
+        'academic_period_id',
         'name',
         'gender',
         'phone',
@@ -64,6 +68,16 @@ class Prospect extends Model
     public function school(): BelongsTo
     {
         return $this->belongsTo(School::class);
+    }
+
+    public function campus(): BelongsTo
+    {
+        return $this->belongsTo(Campus::class);
+    }
+
+    public function academicPeriod(): BelongsTo
+    {
+        return $this->belongsTo(AcademicPeriod::class);
     }
 
     /**

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Http\Controllers\QrCodeController;
 use App\Http\Controllers\StudentQuestionnaireController;
 use App\Models\User;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -12,6 +13,7 @@ use Tests\TestCase;
 
 class StudentQuestionnaireTest extends TestCase
 {
+    use DatabaseTransactions;
     public function test_public_questionnaire_form_lists_all_survey_sections_and_scale(): void
     {
         $response = $this->get(route('student-questionnaire.create'));

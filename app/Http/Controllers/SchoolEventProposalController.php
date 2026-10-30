@@ -17,13 +17,49 @@ class SchoolEventProposalController extends Controller
      */
     public function publicCreate(): View
     {
+        if (!\App\Services\AppContextService::isPortalActive(\App\Services\AppContextService::PORTAL_SCHOOL_EVENT_PROPOSAL)) {
+            return view('errors.portal-disabled', [
+                'portalName' => 'Portal Pengajuan Event & Sponsorship Sekolah',
+            ]);
+        }
+
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $campuses = \App\Models\Campus::orderBy('id')->get();
+        
         $schools = School::query()
-            ->select('id', 'name', 'district_id')
+            ->select('id', 'name', 'district_id', 'campus_id')
             ->with('district:id,name')
             ->orderBy('name')
             ->get();
 
-        return view('public-events.create', compact('schools'));
+        return view('public-events.create', compact('schools', 'campuses', 'activeCampus'));
+    }
+
+    /**
+     * Halaman Cek Status & Tracking Pengajuan Proposal Sekolah (Publik).
+     */
+    public function tracking(Request $request): View
+    {
+        $search = trim((string) ($request->query('ref') ?? $request->query('q') ?? ''));
+        $proposal = null;
+        $searched = false;
+
+        if (!empty($search)) {
+            $searched = true;
+            $cleanPhone = preg_replace('/[^0-9]/', '', $search);
+
+            $proposal = SchoolEventProposal::where('reference_no', $search)
+                ->when($cleanPhone, function ($q) use ($cleanPhone) {
+                    $q->orWhere('pic_phone', 'like', "%{$cleanPhone}%");
+                })
+                ->with(['school.district', 'campus', 'reviewer'])
+                ->latest()
+                ->first();
+        }
+
+        $campuses = \App\Models\Campus::all();
+
+        return view('public-events.tracking', compact('proposal', 'search', 'searched', 'campuses'));
     }
 
     /**
@@ -31,6 +67,10 @@ class SchoolEventProposalController extends Controller
      */
     public function publicStore(Request $request): RedirectResponse
     {
+        if (!\App\Services\AppContextService::isPortalActive(\App\Services\AppContextService::PORTAL_SCHOOL_EVENT_PROPOSAL)) {
+            return back()->with('error', 'Portal Pengajuan Event saat ini sedang ditutup atau dinonaktifkan.');
+        }
+
         $request->validate([
             'school_id' => 'nullable|exists:schools,id',
             'school_name' => 'required_without:school_id|nullable|string|max:200',
@@ -99,9 +139,16 @@ class SchoolEventProposalController extends Controller
         // Buat Nomor Referensi Unik
         $refNo = SchoolEventProposal::generateReferenceNo();
 
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $activePeriod = \App\Services\AppContextService::getActivePeriod();
+
+        $targetCampusId = $request->campus_id ?: ($school?->campus_id ?: ($activeCampus?->id ?? 1));
+
         $proposal = SchoolEventProposal::create([
             'reference_no' => $refNo,
             'school_id' => $request->school_id,
+            'campus_id' => $targetCampusId,
+            'academic_period_id' => $activePeriod?->id,
             'school_name' => $schoolName,
             'pic_name' => $request->pic_name,
             'pic_phone' => $request->pic_phone,
@@ -120,6 +167,15 @@ class SchoolEventProposalController extends Controller
             'status' => SchoolEventProposal::STATUS_MENUNGGU_REVIEW,
             'execution_status' => SchoolEventProposal::EXEC_MENUNGGU_PELAKSANAAN,
         ]);
+
+        \App\Services\ActivityLogService::log(
+            'CREATE',
+            'school_event',
+            $proposal->id,
+            "Pengajuan Proposal Event Baru #{$refNo}: {$request->event_name} dari {$schoolName}",
+            null,
+            ['ref_no' => $refNo, 'event_name' => $request->event_name, 'school' => $schoolName]
+        );
 
         // Kirim Notifikasi WhatsApp Instan (H-0) saat proposal baru diajukan di hari itu
         try {
@@ -149,7 +205,12 @@ class SchoolEventProposalController extends Controller
      */
     public function index(Request $request): View
     {
-        $query = SchoolEventProposal::with(['school.district', 'reviewer'])->latest();
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $query = SchoolEventProposal::with(['school.district', 'reviewer', 'campus'])->latest();
+
+        if ($activeCampus) {
+            $query->where('campus_id', $activeCampus->id);
+        }
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -177,16 +238,21 @@ class SchoolEventProposalController extends Controller
 
         $proposals = $query->paginate(12)->withQueryString();
 
+        $baseQuery = SchoolEventProposal::query();
+        if ($activeCampus) {
+            $baseQuery->where('campus_id', $activeCampus->id);
+        }
+
         $stats = [
-            'total' => SchoolEventProposal::count(),
-            'menunggu_review' => SchoolEventProposal::where('status', SchoolEventProposal::STATUS_MENUNGGU_REVIEW)->count(),
-            'diajukan_ke_pusat' => SchoolEventProposal::where('status', SchoolEventProposal::STATUS_DIAJUKAN_KE_PUSAT)->count(),
-            'menunggu_acc' => SchoolEventProposal::where('status', SchoolEventProposal::STATUS_MENUNGGU_ACC)->count(),
-            'disetujui' => SchoolEventProposal::where('status', SchoolEventProposal::STATUS_DISETUJUI)->count(),
-            'ditolak' => SchoolEventProposal::where('status', SchoolEventProposal::STATUS_DITOLAK)->count(),
+            'total' => (clone $baseQuery)->count(),
+            'menunggu_review' => (clone $baseQuery)->where('status', SchoolEventProposal::STATUS_MENUNGGU_REVIEW)->count(),
+            'diajukan_ke_pusat' => (clone $baseQuery)->where('status', SchoolEventProposal::STATUS_DIAJUKAN_KE_PUSAT)->count(),
+            'menunggu_acc' => (clone $baseQuery)->where('status', SchoolEventProposal::STATUS_MENUNGGU_ACC)->count(),
+            'disetujui' => (clone $baseQuery)->where('status', SchoolEventProposal::STATUS_DISETUJUI)->count(),
+            'ditolak' => (clone $baseQuery)->where('status', SchoolEventProposal::STATUS_DITOLAK)->count(),
         ];
 
-        return view('event-proposals.index', compact('proposals', 'stats'));
+        return view('event-proposals.index', compact('proposals', 'stats', 'activeCampus'));
     }
 
     /**
@@ -206,6 +272,11 @@ class SchoolEventProposalController extends Controller
      */
     public function updateStatus(Request $request, SchoolEventProposal $proposal): RedirectResponse
     {
+        $user = auth()->user();
+        if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator())) {
+            abort(403, 'Akses ditolak. Hanya Admin, Pimpinan, dan Koordinator Marketing yang berwenang meninjau proposal event.');
+        }
+
         $request->validate([
             'status' => 'required|in:' . implode(',', array_keys(SchoolEventProposal::getStatusOptions())),
             'status_notes' => 'nullable|string|max:1000',
@@ -213,6 +284,11 @@ class SchoolEventProposalController extends Controller
             'approved_support_items' => 'nullable|string|max:500',
         ]);
 
+        if ($request->has('approved_amount') && (float)$request->approved_amount > 0 && !$user->isAdmin() && !$user->isPimpinan()) {
+            abort(403, 'Akses ditolak. Persetujuan anggaran pencairan dana sponsor hanya dapat disahkan oleh Pimpinan Kampus atau Admin.');
+        }
+
+        $oldStatus = $proposal->status;
         $proposal->status = $request->status;
         $proposal->status_notes = $request->status_notes;
 
@@ -234,16 +310,39 @@ class SchoolEventProposalController extends Controller
 
         $proposal->save();
 
+        \App\Services\ActivityLogService::log(
+            'UPDATE_STATUS',
+            'school_event',
+            $proposal->id,
+            "Memperbarui status proposal #{$proposal->reference_no} dari '{$oldStatus}' menjadi '{$proposal->status}' (Anggaran: Rp " . number_format($proposal->approved_amount ?? 0, 0, ',', '.') . ")",
+            ['old_status' => $oldStatus],
+            ['new_status' => $proposal->status, 'approved_amount' => $proposal->approved_amount]
+        );
+
         return back()->with('success', "Status proposal #{$proposal->reference_no} berhasil diperbarui menjadi {$proposal->status_label}.");
     }
 
     /**
      * Hapus Proposal Kegiatan.
+     * Diizinkan bagi Admin, Pimpinan, dan Koordinator Marketing.
      */
     public function destroy(SchoolEventProposal $proposal): RedirectResponse
     {
+        $user = auth()->user();
+        if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator())) {
+            abort(403, 'Akses ditolak. Penghapusan proposal kegiatan hanya dapat dilakukan oleh Admin, Pimpinan, dan Koordinator Marketing.');
+        }
+
         $refNo = $proposal->reference_no;
         $proposal->delete();
+
+        \App\Services\ActivityLogService::log(
+            'DELETE',
+            'school_event',
+            $proposal->id,
+            "Menghapus proposal kegiatan #{$refNo} ({$proposal->event_name})",
+            ['ref_no' => $refNo, 'event_name' => $proposal->event_name]
+        );
 
         return back()->with('success', "Proposal #{$refNo} berhasil dihapus.");
     }
@@ -253,11 +352,17 @@ class SchoolEventProposalController extends Controller
      */
     public function reportsIndex(Request $request): View
     {
-        // Hanya tampilkan event yang sudah disetujui
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+
+        // Hanya tampilkan event yang sudah disetujui untuk kampus aktif
         $query = SchoolEventProposal::where('status', SchoolEventProposal::STATUS_DISETUJUI)
-            ->with(['school.district', 'reviewer', 'reporter'])
+            ->with(['school.district', 'reviewer', 'reporter', 'campus'])
             ->withCount('studentLeads')
             ->orderBy('event_date', 'desc');
+
+        if ($activeCampus) {
+            $query->where('campus_id', $activeCampus->id);
+        }
 
         if ($request->filled('execution_status')) {
             $query->where('execution_status', $request->execution_status);
@@ -276,15 +381,20 @@ class SchoolEventProposalController extends Controller
 
         $events = $query->paginate(12)->withQueryString();
 
+        $baseStatsQuery = SchoolEventProposal::where('status', SchoolEventProposal::STATUS_DISETUJUI);
+        if ($activeCampus) {
+            $baseStatsQuery->where('campus_id', $activeCampus->id);
+        }
+
         $stats = [
-            'total_disetujui' => SchoolEventProposal::where('status', SchoolEventProposal::STATUS_DISETUJUI)->count(),
-            'menunggu_pelaksanaan' => SchoolEventProposal::where('status', SchoolEventProposal::STATUS_DISETUJUI)->where('execution_status', SchoolEventProposal::EXEC_MENUNGGU_PELAKSANAAN)->count(),
-            'sedang_berjalan' => SchoolEventProposal::where('status', SchoolEventProposal::STATUS_DISETUJUI)->where('execution_status', SchoolEventProposal::EXEC_SEDANG_BERJALAN)->count(),
-            'selesai' => SchoolEventProposal::where('status', SchoolEventProposal::STATUS_DISETUJUI)->where('execution_status', SchoolEventProposal::EXEC_SELESAI)->count(),
-            'total_dana_disetujui' => SchoolEventProposal::where('status', SchoolEventProposal::STATUS_DISETUJUI)->sum('approved_amount'),
+            'total_disetujui' => (clone $baseStatsQuery)->count(),
+            'menunggu_pelaksanaan' => (clone $baseStatsQuery)->where('execution_status', SchoolEventProposal::EXEC_MENUNGGU_PELAKSANAAN)->count(),
+            'sedang_berjalan' => (clone $baseStatsQuery)->where('execution_status', SchoolEventProposal::EXEC_SEDANG_BERJALAN)->count(),
+            'selesai' => (clone $baseStatsQuery)->where('execution_status', SchoolEventProposal::EXEC_SELESAI)->count(),
+            'total_dana_disetujui' => (clone $baseStatsQuery)->sum('approved_amount'),
         ];
 
-        return view('event-reports.index', compact('events', 'stats'));
+        return view('event-reports.index', compact('events', 'stats', 'activeCampus'));
     }
 
     /**
@@ -339,17 +449,29 @@ class SchoolEventProposalController extends Controller
             }
         }
 
-        // Upload file baru (foto, berkas RAR, ZIP, atau dokumen)
+        // Upload file baru (foto, berkas RAR, ZIP, atau dokumen) tersinkronisasi ke Google Drive Cloud & Local Storage
         if ($request->hasFile('photos')) {
+            $eventDateStr = $proposal->event_date ? $proposal->event_date->format('Y-m-d') : now()->format('Y-m-d');
+            $schoolTarget = $proposal->school?->name ?? $proposal->school_name ?? 'Sekolah';
             foreach ($request->file('photos') as $photoFile) {
                 $originalName = $photoFile->getClientOriginalName();
-                $path = $photoFile->store('event-documentations', 'public');
+                $gdriveResult = \App\Services\GoogleDriveService::uploadDocumentation($photoFile, $schoolTarget, $eventDateStr);
                 $photos[] = [
-                    'path' => $path,
+                    'path' => $gdriveResult['stored_path'],
                     'name' => $originalName,
                     'size' => $photoFile->getSize(),
+                    'drive_file_url' => $gdriveResult['drive_file_url'],
+                    'drive_folder_url' => $gdriveResult['drive_folder_url'],
                 ];
+                $proposal->google_drive_folder_url = $gdriveResult['drive_folder_url'];
+                $proposal->google_drive_file_url = $gdriveResult['drive_file_url'];
             }
+        }
+
+        if (empty($proposal->google_drive_folder_url)) {
+            $eventDateStr = $proposal->event_date ? $proposal->event_date->format('Y-m-d') : now()->format('Y-m-d');
+            $schoolTarget = $proposal->school?->name ?? $proposal->school_name ?? 'Sekolah';
+            $proposal->google_drive_folder_url = \App\Services\GoogleDriveService::buildFolderUrlForSchool($schoolTarget, $eventDateStr);
         }
 
         $proposal->documentation_photos = $photos;

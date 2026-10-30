@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\FollowUp;
+use App\Models\MarketingActivity;
 use App\Models\School;
+use App\Models\SchoolActivity;
 use App\Models\User;
 use App\Services\FollowUpExportService;
 use App\Services\FollowUpSyncService;
@@ -260,9 +262,12 @@ class FollowUpController extends Controller
 
         $followUp->update($validated);
 
+        // Auto copy to MarketingActivity & SchoolActivity
+        self::syncFollowUpToMarketingActivity($followUp->fresh());
+
         return redirect()->route('socializations.completed.index')->with('toast', [
             'type' => 'success',
-            'message' => "Sosialisasi di {$followUp->school?->name} berhasil dicatat sebagai kegiatan terlaksana.",
+            'message' => "Sosialisasi di {$followUp->school?->name} berhasil dicatat sebagai kegiatan terlaksana dan otomatis tercopy ke Aktivitas Sosialisasi!",
         ]);
     }
 
@@ -271,6 +276,9 @@ class FollowUpController extends Controller
      */
     public function reopenSocialization(FollowUp $followUp): RedirectResponse
     {
+        // Remove auto-copied activity
+        self::removeFollowUpFromMarketingActivity($followUp);
+
         $followUp->update([
             'socialization_completed_at' => null,
             'socialization_completion_notes' => null,
@@ -280,6 +288,177 @@ class FollowUpController extends Controller
             'type' => 'success',
             'message' => "Konfirmasi sosialisasi untuk {$followUp->school?->name} dibatalkan. Jadwal kembali ke daftar FIX.",
         ]);
+    }
+
+    /**
+     * Upload documentation for completed socialization and sync with Google Drive & SchoolVisit.
+     */
+    public function uploadDocumentation(Request $request, FollowUp $followUp): RedirectResponse
+    {
+        $validated = $request->validate([
+            'documentation' => [
+                'required',
+                'file',
+                'max:51200', // 50MB
+                function ($attribute, $value, $fail) {
+                    $ext = strtolower($value->getClientOriginalExtension());
+                    $allowed = ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'rar', 'zip', 'doc', 'docx', '7z'];
+                    if (!in_array($ext, $allowed)) {
+                        $fail('Format berkas harus berupa Gambar (JPG/PNG), Dokumen (PDF/DOCX), atau Arsip (RAR/ZIP).');
+                    }
+                },
+            ],
+            'notes' => ['nullable', 'string', 'max:5000'],
+        ]);
+
+        $file = $request->file('documentation');
+        $school = $followUp->school;
+        $schoolName = $school ? $school->name : 'Sekolah';
+        $completedDate = $followUp->socialization_completed_at ?: $followUp->fixed_date;
+        $date = $completedDate ? Carbon::parse($completedDate)->format('Y-m-d') : now()->format('Y-m-d');
+
+        // Upload to Google Drive & save locally
+        $gdriveResult = \App\Services\GoogleDriveService::uploadDocumentation($file, $schoolName, $date);
+
+        // Delete old documentation file if existed
+        if ($followUp->documentation_file) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($followUp->documentation_file);
+        }
+
+        $updateData = [
+            'documentation_file' => $gdriveResult['stored_path'],
+            'google_drive_folder_url' => $gdriveResult['drive_folder_url'],
+            'google_drive_file_url' => $gdriveResult['drive_file_url'],
+        ];
+
+        if (!empty($validated['notes'])) {
+            $updateData['socialization_completion_notes'] = $validated['notes'];
+        }
+
+        $followUp->update($updateData);
+
+        // Sync with linked SchoolVisit
+        if ($followUp->visit) {
+            $followUp->visit->update([
+                'photo' => $gdriveResult['stored_path'],
+                'google_drive_folder_url' => $gdriveResult['drive_folder_url'],
+                'google_drive_file_url' => $gdriveResult['drive_file_url'],
+            ]);
+        }
+
+        // Auto sync documentation to MarketingActivity
+        self::syncFollowUpToMarketingActivity($followUp->fresh());
+
+        return redirect()->route('socializations.completed.index')->with('toast', [
+            'type' => 'success',
+            'message' => "Dokumentasi kegiatan untuk {$schoolName} berhasil diunggah ke Google Drive dan disinkronkan dengan Data Kunjungan serta Aktivitas Sosialisasi!",
+        ]);
+    }
+
+    /**
+     * Automatically sync a completed school socialization into MarketingActivity & SchoolActivity.
+     */
+    public static function syncFollowUpToMarketingActivity(FollowUp $followUp): ?MarketingActivity
+    {
+        if (empty($followUp->socialization_completed_at) || empty($followUp->school_id)) {
+            return null;
+        }
+
+        $school = $followUp->school;
+        $schoolName = $school ? $school->name : 'Sekolah';
+        $completedDate = Carbon::parse($followUp->socialization_completed_at)->format('Y-m-d');
+        $activityName = "Sosialisasi PMB & Beasiswa - {$schoolName}";
+
+        // Find existing MarketingActivity linked through SchoolActivity or by name and date
+        $existingSchoolActivity = SchoolActivity::where('school_id', $followUp->school_id)
+            ->whereDate('date', $completedDate)
+            ->first();
+
+        $activity = null;
+        if ($existingSchoolActivity && $existingSchoolActivity->activity) {
+            $activity = $existingSchoolActivity->activity;
+        } else {
+            $activity = MarketingActivity::where('name', $activityName)
+                ->whereDate('start_date', $completedDate)
+                ->first();
+        }
+
+        $description = $followUp->socialization_completion_notes 
+            ?: "Sosialisasi kampus Universitas BSI (UBSI) telah terlaksana untuk siswa kelas 12 di {$schoolName}.";
+
+        $docPath = $followUp->documentation_file ?: $followUp->visit?->photo;
+        $docName = $docPath ? basename($docPath) : null;
+        $driveFolderUrl = $followUp->google_drive_folder_url 
+            ?: ($followUp->visit?->google_drive_folder_url 
+                ?: \App\Services\GoogleDriveService::buildFolderUrlForSchool($schoolName, $completedDate));
+        $driveFileUrl = $followUp->google_drive_file_url 
+            ?: ($followUp->visit?->google_drive_file_url ?: null);
+
+        if ($activity) {
+            $activity->update([
+                'name' => $activityName,
+                'activity_type' => 'Sosialisasi PMB',
+                'start_date' => $completedDate,
+                'end_date' => $completedDate,
+                'description' => $description,
+                'document_path' => $docPath ?: $activity->document_path,
+                'document_name' => $docName ?: $activity->document_name,
+                'google_drive_folder_url' => $driveFolderUrl ?: $activity->google_drive_folder_url,
+                'google_drive_file_url' => $driveFileUrl ?: $activity->google_drive_file_url,
+            ]);
+        } else {
+            $activity = MarketingActivity::create([
+                'name' => $activityName,
+                'activity_type' => 'Sosialisasi PMB',
+                'start_date' => $completedDate,
+                'end_date' => $completedDate,
+                'description' => $description,
+                'document_path' => $docPath,
+                'document_name' => $docName,
+                'google_drive_folder_url' => $driveFolderUrl,
+                'google_drive_file_url' => $driveFileUrl,
+            ]);
+        }
+
+        // Upsert SchoolActivity
+        SchoolActivity::updateOrCreate(
+            [
+                'school_id' => $followUp->school_id,
+                'activity_id' => $activity->id,
+            ],
+            [
+                'date' => $completedDate,
+                'participants' => (int) ($followUp->target_audience_count ?? ($school?->grade_12_count ?? 0)),
+                'result' => $followUp->result ?? 'Terlaksana (Sosialisasi FIX)',
+                'notes' => $followUp->socialization_completion_notes,
+            ]
+        );
+
+        return $activity;
+    }
+
+    /**
+     * Remove auto-copied MarketingActivity & SchoolActivity when a completed socialization is reopened.
+     */
+    public static function removeFollowUpFromMarketingActivity(FollowUp $followUp): void
+    {
+        if (empty($followUp->school_id)) {
+            return;
+        }
+
+        $schoolName = $followUp->school?->name ?? 'Sekolah';
+        $activityName = "Sosialisasi PMB & Beasiswa - {$schoolName}";
+
+        $schoolActivities = SchoolActivity::where('school_id', $followUp->school_id)->get();
+        foreach ($schoolActivities as $sa) {
+            $act = $sa->activity;
+            $sa->delete();
+            if ($act && ($act->name === $activityName || str_starts_with($act->name, 'Sosialisasi PMB'))) {
+                if ($act->schoolActivities()->count() === 0) {
+                    $act->delete();
+                }
+            }
+        }
     }
 
     /**
@@ -476,8 +655,21 @@ class FollowUpController extends Controller
      */
     public function destroy(FollowUp $followUp): RedirectResponse
     {
+        $user = auth()->user();
+        if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator())) {
+            abort(403, 'Akses ditolak. Penghapusan histori follow up hanya dapat dilakukan oleh Admin, Pimpinan, dan Koordinator.');
+        }
+
         $schoolName = $followUp->school?->name ?? 'Sekolah';
         $followUp->delete();
+
+        \App\Services\ActivityLogService::log(
+            'DELETE',
+            'follow_up',
+            $followUp->id,
+            "Menghapus histori follow up sekolah: {$schoolName}",
+            ['school' => $schoolName, 'status' => $followUp->status]
+        );
 
         return redirect()->route('follow-ups.index')
             ->with('toast', [

@@ -16,8 +16,10 @@ class RouteClusteringService
      */
     public function generateDailyCluster(array $schoolIds = [], array|string|null $districtIds = null, int $limit = 10, array $excludeSchoolIds = [], ?string $startSchoolId = null, ?string $endSchoolId = null, ?int $regencyId = null): array
     {
-        $ubsiLat = SchoolScoringService::UBSI_LATITUDE;
-        $ubsiLng = SchoolScoringService::UBSI_LONGITUDE;
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $ubsiLat = (float) ($activeCampus?->latitude ?? SchoolScoringService::UBSI_LATITUDE);
+        $ubsiLng = (float) ($activeCampus?->longitude ?? SchoolScoringService::UBSI_LONGITUDE);
+        $campusName = $activeCampus ? "Kampus UBSI {$activeCampus->name}" : 'Kampus UBSI Karawang (Jl. Banten No.1)';
 
         // Normalize to array
         if (is_string($districtIds)) {
@@ -28,6 +30,10 @@ class RouteClusteringService
         $query = School::with(['district', 'regency'])
             ->whereNotNull('latitude')
             ->whereNotNull('longitude');
+
+        if ($activeCampus) {
+            $query->where('campus_id', $activeCampus->id);
+        }
 
         if (!empty($excludeSchoolIds)) {
             $query->whereNotIn('id', $excludeSchoolIds);
@@ -58,8 +64,8 @@ class RouteClusteringService
         $currentLat = $ubsiLat;
         $currentLng = $ubsiLng;
         $totalDistance = 0.0;
-        $startLocationName = 'Kampus UBSI Karawang (Jl. Banten No.1)';
-        $endLocationName = 'Kampus UBSI Karawang (Jl. Banten No.1)';
+        $startLocationName = $campusName;
+        $endLocationName = $campusName;
 
         // Separate fixed ending school if specified
         $fixedEndSchool = null;
@@ -240,12 +246,18 @@ class RouteClusteringService
 
                 $routeName = "Outing Mobil Hari #{$day} - Klaster {$districtName} (10 Sekolah)";
 
+                $activeCampus = \App\Services\AppContextService::getActiveCampus();
+                $activePeriod = \App\Services\AppContextService::getActivePeriod();
+                $startLoc = $activeCampus ? "Kampus UBSI {$activeCampus->name} ({$activeCampus->address})" : 'Kampus UBSI Karawang (Jl. Banten No.1)';
+
                 $route = MarketingRoute::create([
+                    'campus_id' => $activeCampus?->id,
+                    'academic_period_id' => $activePeriod?->id,
                     'name' => $routeName,
                     'date' => $currentDate->format('Y-m-d'),
                     'user_id' => $userId,
-                    'start_location' => 'Kampus UBSI Karawang (Jl. Banten No.1)',
-                    'end_location' => 'Kampus UBSI Karawang (Jl. Banten No.1)',
+                    'start_location' => $startLoc,
+                    'end_location' => $startLoc,
                     'total_distance' => $cluster['total_distance_km'],
                     'estimated_duration' => $cluster['estimated_duration_minutes'],
                     'status' => 'planned',

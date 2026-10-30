@@ -18,9 +18,10 @@ class VisitPlanController extends Controller
     {
         $query = VisitPlan::with(['school.district', 'school.schoolType', 'user']);
 
-        // Filter by Status (planned, completed, cancelled)
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
+        // Filter by Status (Default: 'planned' so finished plans automatically move out of active list)
+        $currentStatus = $request->get('status', 'planned');
+        if ($currentStatus !== 'all' && !empty($currentStatus)) {
+            $query->where('status', $currentStatus);
         }
 
         // Filter by Marketing User
@@ -38,6 +39,8 @@ class VisitPlanController extends Controller
             $query->whereDate('planned_date', $request->date);
         }
 
+        \App\Services\AppContextService::applyContextFilters($query);
+
         $plans = $query->orderBy('planned_date', 'asc')->paginate(15)->withQueryString();
 
         // Data for modal select dropdowns
@@ -50,6 +53,7 @@ class VisitPlanController extends Controller
         $totalPlanned = VisitPlan::where('status', 'planned')->count();
         $todayPlanned = VisitPlan::where('status', 'planned')->whereDate('planned_date', today())->count();
         $totalCompleted = VisitPlan::where('status', 'completed')->count();
+        $totalAll = VisitPlan::count();
 
         return view('visit-plans.index', compact(
             'plans',
@@ -57,7 +61,9 @@ class VisitPlanController extends Controller
             'marketingUsers',
             'totalPlanned',
             'todayPlanned',
-            'totalCompleted'
+            'totalCompleted',
+            'totalAll',
+            'currentStatus'
         ));
     }
 
@@ -66,37 +72,90 @@ class VisitPlanController extends Controller
      */
     public function create(): View
     {
-        $districts = \App\Models\District::activeDistricts()->orderBy('name')->get();
-        $schools = School::with('district')->whereHas('district', function($q) {
-            $q->whereNotIn('name', \App\Models\District::EXCLUDED_DISTRICTS);
-        })->orderBy('name')->get();
+        $districts = \App\Models\District::has('schools')
+            ->withCount('schools')
+            ->orderBy('name')
+            ->get();
+
+        $schools = School::with(['district', 'schoolType'])
+            ->whereHas('district', function($q) {
+                $q->whereNotIn('name', \App\Models\District::EXCLUDED_DISTRICTS);
+            })
+            ->orderBy('name')
+            ->get();
+
         $marketingUsers = User::active()->get();
 
         return view('visit-plans.create', compact('districts', 'schools', 'marketingUsers'));
     }
 
     /**
-     * Store a newly created visit plan.
+     * Store a newly created visit plan (supports single or multiple schools).
      */
     public function store(Request $request): RedirectResponse
     {
+        // Support both school_ids (array) and single school_id
+        if ($request->has('school_ids') && is_array($request->school_ids)) {
+            $schoolIds = array_values(array_filter($request->school_ids));
+        } elseif ($request->filled('school_id')) {
+            $schoolIds = [$request->school_id];
+        } else {
+            $schoolIds = [];
+        }
+
+        $request->merge(['school_ids' => $schoolIds]);
+
         $validated = $request->validate([
-            'school_id' => ['required', 'exists:schools,id'],
+            'school_ids' => ['required', 'array', 'min:1'],
+            'school_ids.*' => ['required', 'exists:schools,id'],
             'user_id' => ['required', 'exists:users,id'],
             'planned_date' => ['required', 'date'],
             'purpose' => ['required', 'string', 'max:500'],
             'priority' => ['required', 'in:A,B,C'],
             'notes' => ['nullable', 'string'],
+        ], [
+            'school_ids.required' => 'Pilih minimal satu sekolah tujuan untuk diagendakan.',
+            'school_ids.min' => 'Pilih minimal satu sekolah tujuan untuk diagendakan.',
+            'school_ids.*.exists' => 'Sekolah yang dipilih tidak valid.',
         ]);
 
-        $validated['status'] = 'planned';
+        $schools = School::whereIn('id', $validated['school_ids'])->get();
+        $createdPlans = [];
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $activePeriod = \App\Services\AppContextService::getActivePeriod();
 
-        $plan = VisitPlan::create($validated);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($schools, $validated, $activeCampus, $activePeriod, &$createdPlans) {
+            foreach ($schools as $school) {
+                $schoolPriority = !empty($school->priority_level) ? $school->priority_level : $validated['priority'];
+                $createdPlans[] = VisitPlan::create([
+                    'school_id' => $school->id,
+                    'user_id' => $validated['user_id'],
+                    'campus_id' => $school->campus_id ?: ($activeCampus?->id),
+                    'academic_period_id' => $activePeriod?->id,
+                    'planned_date' => $validated['planned_date'],
+                    'purpose' => $validated['purpose'],
+                    'priority' => $schoolPriority,
+                    'notes' => $validated['notes'] ?? null,
+                    'status' => 'planned',
+                ]);
+            }
+        });
+
+        $count = count($createdPlans);
+        $dateFormatted = \Carbon\Carbon::parse($validated['planned_date'])->translatedFormat('d F Y');
+        
+        if ($count === 1) {
+            $message = "Rencana kunjungan ke {$schools->first()->name} ({$dateFormatted}) berhasil dijadwalkan.";
+        } else {
+            $schoolNames = $schools->take(3)->pluck('name')->join(', ');
+            $remaining = $count > 3 ? ' dan ' . ($count - 3) . ' sekolah lainnya' : '';
+            $message = "Berhasil menjadwalkan {$count} agenda rencana kunjungan ({$schoolNames}{$remaining}) pada {$dateFormatted}.";
+        }
 
         return redirect()->route('visit-plans.index')
             ->with('toast', [
                 'type' => 'success',
-                'message' => "Rencana kunjungan ke {$plan->school->name} berhasil dijadwalkan.",
+                'message' => $message,
             ]);
     }
 
@@ -105,10 +164,18 @@ class VisitPlanController extends Controller
      */
     public function edit(VisitPlan $visitPlan): View
     {
-        $districts = \App\Models\District::activeDistricts()->orderBy('name')->get();
-        $schools = School::with('district')->whereHas('district', function($q) {
-            $q->whereNotIn('name', \App\Models\District::EXCLUDED_DISTRICTS);
-        })->orderBy('name')->get();
+        $districts = \App\Models\District::has('schools')
+            ->withCount('schools')
+            ->orderBy('name')
+            ->get();
+
+        $schools = School::with(['district', 'schoolType'])
+            ->whereHas('district', function($q) {
+                $q->whereNotIn('name', \App\Models\District::EXCLUDED_DISTRICTS);
+            })
+            ->orderBy('name')
+            ->get();
+
         $marketingUsers = User::active()->get();
 
         return view('visit-plans.edit', compact('visitPlan', 'districts', 'schools', 'marketingUsers'));
@@ -143,13 +210,51 @@ class VisitPlanController extends Controller
      */
     public function destroy(VisitPlan $visitPlan): RedirectResponse
     {
+        $user = auth()->user();
+        if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator() && $visitPlan->user_id !== $user->id)) {
+            abort(403, 'Akses ditolak. Anda tidak berhak menghapus rencana kunjungan ini.');
+        }
+
         $schoolName = $visitPlan->school ? $visitPlan->school->name : 'Sekolah';
         $visitPlan->delete();
+
+        \App\Services\ActivityLogService::log(
+            'DELETE',
+            'visit_plan',
+            $visitPlan->id,
+            "Menghapus rencana kunjungan ke: {$schoolName} (Rencana: " . ($visitPlan->planned_date?->format('d/m/Y') ?? '-') . ")",
+            ['school' => $schoolName, 'planned_date' => $visitPlan->planned_date]
+        );
 
         return redirect()->route('visit-plans.index')
             ->with('toast', [
                 'type' => 'success',
-                'message' => "Jadwal kunjungan ke {$schoolName} berhasil dibatalkan.",
+                'message' => "Rencana kunjungan ke {$schoolName} berhasil dihapus.",
+            ]);
+    }
+
+    /**
+     * Bulk remove selected visit plans.
+     */
+    public function bulkDestroy(Request $request): RedirectResponse
+    {
+        $ids = $request->input('ids', []);
+
+        if (empty($ids)) {
+            return redirect()->route('visit-plans.index')
+                ->with('toast', [
+                'type' => 'error',
+                'message' => 'Tidak ada agenda yang dipilih untuk dihapus.',
+            ]);
+        }
+
+        $count = VisitPlan::whereIn('id', $ids)->count();
+        VisitPlan::whereIn('id', $ids)->delete();
+
+        return redirect()->route('visit-plans.index')
+            ->with('toast', [
+                'type' => 'success',
+                'message' => "Berhasil menghapus {$count} agenda rencana kunjungan yang dipilih.",
             ]);
     }
 }

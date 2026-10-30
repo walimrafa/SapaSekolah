@@ -78,7 +78,7 @@ class NewStudentController extends Controller
         $totalNonBeasiswa = Prospect::where('status', Prospect::STATUS_MAHASISWA)->nonScholarship()->count();
 
         // Reference Lists
-        $schools = School::orderBy('name')->get();
+        $schools = School::with('district:id,name')->orderBy('name')->get();
         $studyPrograms = StudyProgram::where('status', 1)->get();
         $availableStudyTimes = StudyProgram::getStudyTimeOptions();
         $graduationYears = Prospect::where('status', Prospect::STATUS_MAHASISWA)

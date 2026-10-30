@@ -501,7 +501,10 @@ class SchoolIntegrationService
             $est = $this->calculateEstimatedGrade12($npsn, $levelKey, $status, $rawAcc, $integrationYear);
             $totalGrade12Count += $est['grade_12_count'];
 
+            $activeCampus = \App\Services\AppContextService::getActiveCampus();
+
             $schoolData = [
+                'campus_id' => $activeCampus?->id,
                 'npsn' => $npsn,
                 'name' => strtoupper(trim($item['nama'])),
                 'school_type_id' => $schoolTypeId,

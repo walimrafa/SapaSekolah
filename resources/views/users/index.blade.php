@@ -20,6 +20,7 @@
                             <th class="py-3.5 px-4">Nama Pengguna</th>
                             <th class="py-3.5 px-4">Email / Telepon</th>
                             <th class="py-3.5 px-4">Role Akses</th>
+                            <th class="py-3.5 px-4">Kampus Penugasan</th>
                             <th class="py-3.5 px-4 text-center">Status</th>
                             <th class="py-3.5 px-4 text-center">Aksi</th>
                         </tr>
@@ -53,6 +54,17 @@
                                         {{ $roleName }}
                                     </span>
                                 </td>
+                                <td class="py-3.5 px-4 whitespace-nowrap">
+                                    @if($u->campus)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                            {{ $u->campus->code }} &bull; {{ $u->campus->name }}
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                                            Lintas Kampus (Pusat)
+                                        </span>
+                                    @endif
+                                </td>
                                 <td class="py-3.5 px-4 text-center">
                                     @if($u->status === 'active')
                                         <span class="px-2 py-0.5 text-[10px] font-bold bg-emerald-100 text-emerald-800 rounded-full">Aktif</span>
@@ -69,6 +81,7 @@
                                                 'name' => $u->name,
                                                 'email' => $u->email,
                                                 'role_id' => $u->role_id,
+                                                'campus_id' => $u->campus_id,
                                                 'phone' => $u->phone,
                                                 'status' => $u->status,
                                                 'is_self' => ($u->id === auth()->id())
@@ -130,6 +143,27 @@
                         @endforeach
                     </select>
                 </div>
+                @if(auth()->user()->isAdmin())
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Kampus Penugasan</label>
+                        <select name="campus_id" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300">
+                            <option value="">-- Semua Kampus / Akses Lintas Kampus --</option>
+                            @foreach($campuses as $camp)
+                                <option value="{{ $camp->id }}">{{ $camp->name }} ({{ $camp->code }})</option>
+                            @endforeach
+                        </select>
+                        <p class="text-[10px] text-slate-400 mt-0.5">Kosongkan jika akun adalah Administrator Pusat yang berwenang lintas kampus.</p>
+                    </div>
+                @else
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Kampus Penugasan</label>
+                        <div class="px-3 py-2 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 text-slate-700 flex items-center space-x-1.5">
+                            <i data-lucide="graduation-cap" class="w-4 h-4 text-emerald-600"></i>
+                            <span>{{ auth()->user()->campus?->name ?? 'Kampus Penugasan' }}</span>
+                        </div>
+                        <input type="hidden" name="campus_id" value="{{ auth()->user()->campus_id }}">
+                    </div>
+                @endif
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Nomor HP/WA</label>
                     <input type="text" name="phone" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300">
@@ -212,6 +246,21 @@
                     </div>
                 </div>
 
+                @if(auth()->user()->isAdmin())
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Kampus Penugasan</label>
+                        <select id="edit_campus_id" name="campus_id" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <option value="">-- Semua Kampus / Akses Lintas Kampus --</option>
+                            @foreach($campuses as $camp)
+                                <option value="{{ $camp->id }}">{{ $camp->name }} ({{ $camp->code }})</option>
+                            @endforeach
+                        </select>
+                        <p class="text-[10px] text-slate-400 mt-0.5">Pilih kampus operasional akun ini atau biarkan kosong untuk akses multi-kampus (Pusat).</p>
+                    </div>
+                @else
+                    <input type="hidden" id="edit_campus_id" name="campus_id" value="{{ auth()->user()->campus_id }}">
+                @endif
+
                 <div id="selfAccountNotice" class="hidden p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-800 flex items-start space-x-2">
                     <i data-lucide="shield-alert" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
                     <span>Ini adalah akun Anda sendiri. Role Admin dan status Aktif tidak dapat diubah demi keamanan sistem.</span>
@@ -240,6 +289,7 @@
             document.getElementById('edit_phone').value = user.phone || '';
             document.getElementById('edit_password').value = '';
             document.getElementById('edit_role_id').value = user.role_id || '';
+            document.getElementById('edit_campus_id').value = user.campus_id || '';
             document.getElementById('edit_status').value = user.status || 'active';
 
             const notice = document.getElementById('selfAccountNotice');

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\School;
 use App\Models\StudentQuestionnaire;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -47,7 +48,21 @@ class StudentQuestionnaireController extends Controller
 
     public function create(Request $request): View
     {
-        $schools = School::with('district')->orderBy('name')->get();
+        if (!\App\Services\AppContextService::isPortalActive(\App\Services\AppContextService::PORTAL_STUDENT_QUESTIONNAIRE)) {
+            return view('errors.portal-disabled', [
+                'portalName' => 'Portal Kuisioner Siswa & Beasiswa',
+            ]);
+        }
+
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $schoolsQuery = School::with('district');
+        if ($activeCampus) {
+            $schoolsQuery->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)->orWhereNull('campus_id');
+            });
+        }
+        $schools = $schoolsQuery->orderBy('name')->get();
+
         $selectedEventId = $request->query('event_id') ?? $request->query('school_event_proposal_id');
         $selectedEvent = $selectedEventId ? \App\Models\SchoolEventProposal::find($selectedEventId) : null;
         $selectedSchoolId = $request->query('school_id') ?? ($selectedEvent ? $selectedEvent->school_id : null);
@@ -63,6 +78,10 @@ class StudentQuestionnaireController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        if (!\App\Services\AppContextService::isPortalActive(\App\Services\AppContextService::PORTAL_STUDENT_QUESTIONNAIRE)) {
+            return back()->with('error', 'Portal Kuisioner Siswa saat ini sedang dinonaktifkan.');
+        }
+
         $answerRules = [];
         foreach (array_keys(self::allQuestions()) as $key) {
             $answerRules["answers.{$key}"] = ['required', 'integer', 'between:1,5'];
@@ -85,6 +104,7 @@ class StudentQuestionnaireController extends Controller
         ], $answerRules));
 
         $schoolId = null;
+        $school = null;
         $schoolName = trim((string) ($request->input('school_name') ?? ''));
 
         if (!empty($validated['school_id']) && $validated['school_id'] !== 'other') {
@@ -109,8 +129,13 @@ class StudentQuestionnaireController extends Controller
             }
         }
 
-        StudentQuestionnaire::create([
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $activePeriod = \App\Services\AppContextService::getActivePeriod();
+
+        $questionnaire = StudentQuestionnaire::create([
             'school_id' => $schoolId,
+            'campus_id' => $school?->campus_id ?: $activeCampus?->id,
+            'academic_period_id' => $activePeriod?->id,
             'school_event_proposal_id' => $eventProposalId,
             'source' => $eventProposalId ? 'support_event' : 'kuisioner',
             'school_name' => $schoolName,
@@ -126,6 +151,15 @@ class StudentQuestionnaireController extends Controller
             'scholarship_interest' => $validated['scholarship_interest'],
             'answers' => $validated['answers'],
         ]);
+
+        \App\Services\ActivityLogService::log(
+            'CREATE',
+            'questionnaire',
+            $questionnaire->id,
+            "Pengisian Kuisioner Siswa Publik oleh {$validated['student_name']} ({$schoolName})",
+            null,
+            ['student_name' => $validated['student_name'], 'school' => $schoolName]
+        );
 
         return redirect()->route('student-questionnaire.create')
             ->with('success_message', 'Terima kasih! Jawaban kuisioner Anda berhasil dikirim.');
@@ -153,7 +187,8 @@ class StudentQuestionnaireController extends Controller
             $query->where('school_id', $request->input('school_id'));
         }
 
-        $schools = School::orderBy('name')->get(['id', 'name']);
+        $schools = School::with('district:id,name')->orderBy('name')->get();
+        $studyPrograms = \App\Models\StudyProgram::where('status', 1)->orderBy('name')->get();
         $statistics = $this->buildStatistics();
 
         return view('student-questionnaires.index', [
@@ -168,6 +203,8 @@ class StudentQuestionnaireController extends Controller
             ],
             'statistics' => $statistics,
             'schools' => $schools,
+            'studyPrograms' => $studyPrograms,
+            'statusOptions' => StudentQuestionnaire::followupStatusOptions(),
         ]);
     }
 
@@ -286,8 +323,13 @@ class StudentQuestionnaireController extends Controller
 
     private function buildStatistics(?\Illuminate\Support\Collection $responses = null): array
     {
-        $responses ??= StudentQuestionnaire::query()
-            ->get(['student_class', 'student_major', 'scholarship_interest', 'answers']);
+        if ($responses === null) {
+            $responses = StudentQuestionnaire::query()
+                ->whereNotNull('answers')
+                ->get(['student_class', 'student_major', 'scholarship_interest', 'answers']);
+        } else {
+            $responses = $responses->filter(fn ($r) => !empty($r->answers));
+        }
 
         $questions = [];
         $scoreTotals = array_fill_keys(range(1, 5), 0);
@@ -362,5 +404,239 @@ class StudentQuestionnaireController extends Controller
         }
 
         return $questions;
+    }
+
+    /**
+     * Update student questionnaire from Hasil Kuisioner index.
+     */
+    public function update(Request $request, StudentQuestionnaire $studentQuestionnaire): RedirectResponse|JsonResponse
+    {
+        $validated = $request->validate([
+            'student_name' => ['required', 'string', 'max:150'],
+            'school_id' => ['nullable'],
+            'school_name' => ['nullable', 'string', 'max:150'],
+            'student_class' => ['nullable', 'string', 'max:50'],
+            'student_major' => ['nullable', 'string', 'max:100'],
+            'student_phone' => ['required', 'string', 'max:30'],
+            'student_email' => ['nullable', 'email', 'max:150'],
+            'student_social_media' => ['nullable', 'string', 'max:255'],
+            'guardian_name' => ['nullable', 'string', 'max:150'],
+            'guardian_phone' => ['nullable', 'string', 'max:30'],
+            'guardian_social_media' => ['nullable', 'string', 'max:255'],
+            'scholarship_interest' => ['required', 'in:ya,tidak'],
+            'followup_status' => ['nullable', 'in:belum_dihubungi,no_respon,respon,berminat,daftar_aplikasi,closing'],
+            'scholarship_notes' => ['nullable', 'string', 'max:500'],
+            'college_interest_notes' => ['nullable', 'string', 'max:500'],
+            'followup_notes' => ['nullable', 'string', 'max:1000'],
+            'answers' => ['nullable', 'array'],
+        ]);
+
+        $schoolId = null;
+        $school = null;
+        $schoolName = trim((string) ($request->input('school_name') ?? ''));
+
+        if (!empty($validated['school_id']) && $validated['school_id'] !== 'other') {
+            $school = School::find($validated['school_id']);
+            if ($school) {
+                $schoolId = $school->id;
+                $schoolName = $school->name;
+            }
+        }
+
+        $dataToUpdate = [
+            'student_name' => $validated['student_name'],
+            'school_id' => $schoolId,
+            'school_name' => $schoolName ?: $studentQuestionnaire->school_name,
+            'student_class' => $validated['student_class'] ?? null,
+            'student_major' => $validated['student_major'] ?? null,
+            'student_phone' => $validated['student_phone'],
+            'student_email' => $validated['student_email'] ?? null,
+            'student_social_media' => $validated['student_social_media'] ?? null,
+            'guardian_name' => $validated['guardian_name'] ?? null,
+            'guardian_phone' => $validated['guardian_phone'] ?? null,
+            'guardian_social_media' => $validated['guardian_social_media'] ?? null,
+            'scholarship_interest' => $validated['scholarship_interest'],
+            'scholarship_notes' => $validated['scholarship_notes'] ?? $studentQuestionnaire->scholarship_notes,
+            'college_interest_notes' => $validated['college_interest_notes'] ?? $studentQuestionnaire->college_interest_notes,
+        ];
+
+        if ($request->has('answers') && is_array($request->answers)) {
+            $existingAnswers = $studentQuestionnaire->answers ?? [];
+            foreach ($request->answers as $qKey => $qScore) {
+                if (is_numeric($qScore) && $qScore >= 1 && $qScore <= 5) {
+                    $existingAnswers[$qKey] = (int) $qScore;
+                }
+            }
+            $dataToUpdate['answers'] = $existingAnswers;
+        }
+
+        if (!empty($validated['followup_status'])) {
+            $statusVal = ($validated['followup_status'] === 'closing') ? StudentQuestionnaire::STATUS_DAFTAR_APLIKASI : $validated['followup_status'];
+            $dataToUpdate['followup_status'] = $statusVal;
+        }
+
+        if (array_key_exists('followup_notes', $validated)) {
+            $dataToUpdate['followup_notes'] = $validated['followup_notes'];
+        }
+
+        $studentQuestionnaire->update($dataToUpdate);
+
+        if (in_array($studentQuestionnaire->followup_status, [StudentQuestionnaire::STATUS_DAFTAR_APLIKASI, 'closing', 'daftar_aplikasi'])) {
+            \App\Services\ProspectSyncService::syncStudentQuestionnaire($studentQuestionnaire->fresh());
+        }
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => "Data siswa {$studentQuestionnaire->student_name} berhasil diperbarui.",
+                'student' => $studentQuestionnaire->fresh(),
+            ]);
+        }
+
+        return redirect()->route('student-questionnaires.index')
+            ->with('toast', [
+                'type' => 'success',
+                'message' => "Data siswa {$studentQuestionnaire->student_name} berhasil diperbarui.",
+            ]);
+    }
+
+    /**
+     * Simpan data siswa & poin kuisioner langsung dari sistem (Internal Staff/Admin).
+     */
+    public function storeFromSystem(Request $request): RedirectResponse|JsonResponse
+    {
+        $validated = $request->validate([
+            'student_name' => ['required', 'string', 'max:150'],
+            'school_id' => ['nullable'],
+            'school_name' => ['nullable', 'string', 'max:150'],
+            'student_class' => ['nullable', 'string', 'max:50'],
+            'student_major' => ['nullable', 'string', 'max:100'],
+            'student_phone' => ['required', 'string', 'max:30'],
+            'student_email' => ['nullable', 'email', 'max:150'],
+            'student_social_media' => ['nullable', 'string', 'max:255'],
+            'guardian_name' => ['nullable', 'string', 'max:150'],
+            'guardian_phone' => ['nullable', 'string', 'max:30'],
+            'guardian_social_media' => ['nullable', 'string', 'max:255'],
+            'scholarship_interest' => ['required', 'in:ya,tidak'],
+            'followup_status' => ['nullable', 'in:belum_dihubungi,no_respon,respon,berminat,daftar_aplikasi,closing'],
+            'scholarship_notes' => ['nullable', 'string', 'max:500'],
+            'college_interest_notes' => ['nullable', 'string', 'max:500'],
+            'followup_notes' => ['nullable', 'string', 'max:1000'],
+            'answers' => ['nullable', 'array'],
+        ]);
+
+        $schoolId = null;
+        $school = null;
+        $schoolName = trim((string) ($request->input('school_name') ?? ''));
+
+        if (!empty($validated['school_id']) && $validated['school_id'] !== 'other') {
+            $school = School::find($validated['school_id']);
+            if ($school) {
+                $schoolId = $school->id;
+                $schoolName = $school->name;
+            }
+        }
+
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $activePeriod = \App\Services\AppContextService::getActivePeriod();
+
+        $answers = [];
+        if ($request->has('answers') && is_array($request->answers)) {
+            foreach ($request->answers as $qKey => $qScore) {
+                if (is_numeric($qScore) && $qScore >= 1 && $qScore <= 5) {
+                    $answers[$qKey] = (int) $qScore;
+                }
+            }
+        }
+
+        $statusVal = $validated['followup_status'] ?? StudentQuestionnaire::STATUS_BELUM_DIHUBUNGI;
+        if ($statusVal === 'closing') {
+            $statusVal = StudentQuestionnaire::STATUS_DAFTAR_APLIKASI;
+        }
+
+        $studentQuestionnaire = StudentQuestionnaire::create([
+            'school_id' => $schoolId,
+            'campus_id' => $school?->campus_id ?: ($activeCampus?->id ?? 1),
+            'academic_period_id' => $activePeriod?->id,
+            'school_name' => $schoolName ?: 'Sekolah Lain',
+            'student_name' => $validated['student_name'],
+            'student_class' => $validated['student_class'] ?? null,
+            'student_major' => $validated['student_major'] ?? null,
+            'student_phone' => $validated['student_phone'],
+            'student_email' => $validated['student_email'] ?? null,
+            'student_social_media' => $validated['student_social_media'] ?? null,
+            'guardian_name' => $validated['guardian_name'] ?? null,
+            'guardian_phone' => $validated['guardian_phone'] ?? null,
+            'guardian_social_media' => $validated['guardian_social_media'] ?? null,
+            'scholarship_interest' => $validated['scholarship_interest'],
+            'scholarship_notes' => $validated['scholarship_notes'] ?? null,
+            'college_interest_notes' => $validated['college_interest_notes'] ?? null,
+            'followup_status' => $statusVal,
+            'followup_notes' => $validated['followup_notes'] ?? null,
+            'source' => 'sistem',
+            'answers' => $answers,
+        ]);
+
+        \App\Services\ActivityLogService::log(
+            'CREATE',
+            'student_questionnaire',
+            $studentQuestionnaire->id,
+            "Input Kuisioner Siswa melalui Sistem: {$studentQuestionnaire->student_name} ({$studentQuestionnaire->school_display_name})",
+            null,
+            ['student_name' => $studentQuestionnaire->student_name, 'school' => $studentQuestionnaire->school_display_name]
+        );
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => "Data & kuisioner siswa {$studentQuestionnaire->student_name} berhasil disimpan.",
+                'student' => $studentQuestionnaire,
+            ]);
+        }
+
+        return redirect()->route('student-questionnaires.index')
+            ->with('toast', [
+                'type' => 'success',
+                'message' => "Data & kuisioner siswa {$studentQuestionnaire->student_name} berhasil diinput ke sistem!",
+            ]);
+    }
+
+    /**
+     * Delete student questionnaire from Hasil Kuisioner index.
+     * Hanya diizinkan untuk Admin, Pimpinan, dan Koordinator Marketing.
+     */
+    public function destroy(Request $request, StudentQuestionnaire $studentQuestionnaire)
+    {
+        $user = auth()->user();
+        if (!$user || !$user->canPlotFollowUps()) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Akses ditolak. Anda tidak berhak menghapus data kuisioner siswa.'], 403);
+            }
+            abort(403, 'Akses ditolak. Anda tidak berhak menghapus data kuisioner siswa.');
+        }
+
+        $name = $studentQuestionnaire->student_name;
+        $studentQuestionnaire->delete();
+
+        \App\Services\ActivityLogService::log(
+            'DELETE',
+            'questionnaire',
+            $studentQuestionnaire->id,
+            "Menghapus data kuisioner siswa: {$name}",
+            ['student_name' => $name]
+        );
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => "Data kuisioner siswa {$name} berhasil dihapus.",
+            ]);
+        }
+
+        return redirect()->route('student-questionnaires.index')
+            ->with('toast', [
+                'type' => 'success',
+                'message' => "Data kuisioner siswa {$name} berhasil dihapus.",
+            ]);
     }
 }

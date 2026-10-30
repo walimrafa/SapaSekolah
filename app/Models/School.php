@@ -15,6 +15,7 @@ class School extends Model
     protected $fillable = [
         'npsn',
         'name',
+        'headmaster_name',
         'school_type_id',
         'status',
         'province_id',
@@ -38,6 +39,7 @@ class School extends Model
         'priority_level',
         'distance_from_campus',
         'status_school',
+        'campus_id',
         'notes',
     ];
 
@@ -57,6 +59,11 @@ class School extends Model
     /**
      * School belongsTo SchoolType.
      */
+    public function campus(): BelongsTo
+    {
+        return $this->belongsTo(Campus::class);
+    }
+
     public function schoolType(): BelongsTo
     {
         return $this->belongsTo(SchoolType::class);

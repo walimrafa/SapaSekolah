@@ -172,6 +172,28 @@
     <!-- Toast Component -->
     <x-toast />
 
+    <!-- Global School Filter Select2 Auto-Initializer -->
+    <script>
+        $(document).ready(function() {
+            if (typeof $.fn.select2 !== 'undefined') {
+                $('.select2-school-filter').each(function() {
+                    const $select = $(this);
+                    if (!$select.hasClass('select2-hidden-accessible')) {
+                        $select.select2({
+                            placeholder: '-- Ketik / Cari Asal Sekolah --',
+                            allowClear: true,
+                            width: '100%',
+                            language: {
+                                noResults: function() { return 'Sekolah tidak ditemukan'; },
+                                searching: function() { return 'Mencari sekolah...'; }
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    </script>
+
     @stack('scripts')
 </body>
 </html>

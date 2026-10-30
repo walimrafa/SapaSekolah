@@ -18,8 +18,8 @@ class FollowUpSyncService
 
         $followUp = FollowUp::where('visit_id', $visit->id)->first();
 
-        $picPhone = null;
-        if ($visit->school) {
+        $picPhone = $visit->recipient_phone;
+        if (!$picPhone && $visit->school) {
             $picPhone = $visit->school->primaryContact?->phone 
                      ?? $visit->school->contacts->first()?->phone 
                      ?? $visit->school->phone;
@@ -65,10 +65,23 @@ class FollowUpSyncService
             'fixed_time' => $visit->target_time,
             'description' => $desc,
             'notes' => $desc,
+            'google_drive_folder_url' => $visit->google_drive_folder_url,
+            'google_drive_file_url' => $visit->google_drive_file_url,
         ];
 
         if ($followUp) {
-            // Only update non-final statuses
+            // Update agenda target date and drive links
+            if ($visit->target_date) {
+                $data['fixed_date'] = $visit->target_date;
+                $data['fixed_time'] = $visit->target_time;
+            }
+            if ($visit->google_drive_folder_url) {
+                $data['google_drive_folder_url'] = $visit->google_drive_folder_url;
+            }
+            if ($visit->google_drive_file_url) {
+                $data['google_drive_file_url'] = $visit->google_drive_file_url;
+            }
+
             if ($followUp->status === 'pending' || $followUp->status === 'progress') {
                 $followUp->update($data);
             }
@@ -76,7 +89,7 @@ class FollowUpSyncService
         }
 
         $data['status'] = 'pending';
-        $data['is_schedule_fixed'] = false;
+        $data['is_schedule_fixed'] = !empty($visit->target_date);
 
         return FollowUp::create($data);
     }

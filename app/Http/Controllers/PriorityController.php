@@ -26,14 +26,21 @@ class PriorityController extends Controller
      */
     public function index(Request $request): View
     {
-        // Automatically ensure scores are calculated using UBSI Karawang criteria
-        $this->scoringService->recalculateAllSchoolScores();
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+
+        // Automatically ensure scores are calculated using active campus criteria
+        $this->scoringService->recalculateAllSchoolScores($activeCampus?->id);
 
         $query = School::with(['schoolType', 'accreditation', 'district', 'village', 'primaryContact', 'latestVisit'])
             ->withCount(['visits', 'prospects as individual_ubsi_students_count' => function ($q) {
                 $q->where('status', 'mahasiswa');
             }])
             ->withSum('studentIntakes as reported_ubsi_students_count', 'student_count');
+
+        // Isolasi Kampus: Hanya tampilkan peringkat prioritas sekolah kampus aktif
+        if ($activeCampus) {
+            $query->where('campus_id', $activeCampus->id);
+        }
 
         // Filters
         if ($request->filled('district_id')) {
@@ -58,23 +65,35 @@ class PriorityController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        // Top Recommendation Cards: Unvisited or High XII Grade
-        $todayRecommended = School::with(['district', 'schoolType', 'primaryContact'])
+        // Top Recommendation Cards: Terisolasi ketat sesuai kampus aktif
+        $todayRecommendedQuery = School::with(['district', 'schoolType', 'primaryContact'])
             ->withCount(['prospects as individual_ubsi_students_count' => function ($q) {
                 $q->where('status', 'mahasiswa');
             }])
             ->withSum('studentIntakes as reported_ubsi_students_count', 'student_count')
-            ->where('priority_level', 'A')
+            ->where('priority_level', 'A');
+
+        if ($activeCampus) {
+            $todayRecommendedQuery->where('campus_id', $activeCampus->id);
+        }
+
+        $todayRecommended = $todayRecommendedQuery
             ->orderBy('potential_score', 'desc')
             ->limit(3)
             ->get();
 
-        $districts = District::orderBy('name')->get();
+        // Hanya tampilkan kecamatan yang memiliki sekolah di kampus aktif
+        $districtsQuery = District::orderBy('name');
+        if ($activeCampus) {
+            $districtsQuery->whereHas('schools', fn($q) => $q->where('campus_id', $activeCampus->id));
+        }
+        $districts = $districtsQuery->get();
+
         $schoolTypes = SchoolType::all();
 
-        $ubsiCampusAddress = SchoolScoringService::UBSI_ADDRESS;
+        $ubsiCampusAddress = $activeCampus ? ($activeCampus->address ?? SchoolScoringService::UBSI_ADDRESS) : SchoolScoringService::UBSI_ADDRESS;
 
-        return view('priorities.index', compact('schools', 'todayRecommended', 'districts', 'schoolTypes', 'ubsiCampusAddress'));
+        return view('priorities.index', compact('schools', 'todayRecommended', 'districts', 'schoolTypes', 'ubsiCampusAddress', 'activeCampus'));
     }
 
     public function importStudentIntakes(Request $request, SchoolStudentIntakeImportService $importService): RedirectResponse
@@ -130,6 +149,9 @@ class PriorityController extends Controller
                     ->getNumberFormat()
                     ->setFormatCode('@');
                 $sheet->setAutoFilter('A1:D' . ($schools->count() + 1));
+                $sheet->getStyle('D2:D' . ($schools->count() + 1))
+                    ->getNumberFormat()
+                    ->setFormatCode('0');
             }
 
             $sheet->freezePane('A2');
@@ -137,9 +159,6 @@ class PriorityController extends Controller
             $sheet->getStyle('A1:D1')->getFill()
                 ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
                 ->getStartColor()->setARGB('FFE2E8F0');
-            $sheet->getStyle('D2:D' . max($schools->count() + 1, 2))
-                ->getNumberFormat()
-                ->setFormatCode('0');
             $sheet->getColumnDimension('A')->setWidth(18);
             $sheet->getColumnDimension('B')->setWidth(38);
             $sheet->getColumnDimension('C')->setWidth(24);
@@ -157,12 +176,15 @@ class PriorityController extends Controller
      */
     public function recalculate(): RedirectResponse
     {
-        $this->scoringService->recalculateAllSchoolScores();
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $this->scoringService->recalculateAllSchoolScores($activeCampus?->id);
+
+        $campusName = $activeCampus ? "Kampus {$activeCampus->name}" : 'Semua Kampus Operasional';
 
         return redirect()->route('priorities.index')
             ->with('toast', [
                 'type' => 'success',
-                'message' => 'Skor & Prioritas sekolah berhasil dihitung ulang berdasarkan lokasi Kampus UBSI Karawang.',
+                'message' => "Skor & Prioritas sekolah berhasil dihitung ulang berdasarkan lokasi {$campusName}.",
             ]);
     }
 }

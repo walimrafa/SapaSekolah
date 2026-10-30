@@ -5,7 +5,42 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
+/**
+ * App\Models\FollowUp
+ *
+ * @property int $id
+ * @property int $school_id
+ * @property int|null $visit_id
+ * @property int|null $user_id
+ * @property Carbon|null $followup_date
+ * @property string|null $method
+ * @property string|null $description
+ * @property string|null $notes
+ * @property string|null $result
+ * @property Carbon|null $next_followup_date
+ * @property string $status
+ * @property Carbon|null $fixed_date
+ * @property string|null $fixed_time
+ * @property string|null $pic_name
+ * @property string|null $pic_phone
+ * @property string|null $pic_position
+ * @property string|null $socialization_location
+ * @property bool $is_schedule_fixed
+ * @property int|null $target_audience_count
+ * @property Carbon|null $socialization_completed_at
+ * @property string|null $socialization_completion_notes
+ * @property string|null $documentation_file
+ * @property string|null $google_drive_folder_url
+ * @property string|null $google_drive_file_url
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ * @property-read \App\Models\School|null $school
+ * @property-read \App\Models\SchoolVisit|null $visit
+ * @property-read \App\Models\User|null $user
+ */
 class FollowUp extends Model
 {
     use SoftDeletes;
@@ -19,6 +54,8 @@ class FollowUp extends Model
 
     protected $fillable = [
         'school_id',
+        'campus_id',
+        'academic_period_id',
         'visit_id',
         'user_id',
         'followup_date',
@@ -38,15 +75,40 @@ class FollowUp extends Model
         'target_audience_count',
         'socialization_completed_at',
         'socialization_completion_notes',
+        'documentation_file',
+        'google_drive_folder_url',
+        'google_drive_file_url',
     ];
 
+    /**
+     * Get effective Google Drive Folder URL for this socialization.
+     */
+    public function getDriveFolderUrlAttribute(): string
+    {
+        if (!empty($this->attributes['google_drive_folder_url'])) {
+            return $this->attributes['google_drive_folder_url'];
+        }
+
+        if ($this->visit && !empty($this->visit->google_drive_folder_url)) {
+            return $this->visit->google_drive_folder_url;
+        }
+
+        $targetDate = $this->socialization_completed_at ?: $this->fixed_date;
+        $date = $targetDate ? Carbon::parse($targetDate)->format('Y-m-d') : null;
+
+        return \App\Services\GoogleDriveService::buildFolderUrlForSchool(
+            $this->school?->name ?? 'Sekolah',
+            $date
+        );
+    }
+
     protected $casts = [
-        'followup_date' => 'date',
-        'next_followup_date' => 'date',
-        'fixed_date' => 'date',
+        'followup_date' => 'datetime',
+        'next_followup_date' => 'datetime',
+        'fixed_date' => 'datetime',
         'is_schedule_fixed' => 'boolean',
         'target_audience_count' => 'integer',
-        'socialization_completed_at' => 'date',
+        'socialization_completed_at' => 'datetime',
     ];
 
     public static function statusLabels(): array
@@ -93,7 +155,7 @@ class FollowUp extends Model
         }
 
         $schoolName = $this->school?->name ?? 'Sekolah';
-        $targetStr = $this->fixed_date ? $this->fixed_date->format('d M Y') : ($this->visit?->target_month_year ?: 'jadwal sosialisasi');
+        $targetStr = $this->fixed_date ? Carbon::parse($this->fixed_date)->format('d M Y') : ($this->visit?->target_month_year ?: 'jadwal sosialisasi');
         $msg = urlencode("Selamat pagi/siang Bapak/Ibu {$this->pic_name}, salam hangat dari Tim Kampus Universitas BSI (UBSI). Menindaklanjuti kunjungan kami ke {$schoolName}, kami ingin konfirmasi terkait penetapan FIX jadwal sosialisasi kampus untuk siswa kelas 12 (rencana tanggal/bulan: {$targetStr}). Apakah jadwal tersebut sudah dapat kami kunci? Terima kasih.");
 
         return "https://wa.me/{$digits}?text={$msg}";
@@ -105,6 +167,16 @@ class FollowUp extends Model
     public function school(): BelongsTo
     {
         return $this->belongsTo(School::class);
+    }
+
+    public function campus(): BelongsTo
+    {
+        return $this->belongsTo(Campus::class);
+    }
+
+    public function academicPeriod(): BelongsTo
+    {
+        return $this->belongsTo(AcademicPeriod::class);
     }
 
     /**

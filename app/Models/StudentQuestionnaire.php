@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class StudentQuestionnaire extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     public const STATUS_BELUM_DIHUBUNGI = 'belum_dihubungi';
     public const STATUS_NO_RESPON = 'no_respon';
@@ -18,6 +19,8 @@ class StudentQuestionnaire extends Model
 
     protected $fillable = [
         'school_id',
+        'campus_id',
+        'academic_period_id',
         'school_event_proposal_id',
         'school_name',
         'student_name',
@@ -63,6 +66,30 @@ class StudentQuestionnaire extends Model
     public function school()
     {
         return $this->belongsTo(School::class, 'school_id');
+    }
+
+    public function campus()
+    {
+        return $this->belongsTo(Campus::class);
+    }
+
+    public function academicPeriod()
+    {
+        return $this->belongsTo(AcademicPeriod::class);
+    }
+
+    protected static function booted(): void
+    {
+        static::saved(function (StudentQuestionnaire $student) {
+            if (in_array($student->followup_status, [self::STATUS_DAFTAR_APLIKASI, 'closing', 'daftar_aplikasi'])) {
+                \App\Services\ProspectSyncService::syncStudentQuestionnaire($student);
+            }
+        });
+    }
+
+    public function syncToProspect(array $extra = []): ?Prospect
+    {
+        return \App\Services\ProspectSyncService::syncStudentQuestionnaire($this, $extra);
     }
 
     public function getSchoolDisplayNameAttribute(): string

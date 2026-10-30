@@ -269,6 +269,19 @@
                 </div>
             @endif
 
+            <!-- Asal Sekolah Option (Format Kuisioner) -->
+            <div>
+                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Asal Sekolah</label>
+                <select name="school_id" class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs focus:ring-brand-500 focus:border-brand-500 bg-white">
+                    <option value="all">Semua Asal Sekolah</option>
+                    @foreach($schools as $sch)
+                        <option value="{{ $sch->id }}" {{ (string)request('school_id') === (string)$sch->id ? 'selected' : '' }}>
+                            {{ $sch->name }} {{ $sch->district ? '(' . $sch->district->name . ')' : '' }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
             <!-- Minat Beasiswa Option -->
             <div>
                 <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Minat Beasiswa</label>
@@ -306,7 +319,7 @@
                     <i data-lucide="filter" class="w-3.5 h-3.5"></i>
                     <span>Terapkan</span>
                 </button>
-                @if(request()->anyFilled(['search', 'scholarship', 'source', 'major', 'class', 'status', 'interest_program', 'assigned_to']))
+                @if(request()->anyFilled(['search', 'school_id', 'scholarship', 'source', 'major', 'class', 'status', 'interest_program', 'assigned_to']))
                     <a href="{{ route('student-follow-ups.index') }}" class="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs transition" title="Reset Filter">
                         <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
                     </a>
@@ -561,9 +574,10 @@
                                 <div class="flex items-center justify-center gap-1.5">
                                     <button type="button" 
                                             onclick="openFollowUpModal({{ $student->id }}, '{{ addslashes($student->student_name) }}', '{{ $student->student_phone }}', '{{ $student->followup_status }}', '{{ addslashes($student->scholarship_notes ?? '') }}', '{{ addslashes($student->college_interest_notes ?? '') }}')"
-                                            class="px-2.5 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-xs flex items-center gap-1 transition">
-                                        <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
-                                        <span>Update</span>
+                                            class="px-2.5 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-xs flex items-center gap-1 transition"
+                                            title="Catat Follow Up Siswa">
+                                        <i data-lucide="phone-call" class="w-3.5 h-3.5"></i>
+                                        <span>Follow Up</span>
                                     </button>
 
                                     <button type="button" 
@@ -571,6 +585,20 @@
                                             class="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition"
                                             title="Lihat Detail Jawaban & Riwayat Lengkap">
                                         <i data-lucide="eye" class="w-4 h-4"></i>
+                                    </button>
+
+                                    <button type="button"
+                                            onclick="openEditStudentModal({{ $student->id }})"
+                                            class="p-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 font-bold transition"
+                                            title="Edit Data Siswa">
+                                        <i data-lucide="pencil" class="w-4 h-4"></i>
+                                    </button>
+
+                                    <button type="button"
+                                            onclick="confirmDeleteStudent({{ $student->id }}, '{{ addslashes($student->student_name) }}')"
+                                            class="p-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold transition"
+                                            title="Hapus Data Siswa">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
                                     </button>
                                 </div>
                             </td>
@@ -627,9 +655,17 @@
                     <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
                     <span>Tugaskan</span>
                 </button>
+                <button type="button" onclick="confirmBulkDelete()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs shadow-md transition flex items-center gap-1.5" title="Hapus Data Terpilih">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    <span>Hapus</span>
+                </button>
                 <button type="button" onclick="cancelSelection()" class="p-1.5 text-slate-400 hover:text-white rounded-lg transition" title="Batal Pilih">
                     <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
+            </form>
+            <form id="bulkDeleteForm" method="POST" action="{{ route('student-follow-ups.bulk-destroy') }}" class="hidden">
+                @csrf
+                <div id="bulkDeleteSelectedInputs"></div>
             </form>
         </div>
     @endif
@@ -640,7 +676,7 @@
             <!-- Modal Header -->
             <div class="px-6 py-4 bg-slate-950 text-white flex items-center justify-between">
                 <div>
-                    <h3 class="text-base font-extrabold tracking-tight">Tindak Lanjut Siswa (Follow Up)</h3>
+                    <h3 class="text-base font-extrabold tracking-tight" id="modalFollowUpHeading">Tindak Lanjut Siswa (Follow Up)</h3>
                     <p class="text-xs text-amber-400 mt-0.5" id="modalStudentTitle">Nama Siswa</p>
                 </div>
                 <button type="button" onclick="closeFollowUpModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">
@@ -651,7 +687,9 @@
             <!-- Modal Body Form -->
             <form id="followUpForm" method="POST" action="" onsubmit="handleFollowUpSubmit(event)" class="p-6 space-y-4">
                 @csrf
+                <input type="hidden" name="_method" id="formFollowUpMethod" value="">
                 <input type="hidden" id="formStudentId" value="">
+                <input type="hidden" id="formFollowUpId" value="">
 
                 <!-- Kriteria Option Report (User Required) -->
                 <div>
@@ -822,10 +860,224 @@
                     </button>
                     <button type="submit" id="btnSubmitFollowUp" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-md transition flex items-center gap-1.5">
                         <i data-lucide="check" class="w-4 h-4"></i>
-                        <span>Simpan Hasil Follow Up</span>
+                        <span id="btnSubmitFollowUpText">Simpan Hasil Follow Up</span>
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL EDIT DATA SISWA -->
+    <div id="editStudentModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs hidden">
+        <div class="bg-white rounded-3xl border border-slate-200/80 shadow-2xl w-full max-w-xl max-h-[92vh] flex flex-col overflow-hidden transform transition-all animate-in fade-in zoom-in-95">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 bg-slate-950 text-white flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-2.5">
+                    <span class="p-2 rounded-xl bg-amber-500 text-slate-950 font-bold shadow-md">
+                        <i data-lucide="user-cog" class="w-5 h-5"></i>
+                    </span>
+                    <div>
+                        <h3 class="text-base font-extrabold tracking-tight">Edit Data Siswa</h3>
+                        <p class="text-xs text-amber-400 mt-0.5">Perbarui profil, kontak, asal sekolah, dan minat siswa</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeEditStudentModal()" class="text-slate-400 hover:text-white p-1 rounded-lg transition">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body Form -->
+            <form id="editStudentForm" method="POST" action="" onsubmit="handleEditStudentSubmit(event)" class="flex-1 overflow-y-auto p-6 space-y-4 text-xs">
+                @csrf
+                <input type="hidden" name="_method" value="PUT">
+                <input type="hidden" id="editStudentId" value="">
+
+                <!-- Nama Siswa -->
+                <div>
+                    <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Nama Lengkap Siswa <span class="text-rose-500">*</span></label>
+                    <input type="text" name="student_name" id="editStudentName" required class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs focus:ring-brand-500 focus:border-brand-500 font-semibold text-slate-900">
+                </div>
+
+                <!-- Asal Sekolah -->
+                <div>
+                    <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Asal Sekolah</label>
+                    <select name="school_id" id="editStudentSchoolId" onchange="toggleEditCustomSchool(this)" class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs focus:ring-brand-500 focus:border-brand-500 bg-white">
+                        <option value="">-- Pilih Asal Sekolah Terdaftar --</option>
+                        @foreach($schools as $sch)
+                            <option value="{{ $sch->id }}">{{ $sch->name }} {{ $sch->district ? '(' . $sch->district->name . ')' : '' }}</option>
+                        @endforeach
+                        <option value="other">Sekolah Lainnya / Tulis Manual...</option>
+                    </select>
+                    <div id="editCustomSchoolWrapper" class="hidden mt-2">
+                        <input type="text" name="school_name" id="editStudentCustomSchool" placeholder="Ketik nama asal sekolah..." class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs bg-slate-50">
+                    </div>
+                </div>
+
+                <!-- Kelas & Jurusan -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Kelas</label>
+                        <input type="text" name="student_class" id="editStudentClass" placeholder="Misal: XII, XII IPA 1" class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Jurusan</label>
+                        <input type="text" name="student_major" id="editStudentMajor" placeholder="Misal: IPA, Rekayasa Perangkat Lunak" class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs">
+                    </div>
+                </div>
+
+                <!-- Kontak Siswa: WA & Email -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">No. WhatsApp Siswa <span class="text-rose-500">*</span></label>
+                        <input type="text" name="student_phone" id="editStudentPhone" required placeholder="08xxxxxxxxxx" class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs font-semibold">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Email Siswa</label>
+                        <input type="email" name="student_email" id="editStudentEmail" placeholder="nama@email.com" class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs">
+                    </div>
+                </div>
+
+                <!-- Medsos Siswa -->
+                <div>
+                    <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Media Sosial Siswa (Instagram/TikTok)</label>
+                    <input type="text" name="student_social_media" id="editStudentSocial" placeholder="@username" class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs">
+                </div>
+
+                <!-- Data Orang Tua / Wali -->
+                <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
+                    <span class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">Data Orang Tua / Wali Siswa</span>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-bold text-slate-600 mb-1">Nama Orang Tua / Wali</label>
+                            <input type="text" name="guardian_name" id="editGuardianName" placeholder="Nama wali..." class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs bg-white">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-600 mb-1">No. WhatsApp Wali</label>
+                            <input type="text" name="guardian_phone" id="editGuardianPhone" placeholder="08xxxxxxxxxx" class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs bg-white">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-600 mb-1">Media Sosial Wali (Opsional)</label>
+                        <input type="text" name="guardian_social_media" id="editGuardianSocial" placeholder="@username / akun wali" class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs bg-white">
+                    </div>
+                </div>
+
+                <!-- Minat Beasiswa & Catatan Beasiswa -->
+                <div class="p-3.5 rounded-2xl bg-emerald-50/50 border border-emerald-200/80 space-y-3">
+                    <div>
+                        <label class="block font-bold text-emerald-900 uppercase tracking-wider mb-1.5">Minat Beasiswa UBSI <span class="text-rose-500">*</span></label>
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <label class="flex items-center gap-2 p-2 rounded-xl border border-emerald-300 bg-white cursor-pointer font-bold text-emerald-800">
+                                <input type="radio" name="scholarship_interest" id="editScholarshipYa" value="ya" class="text-emerald-600 focus:ring-emerald-500">
+                                <span>Ya (Berminat Beasiswa)</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-2 rounded-xl border border-slate-300 bg-white cursor-pointer font-bold text-slate-700">
+                                <input type="radio" name="scholarship_interest" id="editScholarshipTidak" value="tidak" class="text-slate-600 focus:ring-slate-500">
+                                <span>Tidak Berminat</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-emerald-900 mb-1">Keterangan / Jenis Beasiswa</label>
+                        <input type="text" name="scholarship_notes" id="editScholarshipNotes" placeholder="Misal: Beasiswa KIP-Kuliah / Non Beasiswa" class="w-full py-2 px-3 rounded-xl border border-emerald-300 text-xs bg-white">
+                    </div>
+                </div>
+
+                <!-- Minat Program Studi -->
+                <div>
+                    <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Minat Program Studi</label>
+                    <input type="text" name="college_interest_notes" id="editCollegeNotes" placeholder="Pilihan program studi minat siswa..." class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs">
+                </div>
+
+                <!-- Status Follow Up & Catatan -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Status Kriteria Follow Up</label>
+                        <select name="followup_status" id="editFollowupStatus" class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs bg-white font-semibold">
+                            <option value="belum_dihubungi">Belum Dihubungi</option>
+                            <option value="no_respon">No Respon</option>
+                            <option value="respon">Respon</option>
+                            <option value="berminat">Berminat</option>
+                            <option value="daftar_aplikasi">Daftar Aplikasi</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Catatan Follow Up Terakhir</label>
+                        <input type="text" name="followup_notes" id="editFollowupNotes" placeholder="Poin catatan..." class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs">
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex items-center justify-end gap-2 pt-4 border-t border-slate-200">
+                    <button type="button" onclick="closeEditStudentModal()" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition">
+                        Batal
+                    </button>
+                    <button type="submit" id="btnSubmitEditStudent" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs shadow-md transition flex items-center gap-1.5">
+                        <i data-lucide="check" class="w-4 h-4"></i>
+                        <span>Simpan Perubahan</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL KONFIRMASI HAPUS DATA SISWA -->
+    <div id="deleteStudentModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs hidden">
+        <div class="bg-white rounded-3xl border border-slate-200/80 shadow-2xl w-full max-w-md overflow-hidden transform transition-all animate-in fade-in zoom-in-95">
+            <div class="p-6 text-center space-y-4">
+                <div class="w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto shadow-inner">
+                    <i data-lucide="alert-triangle" class="w-7 h-7"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-extrabold text-slate-900">Hapus Data Siswa</h3>
+                    <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                        Apakah Anda yakin ingin menghapus data siswa <strong id="deleteStudentNameText" class="text-rose-600">Nama Siswa</strong>?
+                    </p>
+                    <p class="text-[11px] text-rose-600/90 mt-1 bg-rose-50 p-2 rounded-xl border border-rose-100">
+                        ⚠️ Seluruh riwayat interaksi follow up terkait siswa ini juga akan dihapus permanen.
+                    </p>
+                </div>
+                <form id="deleteStudentForm" method="POST" action="" class="flex items-center justify-center gap-2 pt-2">
+                    @csrf
+                    @method('DELETE')
+                    <button type="button" onclick="closeDeleteStudentModal()" class="flex-1 py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition">
+                        Batal
+                    </button>
+                    <button type="submit" id="btnSubmitDeleteStudent" class="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        <span>Ya, Hapus Data</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL KONFIRMASI HAPUS MASSAL -->
+    <div id="bulkDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs hidden">
+        <div class="bg-white rounded-3xl border border-slate-200/80 shadow-2xl w-full max-w-md overflow-hidden transform transition-all animate-in fade-in zoom-in-95">
+            <div class="p-6 text-center space-y-4">
+                <div class="w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto shadow-inner">
+                    <i data-lucide="trash-2" class="w-7 h-7"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-extrabold text-slate-900">Hapus Massal Data Siswa</h3>
+                    <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                        Anda akan menghapus <strong id="bulkDeleteCountText" class="text-rose-600">0</strong> data siswa yang dipilih sekaligus.
+                    </p>
+                    <p class="text-[11px] text-rose-600/90 mt-1 bg-rose-50 p-2 rounded-xl border border-rose-100">
+                        ⚠️ Tindakan ini permanen dan akan menghapus seluruh data siswa dan riwayat interaksi mereka.
+                    </p>
+                </div>
+                <div class="flex items-center justify-center gap-2 pt-2">
+                    <button type="button" onclick="closeBulkDeleteModal()" class="flex-1 py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition">
+                        Batal
+                    </button>
+                    <button type="button" onclick="executeBulkDelete()" class="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        <span>Ya, Hapus Semua</span>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1286,6 +1538,10 @@
         function openFollowUpModal(studentId, name, phone, currentStatus, scholarshipNotes, collegeNotes) {
             document.getElementById('formStudentId').value = studentId;
             document.getElementById('modalStudentTitle').textContent = name + ' (' + (phone || '-') + ')';
+            document.getElementById('modalFollowUpHeading').textContent = 'Tindak Lanjut Siswa (Follow Up)';
+            document.getElementById('btnSubmitFollowUpText').textContent = 'Simpan Hasil Follow Up';
+            document.getElementById('formFollowUpMethod').value = '';
+            document.getElementById('formFollowUpId').value = '';
             document.getElementById('followUpForm').action = '/student-follow-ups/' + studentId;
 
             // Set current status radio
@@ -1426,10 +1682,15 @@
                         `;
                     }
 
-                    // Reload page after a brief moment to update counters accurately
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 500);
+                    // If history modal is currently open, refresh history modal
+                    const histModal = document.getElementById('historyModal');
+                    if (histModal && !histModal.classList.contains('hidden')) {
+                        openHistoryModal(studentId);
+                    } else {
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 400);
+                    }
                 } else {
                     alert(data.message || 'Gagal menyimpan follow up.');
                 }
@@ -1460,6 +1721,9 @@
 
                 // Fill details
                 const s = data.student;
+                currentHistoryStudent = s;
+                currentHistoryFollowUps = data.follow_ups;
+
                 document.getElementById('histStudentName').textContent = s.name;
                 document.getElementById('histStudentMeta').textContent = s.class + ' • ' + s.major + ' • Tanggal Isi: ' + s.created_at;
                 document.getElementById('histPhone').textContent = s.phone;
@@ -1480,7 +1744,7 @@
                     timelineContainer.innerHTML = `
                         <div class="text-center py-8 text-slate-400 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
                             <p class="font-semibold text-slate-600">Belum ada riwayat follow up tercatat.</p>
-                            <p class="text-[11px] mt-1">Gunakan tombol "Update" untuk mencatat respon siswa ini.</p>
+                            <p class="text-[11px] mt-1">Gunakan tombol "Follow Up" untuk mencatat respon siswa ini.</p>
                         </div>
                     `;
                 } else {
@@ -1497,9 +1761,27 @@
                                 ${fu.notes ? `<p class="text-xs text-slate-700 font-medium">"${fu.notes}"</p>` : ''}
                                 ${fu.scholarship_interest_notes ? `<p class="text-[11px] text-emerald-800 bg-emerald-50 p-1.5 rounded font-semibold">Beasiswa: ${fu.scholarship_interest_notes}</p>` : ''}
                                 ${fu.college_interest_notes ? `<p class="text-[11px] text-blue-800 bg-blue-50 p-1.5 rounded font-medium">Minat Prodi: ${fu.college_interest_notes}</p>` : ''}
-                                <div class="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-100">
-                                    <span>Petugas: <strong>${fu.officer}</strong></span>
-                                    ${fu.next_date ? `<span class="text-amber-600 font-bold">Jadwal lanjut: ${fu.next_date}</span>` : ''}
+                                <div class="flex items-center justify-between text-[10px] text-slate-400 pt-1.5 border-t border-slate-100 flex-wrap gap-2">
+                                    <div>
+                                        <span>Petugas: <strong>${fu.officer}</strong></span>
+                                        ${fu.next_date ? `<span class="text-amber-600 font-bold ml-2">Jadwal lanjut: ${fu.next_date}</span>` : ''}
+                                    </div>
+                                    ${fu.can_edit ? `
+                                        <div class="flex items-center gap-1.5 ml-auto">
+                                            <button type="button" onclick="editFollowUpFromHistory(${fu.id})" 
+                                                    class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 transition flex items-center gap-1"
+                                                    title="Edit Catatan Follow Up Ini">
+                                                <i data-lucide="pencil" class="w-2.5 h-2.5"></i>
+                                                <span>Edit</span>
+                                            </button>
+                                            <button type="button" onclick="deleteFollowUpRecord(${fu.id}, ${s.id})" 
+                                                    class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition flex items-center gap-1"
+                                                    title="Hapus Catatan Follow Up Ini">
+                                                <i data-lucide="trash-2" class="w-2.5 h-2.5"></i>
+                                                <span>Hapus</span>
+                                            </button>
+                                        </div>
+                                    ` : ''}
                                 </div>
                             </div>
                         `;
@@ -1566,6 +1848,319 @@
                 tabBtnAnswers.className = 'py-3 px-4 font-bold text-xs border-b-2 border-brand-600 text-brand-700 flex items-center gap-2';
                 tabBtnHist.className = 'py-3 px-4 font-bold text-xs border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-2';
             }
+        }
+
+        // ================= EDIT & DELETE LOGIC =================
+        function editFollowUpFromHistory(fuId) {
+            const fu = (currentHistoryFollowUps || []).find(x => x.id === fuId);
+            if (!fu || !currentHistoryStudent) {
+                alert('Data follow up tidak ditemukan.');
+                return;
+            }
+            openEditFollowUpModal(fu, currentHistoryStudent);
+        }
+
+        function openEditFollowUpModal(fu, student) {
+            document.getElementById('formStudentId').value = student.id;
+            document.getElementById('modalStudentTitle').textContent = student.name + ' (' + (student.phone || '-') + ')';
+            document.getElementById('modalFollowUpHeading').textContent = 'Edit Hasil Follow Up Siswa';
+            document.getElementById('btnSubmitFollowUpText').textContent = 'Perbarui Hasil Follow Up';
+            document.getElementById('formFollowUpMethod').value = 'PUT';
+            document.getElementById('formFollowUpId').value = fu.id;
+            document.getElementById('followUpForm').action = '/student-follow-ups/records/' + fu.id;
+
+            // Set current status radio
+            const statusRadios = document.getElementsByName('status');
+            for (let r of statusRadios) {
+                if (r.value === fu.status || ((fu.status === 'closing' || fu.status === 'daftar_aplikasi') && r.value === 'daftar_aplikasi')) {
+                    r.checked = true;
+                }
+            }
+
+            // Contact method & followup date
+            if (document.getElementById('formContactMethod')) {
+                document.getElementById('formContactMethod').value = fu.method_raw || 'wa';
+            }
+            if (document.getElementById('formFollowupDate')) {
+                document.getElementById('formFollowupDate').value = fu.date_raw || '';
+            }
+
+            // Sync Program Type: Beasiswa atau Non Beasiswa
+            const beasiswaSelect = document.getElementById('selectBeasiswaType');
+            const customBeasiswaWrapper = document.getElementById('wrapperCustomBeasiswa');
+            const customBeasiswaInput = document.getElementById('formCustomBeasiswa');
+            const sNotes = (fu.scholarship_interest_notes || '').trim();
+            const lowerS = sNotes.toLowerCase();
+            const isNonBeasiswa = lowerS.includes('non beasiswa') || lowerS.includes('reguler mandiri') || lowerS === 'mandiri';
+
+            if (isNonBeasiswa) {
+                handleProgramTypeChange('non_beasiswa');
+            } else {
+                handleProgramTypeChange('beasiswa');
+                let foundPreset = false;
+                if (sNotes !== '') {
+                    for (let opt of beasiswaSelect.options) {
+                        if (opt.value && opt.value !== '__custom_beasiswa__' && (opt.value.toLowerCase() === lowerS || lowerS.includes(opt.value.toLowerCase()) || opt.value.toLowerCase().includes(lowerS))) {
+                            beasiswaSelect.value = opt.value;
+                            foundPreset = true;
+                            break;
+                        }
+                    }
+                }
+                if (!foundPreset && sNotes !== '') {
+                    beasiswaSelect.value = '__custom_beasiswa__';
+                    customBeasiswaWrapper.classList.remove('hidden');
+                    customBeasiswaInput.value = sNotes;
+                } else {
+                    customBeasiswaWrapper.classList.add('hidden');
+                    customBeasiswaInput.value = '';
+                    if (!foundPreset) {
+                        beasiswaSelect.selectedIndex = 0;
+                    }
+                }
+                updateScholarshipHiddenValue();
+            }
+
+            // Sync Minat Program Studi dengan Dropdown Master Prodi
+            const collegeSelect = document.getElementById('formCollegeNotesSelect');
+            const hiddenCollege = document.getElementById('formCollegeNotes');
+            const customWrapper = document.getElementById('wrapperCustomCollegeNotes');
+            const customInput = document.getElementById('formCustomCollegeNotes');
+
+            hiddenCollege.value = fu.college_interest_notes || '';
+            let matched = false;
+
+            if (fu.college_interest_notes && fu.college_interest_notes.trim() !== '') {
+                const cleanNotes = fu.college_interest_notes.trim().toLowerCase();
+                for (let i = 0; i < collegeSelect.options.length; i++) {
+                    const optVal = collegeSelect.options[i].value;
+                    const optText = (collegeSelect.options[i].text || '').toLowerCase();
+                    if (optVal && optVal !== '__custom__' && (optVal.toLowerCase() === cleanNotes || cleanNotes.includes(optVal.toLowerCase()) || optText.includes(cleanNotes) || cleanNotes.includes(optText))) {
+                        collegeSelect.selectedIndex = i;
+                        hiddenCollege.value = optVal;
+                        matched = true;
+                        break;
+                    }
+                }
+            }
+
+            if (matched) {
+                customWrapper.classList.add('hidden');
+                customInput.value = '';
+            } else if (fu.college_interest_notes && fu.college_interest_notes.trim() !== '') {
+                collegeSelect.value = '__custom__';
+                customWrapper.classList.remove('hidden');
+                customInput.value = fu.college_interest_notes;
+                hiddenCollege.value = fu.college_interest_notes;
+            } else {
+                collegeSelect.value = '';
+                customWrapper.classList.add('hidden');
+                customInput.value = '';
+                hiddenCollege.value = '';
+            }
+
+            document.getElementById('formNotes').value = fu.notes || '';
+            document.getElementById('formNextDate').value = fu.next_date_raw || '';
+
+            document.getElementById('followUpModal').classList.remove('hidden');
+            if (window.lucide) { window.lucide.createIcons(); }
+        }
+
+        async function deleteFollowUpRecord(fuId, studentId) {
+            if (!confirm('Apakah Anda yakin ingin menghapus catatan follow up ini? Status follow up siswa akan disesuaikan kembali ke riwayat sebelumnya.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/student-follow-ups/records/' + fuId, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    await openHistoryModal(studentId);
+
+                    // Update UI badge in table without full reload
+                    const badgeContainer = document.getElementById('status-badge-container-' + studentId);
+                    if (badgeContainer && data.status_label) {
+                        badgeContainer.innerHTML = `
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${data.badge_class}">
+                                ${data.status_label}
+                            </span>
+                            <div class="text-[10px] text-slate-400 mt-1">${data.remaining_count}x Interaksi</div>
+                        `;
+                    }
+                } else {
+                    alert(data.message || 'Gagal menghapus catatan follow up.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Terjadi kesalahan saat menghapus catatan follow up.');
+            }
+        }
+
+        // Edit Student Logic
+        async function openEditStudentModal(studentId) {
+            const modal = document.getElementById('editStudentModal');
+            modal.classList.remove('hidden');
+            if (window.lucide) { window.lucide.createIcons(); }
+
+            document.getElementById('editStudentId').value = studentId;
+            document.getElementById('editStudentForm').action = '/student-follow-ups/' + studentId + '/update-student';
+
+            try {
+                const res = await fetch('/student-follow-ups/' + studentId + '/edit-data', {
+                    headers: { 'Accept': 'application/json' }
+                });
+                const json = await res.json();
+                if (res.ok && json.success) {
+                    const s = json.student;
+                    document.getElementById('editStudentName').value = s.student_name || '';
+                    document.getElementById('editStudentPhone').value = s.student_phone || '';
+                    document.getElementById('editStudentEmail').value = s.student_email || '';
+                    document.getElementById('editStudentClass').value = s.student_class || '';
+                    document.getElementById('editStudentMajor').value = s.student_major || '';
+                    document.getElementById('editStudentSocial').value = s.student_social_media || '';
+                    document.getElementById('editGuardianName').value = s.guardian_name || '';
+                    document.getElementById('editGuardianPhone').value = s.guardian_phone || '';
+                    document.getElementById('editGuardianSocial').value = s.guardian_social_media || '';
+                    document.getElementById('editScholarshipNotes').value = s.scholarship_notes || '';
+                    document.getElementById('editCollegeNotes').value = s.college_interest_notes || '';
+                    document.getElementById('editFollowupNotes').value = s.followup_notes || '';
+
+                    // Scholarship radio
+                    if (s.scholarship_interest === 'tidak') {
+                        document.getElementById('editScholarshipTidak').checked = true;
+                    } else {
+                        document.getElementById('editScholarshipYa').checked = true;
+                    }
+
+                    // Followup status
+                    if (document.getElementById('editFollowupStatus')) {
+                        document.getElementById('editFollowupStatus').value = s.followup_status || 'belum_dihubungi';
+                    }
+
+                    // School selection
+                    const schoolSelect = document.getElementById('editStudentSchoolId');
+                    const customSchoolWrapper = document.getElementById('editCustomSchoolWrapper');
+                    const customSchoolInput = document.getElementById('editStudentCustomSchool');
+
+                    if (s.school_id) {
+                        schoolSelect.value = s.school_id;
+                        customSchoolWrapper.classList.add('hidden');
+                        customSchoolInput.value = '';
+                    } else if (s.school_name) {
+                        schoolSelect.value = 'other';
+                        customSchoolWrapper.classList.remove('hidden');
+                        customSchoolInput.value = s.school_name;
+                    } else {
+                        schoolSelect.value = '';
+                        customSchoolWrapper.classList.add('hidden');
+                        customSchoolInput.value = '';
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Gagal mengambil data siswa.');
+            }
+        }
+
+        function closeEditStudentModal() {
+            document.getElementById('editStudentModal').classList.add('hidden');
+        }
+
+        function toggleEditCustomSchool(select) {
+            const wrapper = document.getElementById('editCustomSchoolWrapper');
+            if (select.value === 'other') {
+                wrapper.classList.remove('hidden');
+                document.getElementById('editStudentCustomSchool').focus();
+            } else {
+                wrapper.classList.add('hidden');
+            }
+        }
+
+        async function handleEditStudentSubmit(e) {
+            e.preventDefault();
+            const form = document.getElementById('editStudentForm');
+            const submitBtn = document.getElementById('btnSubmitEditStudent');
+            const originalText = submitBtn.innerHTML;
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="animate-spin inline-block mr-1">⌛</span> Menyimpan...';
+
+            try {
+                const formData = new FormData(form);
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    closeEditStudentModal();
+                    window.location.reload();
+                } else {
+                    alert(data.message || 'Gagal menyimpan perubahan siswa.');
+                }
+            } catch (err) {
+                console.error(err);
+                form.submit();
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        }
+
+        // Delete Student Logic
+        function confirmDeleteStudent(studentId, studentName) {
+            document.getElementById('deleteStudentNameText').textContent = studentName;
+            document.getElementById('deleteStudentForm').action = '/student-follow-ups/' + studentId + '/destroy-student';
+            document.getElementById('deleteStudentModal').classList.remove('hidden');
+            if (window.lucide) { window.lucide.createIcons(); }
+        }
+
+        function closeDeleteStudentModal() {
+            document.getElementById('deleteStudentModal').classList.add('hidden');
+        }
+
+        // Bulk Delete Logic
+        function confirmBulkDelete() {
+            const checkboxes = document.querySelectorAll('.student-checkbox:checked');
+            if (checkboxes.length === 0) {
+                alert('Silakan pilih minimal satu siswa terlebih dahulu.');
+                return;
+            }
+            document.getElementById('bulkDeleteCountText').textContent = checkboxes.length;
+            document.getElementById('bulkDeleteModal').classList.remove('hidden');
+            if (window.lucide) { window.lucide.createIcons(); }
+        }
+
+        function closeBulkDeleteModal() {
+            document.getElementById('bulkDeleteModal').classList.add('hidden');
+        }
+
+        function executeBulkDelete() {
+            const checkboxes = document.querySelectorAll('.student-checkbox:checked');
+            const container = document.getElementById('bulkDeleteSelectedInputs');
+            container.innerHTML = '';
+            checkboxes.forEach(cb => {
+                const inp = document.createElement('input');
+                inp.type = 'hidden';
+                inp.name = 'selected_ids[]';
+                inp.value = cb.value;
+                container.appendChild(inp);
+            });
+            document.getElementById('bulkDeleteForm').submit();
         }
 
         // ================= PLOTING & DISTRIBUTION SCRIPTS =================

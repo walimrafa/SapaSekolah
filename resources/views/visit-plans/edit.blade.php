@@ -37,18 +37,20 @@
                             <label class="block font-bold text-slate-700 mb-1">Filter Kecamatan Sekolah <span class="text-amber-600 font-normal">(Pilih Kecamatan Terlebih Dahulu)</span></label>
                             <select x-model="selectedDistrictId" @change="selectedSchoolId = ''" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-bold text-brand-700 bg-amber-50/40 focus:border-brand-500">
                                 <option value="">-- Semua Kecamatan (Filter Wilayah) --</option>
-                                <template x-for="d in districts" :key="d.id">
-                                    <option :value="d.id" x-text="'Kecamatan ' + d.name"></option>
-                                </template>
+                                @foreach($districts as $d)
+                                    <option value="{{ $d->id }}">Kecamatan {{ $d->name }} ({{ $d->schools_count }} Sekolah)</option>
+                                @endforeach
                             </select>
                         </div>
                         <div>
                             <label class="block font-bold text-slate-700 mb-1">Sekolah Tujuan SLTA <span class="text-red-500">*</span></label>
                             <select name="school_id" x-model="selectedSchoolId" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-semibold focus:border-brand-500">
                                 <option value="">-- Pilih Sekolah Tujuan --</option>
-                                <template x-for="s in filteredSchools" :key="s.id">
-                                    <option :value="s.id" x-text="s.name + (s.district ? ' (Kec. ' + s.district.name + ')' : '') + ' - Prio ' + (s.priority_level || 'C')"></option>
-                                </template>
+                                @foreach($schools as $s)
+                                    <option value="{{ $s->id }}" x-show="!selectedDistrictId || selectedDistrictId == '{{ $s->district_id }}'">
+                                        {{ $s->name }} (Kec. {{ $s->district ? $s->district->name : '-' }}) - Prio {{ $s->priority_level ?? 'C' }}
+                                    </option>
+                                @endforeach
                             </select>
                             <p class="text-[10px] text-slate-400 mt-1" x-show="selectedDistrictId">Menampilkan <span class="font-bold text-brand-600" x-text="filteredSchools.length"></span> sekolah di kecamatan terpilih.</p>
                         </div>

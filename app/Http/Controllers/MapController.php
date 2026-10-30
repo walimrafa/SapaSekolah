@@ -52,6 +52,12 @@ class MapController extends Controller
             ->whereNotNull('latitude')
             ->whereNotNull('longitude');
 
+        // Isolasi Kampus: Saring pin peta sekolah sesuai kampus aktif
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        if ($activeCampus) {
+            $query->where('campus_id', $activeCampus->id);
+        }
+
         // Regency Filter (Show only schools from integrated regency)
         if ($request->filled('regency_id') && $request->regency_id !== 'all') {
             $query->where('regency_id', $request->regency_id);

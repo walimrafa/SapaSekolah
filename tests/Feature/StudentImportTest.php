@@ -56,6 +56,8 @@ class StudentImportTest extends TestCase
                 'Email',
                 'Tahun Lulus',
                 'Program Studi',
+                'Waktu Kuliah',
+                'Kategori Beasiswa',
             ], $spreadsheet->getActiveSheet()->toArray()[0]);
 
             $spreadsheet->disconnectWorksheets();

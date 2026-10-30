@@ -63,9 +63,25 @@ class ProspectController extends Controller
             });
         }
 
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        if ($activeCampus) {
+            $query->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)
+                  ->orWhereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id))
+                  ->orWhereNull('campus_id');
+            });
+        }
+        $activePeriod = \App\Services\AppContextService::getActivePeriod();
+        if ($activePeriod) {
+            $query->where(function ($q) use ($activePeriod) {
+                $q->where('academic_period_id', $activePeriod->id)
+                  ->orWhereNull('academic_period_id');
+            });
+        }
+
         $prospects = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
 
-        $schools = School::orderBy('name')->get();
+        $schools = School::with('district:id,name')->orderBy('name')->get();
         $marketingUsers = User::active()->get();
         $studyPrograms = StudyProgram::where('status', 1)->get();
 
@@ -110,7 +126,21 @@ class ProspectController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
-        Prospect::create($validated);
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $activePeriod = \App\Services\AppContextService::getActivePeriod();
+        $validated['campus_id'] = $activeCampus?->id;
+        $validated['academic_period_id'] = $activePeriod?->id;
+
+        $prospect = Prospect::create($validated);
+
+        \App\Services\ActivityLogService::log(
+            'CREATE',
+            'prospect',
+            $prospect->id,
+            "Menambahkan prospek calon mahasiswa: {$prospect->name} ({$prospect->school?->name})",
+            null,
+            $validated
+        );
 
         return redirect()->route('prospects.index')
             ->with('toast', [
@@ -269,12 +299,29 @@ class ProspectController extends Controller
             ]);
     }
 
+    /**
+     * Remove prospect from storage.
+     * Hanya diizinkan bagi Admin, Pimpinan, dan Koordinator Marketing.
+     */
     public function destroy(Prospect $prospect): RedirectResponse
     {
+        $user = auth()->user();
+        if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator())) {
+            abort(403, 'Akses ditolak. Anda tidak berhak menghapus data prospek calon mahasiswa.');
+        }
+
         $name = $prospect->name;
         $prospect->delete();
 
+        \App\Services\ActivityLogService::log(
+            'DELETE',
+            'prospect',
+            $prospect->id,
+            "Menghapus prospek calon mahasiswa: {$name}",
+            ['name' => $name, 'nim' => $prospect->nim]
+        );
+
         return redirect()->route('prospects.index')
-            ->with('toast', ['type' => 'success', 'message' => "Prospek {$name} dihapus."]);
+            ->with('toast', ['type' => 'success', 'message' => "Prospek {$name} dipindahkan ke tempat sampah."]);
     }
 }

@@ -157,6 +157,14 @@ class AppSettingService
     }
 
     /**
+     * Save/update single setting.
+     */
+    public static function set(string $key, mixed $value): void
+    {
+        static::setMany([$key => $value]);
+    }
+
+    /**
      * Save/update array of settings.
      */
     public static function setMany(array $settings): void

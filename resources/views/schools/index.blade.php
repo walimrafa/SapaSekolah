@@ -1,4 +1,8 @@
-<x-app-layout title="Data Sekolah SLTA Karawang">
+@php
+    $activeCampus = \App\Services\AppContextService::getActiveCampus();
+    $campusTitle = $activeCampus ? ($activeCampus->short_name ?: $activeCampus->name) : 'Semua Kampus';
+@endphp
+<x-app-layout :title="'Data Sekolah SLTA ' . $campusTitle">
     <!-- Header Title & Action Buttons -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6"
         x-data="{
@@ -127,7 +131,7 @@
         }">
         <div>
             <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Data Sekolah SLTA Sederajat</h1>
-            <p class="text-xs text-slate-500 mt-0.5">Kelola data SMA, SMK, MA &amp; SLB di Kabupaten Karawang dan sekitarnya</p>
+            <p class="text-xs text-slate-500 mt-0.5">Kelola data SMA, SMK, MA &amp; SLB {{ $activeCampus ? 'wilayah ' . $activeCampus->name : 'seluruh wilayah' }}</p>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
@@ -168,14 +172,16 @@
                 <span>Tambah Sekolah</span>
             </a>
 
-            <!-- Hapus Semua Data Sekolah Button -->
-            <button type="button" @click="showDeleteAllModal = true"
-                style="background-color: #dc2626 !important; color: #ffffff !important;"
-                title="Hapus Seluruh Data Sekolah"
-                class="px-3.5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-extrabold rounded-xl text-xs shadow-md shadow-red-600/30 flex items-center space-x-1.5 transition hover-lift cursor-pointer">
-                <i data-lucide="trash-2" class="w-4 h-4 text-white"></i>
-                <span class="text-white font-extrabold">Hapus Semua</span>
-            </button>
+            <!-- Hapus Semua Data Sekolah Button (Khusus Admin, Pimpinan, dan Koordinator Marketing) -->
+            @if(auth()->user() && (auth()->user()->isAdmin() || auth()->user()->isPimpinan() || auth()->user()->isKoordinator()))
+                <button type="button" @click="showDeleteAllModal = true"
+                    style="background-color: #dc2626 !important; color: #ffffff !important;"
+                    title="Hapus Seluruh Data Sekolah {{ $activeCampus ? '— ' . $activeCampus->name : '' }}"
+                    class="px-3.5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-extrabold rounded-xl text-xs shadow-md shadow-red-600/30 flex items-center space-x-1.5 transition hover-lift cursor-pointer">
+                    <i data-lucide="trash-2" class="w-4 h-4 text-white"></i>
+                    <span class="text-white font-extrabold">Hapus Semua</span>
+                </button>
+            @endif
         </div>
 
         <!-- Modal Integrasi Dapodik & Kemenag -->
@@ -561,8 +567,8 @@
                                 <i data-lucide="alert-triangle" class="w-5 h-5"></i>
                             </div>
                             <div>
-                                <h3 class="text-sm font-extrabold text-slate-900">Konfirmasi Hapus Semua Data Sekolah</h3>
-                                <p class="text-[11px] text-slate-500">Tindakan massal menghapus data sekolah dari sistem</p>
+                                <h3 class="text-sm font-extrabold text-slate-900">Konfirmasi Hapus Semua Data Sekolah {{ $activeCampus ? '— ' . $activeCampus->name : '' }}</h3>
+                                <p class="text-[11px] text-slate-500">Tindakan massal menghapus data sekolah {{ $activeCampus ? 'khusus kampus ' . $activeCampus->name : 'dari sistem' }}</p>
                             </div>
                         </div>
                         <button type="button" :disabled="isDeletingAll" @click="showDeleteAllModal = false" class="text-slate-400 hover:text-slate-600 transition">
@@ -577,10 +583,14 @@
                         <div class="p-3.5 bg-red-50 rounded-2xl border border-red-200 text-xs text-red-900 space-y-1.5">
                             <p class="font-bold flex items-center gap-1.5">
                                 <i data-lucide="alert-circle" class="w-4 h-4 text-red-600 shrink-0"></i>
-                                <span>Peringatan Penghapusan Data Massal</span>
+                                <span>Peringatan Penghapusan Data Massal (Terkunci per Kampus)</span>
                             </p>
                             <p class="text-[11px] leading-relaxed text-red-800">
-                                Saat ini terdapat <strong class="text-red-950 font-extrabold">{{ $schools->total() }} data sekolah</strong> dalam basis data. Anda dapat memilih memindahkan data ke <strong>Tempat Sampah</strong> (aman dan dapat dipulihkan kapan saja) atau menghapusnya secara permanen.
+                                Saat ini terdapat <strong class="text-red-950 font-extrabold">{{ $schools->total() }} data sekolah</strong> pada <strong class="text-red-950 font-extrabold">{{ $activeCampus ? $activeCampus->name : 'seluruh kampus' }}</strong>. 
+                                @if($activeCampus)
+                                    Penghapusan massal ini <strong>hanya akan menghapus sekolah milik {{ $activeCampus->name }}</strong> dan <strong>tidak akan menyentuh data sekolah di kampus lain</strong>.
+                                @endif
+                                Anda dapat memilih memindahkan data ke <strong>Tempat Sampah</strong> (aman dan dapat dipulihkan kapan saja) atau menghapusnya secara permanen.
                             </p>
                         </div>
 

@@ -13,7 +13,21 @@ class MarketingActivityController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = MarketingActivity::withCount('schoolActivities');
+        // Auto-sync any completed socializations from FollowUp to MarketingActivity
+        try {
+            $completedFollowUps = \App\Models\FollowUp::whereNotNull('socialization_completed_at')
+                ->with(['school.district'])
+                ->get();
+
+            foreach ($completedFollowUps as $fu) {
+                FollowUpController::syncFollowUpToMarketingActivity($fu);
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Error syncing completed socializations to activities: ' . $e->getMessage());
+        }
+
+        $query = MarketingActivity::with(['schoolActivities.school.district'])
+            ->withCount('schoolActivities');
 
         if ($request->filled('type')) {
             $query->where('activity_type', $request->type);
@@ -49,8 +63,21 @@ class MarketingActivityController extends Controller
 
         if ($request->hasFile('document')) {
             $file = $request->file('document');
+            $gdriveResult = \App\Services\GoogleDriveService::uploadDocumentation(
+                $file,
+                $validated['name'],
+                $validated['start_date']
+            );
+
             $validated['document_name'] = $file->getClientOriginalName();
-            $validated['document_path'] = $file->store('activity-documents', 'public');
+            $validated['document_path'] = $gdriveResult['stored_path'];
+            $validated['google_drive_folder_url'] = $gdriveResult['drive_folder_url'];
+            $validated['google_drive_file_url'] = $gdriveResult['drive_file_url'];
+        } else {
+            $validated['google_drive_folder_url'] = \App\Services\GoogleDriveService::buildFolderUrlForSchool(
+                $validated['name'],
+                $validated['start_date']
+            );
         }
 
         unset($validated['document']);
@@ -59,8 +86,33 @@ class MarketingActivityController extends Controller
         return redirect()->route('activities.index')
             ->with('toast', [
                 'type' => 'success',
-                'message' => 'Aktivitas marketing baru dan dokumen lampiran berhasil disimpan.',
+                'message' => 'Aktivitas marketing baru dan dokumen lampiran berhasil disimpan ke sistem & disinkronkan ke Google Drive.',
             ]);
+    }
+
+    /**
+     * Stream or redirect to document (Google Drive / Local Storage) securely without 404 port issues.
+     */
+    public function document(MarketingActivity $activity)
+    {
+        // 1. If uploaded to Google Drive with real drive URL, redirect directly
+        if (!empty($activity->google_drive_file_url) && str_contains($activity->google_drive_file_url, 'drive.google.com')) {
+            return redirect()->away($activity->google_drive_file_url);
+        }
+
+        // 2. Serve local file directly with proper headers
+        if (!empty($activity->document_path) && Storage::disk('public')->exists($activity->document_path)) {
+            return response()->file(Storage::disk('public')->path($activity->document_path), [
+                'Content-Disposition' => 'inline; filename="' . ($activity->document_name ?: basename($activity->document_path)) . '"',
+            ]);
+        }
+
+        // 3. Fallback to Google Drive Folder
+        if (!empty($activity->drive_folder_url)) {
+            return redirect()->away($activity->drive_folder_url);
+        }
+
+        abort(404, 'Dokumen lampiran aktivitas marketing tidak ditemukan.');
     }
 
     public function destroy(MarketingActivity $activity): RedirectResponse

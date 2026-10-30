@@ -1,11 +1,16 @@
 @php
     $appSettings = \App\Services\AppSettingService::all();
-    $waNumber = preg_replace('/[^0-9]/', '', $appSettings['admin_phone'] ?? '6281211112222');
+    $proposalCampus = $proposal->campus ?: \App\Models\Campus::find($proposal->campus_id);
+    $rawPhone = $proposalCampus?->phone ?: ($appSettings['campus_phone'] ?? ($appSettings['admin_phone'] ?? '081220022851'));
+    $waNumber = preg_replace('/[^0-9]/', '', $rawPhone);
     if (str_starts_with($waNumber, '0')) {
         $waNumber = '62' . substr($waNumber, 1);
+    } elseif (str_starts_with($waNumber, '8')) {
+        $waNumber = '62' . $waNumber;
     }
+    $campusName = $proposalCampus?->name ?: ($appSettings['campus_name'] ?? 'Universitas BSI');
     $eventDateFormatted = $proposal->event_date ? \Carbon\Carbon::parse($proposal->event_date)->format('d/m/Y') : '-';
-    $waText = urlencode("Halo Tim Kerjasama {$appSettings['campus_name']}, kami telah mengajukan proposal kegiatan dengan Kode Referensi: {$proposal->reference_no}\n\nSekolah: {$proposal->school_name}\nEvent: {$proposal->event_name}\nTanggal: {$eventDateFormatted}\n\nMohon konfirmasi dan info tindak lanjutnya. Terima kasih!");
+    $waText = urlencode("Halo Tim Kerjasama {$campusName}, kami telah mengajukan proposal kegiatan dengan Kode Referensi: {$proposal->reference_no}\n\nSekolah: {$proposal->school_name}\nEvent: {$proposal->event_name}\nTanggal: {$eventDateFormatted}\n\nMohon konfirmasi dan info tindak lanjutnya. Terima kasih!");
 @endphp
 <!DOCTYPE html>
 <html lang="id">
@@ -149,7 +154,13 @@
                 <a href="https://wa.me/{{ $waNumber }}?text={{ $waText }}" target="_blank"
                     class="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-6 py-3 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/20 transition">
                     <i data-lucide="message-circle" class="w-4 h-4"></i>
-                    <span>Konfirmasi via WhatsApp</span>
+                    <span>Konfirmasi via WhatsApp Resmi BSI</span>
+                </a>
+
+                <a href="{{ route('school-events.tracking', ['ref' => $proposal->reference_no]) }}"
+                    class="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-5 py-3 rounded-xl text-sm font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-lg shadow-amber-500/20 transition">
+                    <i data-lucide="search" class="w-4 h-4"></i>
+                    <span>Cek Status Proposal (Tracking)</span>
                 </a>
 
                 <a href="{{ route('school-events.create') }}"

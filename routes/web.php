@@ -44,6 +44,8 @@ Route::post('/kuisioner-siswa', [StudentQuestionnaireController::class, 'store']
 Route::get('/pengajuan-event', [\App\Http\Controllers\SchoolEventProposalController::class, 'publicCreate'])->name('school-events.create');
 Route::post('/pengajuan-event', [\App\Http\Controllers\SchoolEventProposalController::class, 'publicStore'])->name('school-events.store')->middleware('throttle:30,1');
 Route::get('/pengajuan-event/sukses/{reference_no}', [\App\Http\Controllers\SchoolEventProposalController::class, 'publicSuccess'])->name('school-events.success');
+Route::get('/tracking-proposal', [\App\Http\Controllers\SchoolEventProposalController::class, 'tracking'])->name('school-events.tracking');
+Route::get('/pengajuan-event/tracking', [\App\Http\Controllers\SchoolEventProposalController::class, 'tracking'])->name('school-events.tracking.alias');
 
 // Hasil Support Event - Pendaftaran Siswa Event (Tanpa Login & Tanpa Kuisioner)
 Route::get('/hasil-support-event', [\App\Http\Controllers\EventStudentLeadController::class, 'publicCreate'])->name('event-students.create');
@@ -63,18 +65,50 @@ Route::middleware(['auth'])->group(function () {
     // 1. Dashboard: Accessible by all authenticated users
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    // Context Switcher (Kampus & Periode Aktif)
+    Route::post('/context/switch', [\App\Http\Controllers\ContextController::class, 'switchContext'])->name('context.switch');
+
+    // Public Portal Status Toggle (Admin, Pimpinan, Koordinator Marketing)
+    Route::post('/portal-status/toggle', [\App\Http\Controllers\ContextController::class, 'togglePortal'])
+        ->name('portal-status.toggle')
+        ->middleware('role:Admin,Pimpinan,Koordinator Marketing');
+
+    // Profile & Password Mandiri
+    Route::get('/profile', [\App\Http\Controllers\ContextController::class, 'showProfile'])->name('profile.show');
+    Route::put('/profile/password', [\App\Http\Controllers\ContextController::class, 'updatePassword'])->name('profile.password');
+
+    // Audit Trail / Log Aktivitas Sistem (Admin, Pimpinan, Koordinator Marketing)
+    Route::get('/activity-logs', [\App\Http\Controllers\ActivityLogController::class, 'index'])
+        ->name('activity-logs.index')
+        ->middleware('role:Admin,Pimpinan,Koordinator Marketing');
+
+    // Laporan Khusus Lengkap & Ekspor Kategori
+    Route::get('/comprehensive-reports', [\App\Http\Controllers\ComprehensiveReportController::class, 'index'])->name('comprehensive-reports.index');
+    Route::get('/comprehensive-reports/download', [\App\Http\Controllers\ComprehensiveReportController::class, 'download'])->name('comprehensive-reports.download');
+
     // 2. CRM, Prospek, Kuisioner & Follow Up Siswa (Core workspace for Customer Service, Marketing, Koordinator, Pimpinan, Admin)
     Route::get('/hasil-kuisioner/export', [StudentQuestionnaireController::class, 'downloadExcel'])->name('student-questionnaires.export');
     Route::get('/hasil-kuisioner', [StudentQuestionnaireController::class, 'index'])->name('student-questionnaires.index');
+    Route::post('/hasil-kuisioner', [StudentQuestionnaireController::class, 'storeFromSystem'])->name('student-questionnaires.store-system');
+    Route::put('/hasil-kuisioner/{studentQuestionnaire}', [StudentQuestionnaireController::class, 'update'])->name('student-questionnaires.update');
+    Route::delete('/hasil-kuisioner/{studentQuestionnaire}', [StudentQuestionnaireController::class, 'destroy'])->name('student-questionnaires.destroy');
 
     // Follow Up Siswa Kuisioner (Minat Kuliah & Beasiswa)
     Route::get('/student-follow-ups/export', [StudentFollowUpController::class, 'export'])->name('student-follow-ups.export');
     Route::get('/student-follow-ups/import-template', [StudentFollowUpController::class, 'downloadImportTemplate'])->name('student-follow-ups.import-template');
     Route::post('/student-follow-ups/import', [StudentFollowUpController::class, 'import'])->name('student-follow-ups.import');
     Route::get('/student-follow-ups', [StudentFollowUpController::class, 'index'])->name('student-follow-ups.index');
+    Route::post('/student-follow-ups/bulk-destroy', [StudentFollowUpController::class, 'bulkDestroy'])->name('student-follow-ups.bulk-destroy');
     Route::post('/student-follow-ups/{studentQuestionnaire}', [StudentFollowUpController::class, 'store'])->name('student-follow-ups.store');
     Route::get('/student-follow-ups/{studentQuestionnaire}/history', [StudentFollowUpController::class, 'history'])->name('student-follow-ups.history');
-    
+    Route::get('/student-follow-ups/{studentQuestionnaire}/edit-data', [StudentFollowUpController::class, 'getStudentData'])->name('student-follow-ups.get-student');
+    Route::put('/student-follow-ups/{studentQuestionnaire}/update-student', [StudentFollowUpController::class, 'updateStudent'])->name('student-follow-ups.update-student');
+    Route::delete('/student-follow-ups/{studentQuestionnaire}/destroy-student', [StudentFollowUpController::class, 'destroyStudent'])->name('student-follow-ups.destroy-student');
+
+    // Update & Hapus Riwayat Interaksi Follow Up Siswa
+    Route::put('/student-follow-ups/records/{studentFollowUp}', [StudentFollowUpController::class, 'updateFollowUp'])->name('student-follow-ups.record-update');
+    Route::delete('/student-follow-ups/records/{studentFollowUp}', [StudentFollowUpController::class, 'destroyFollowUp'])->name('student-follow-ups.record-destroy');
+
     // Ploting & Pembagian Jumlah Data Follow Up (Pimpinan, Koordinator Marketing, & Admin)
     Route::post('/student-follow-ups/distribute', [StudentFollowUpController::class, 'distribute'])->name('student-follow-ups.distribute');
     Route::post('/student-follow-ups/bulk-assign', [StudentFollowUpController::class, 'bulkAssign'])->name('student-follow-ups.bulk-assign');
@@ -123,7 +157,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Master Program Studi Routes (Index is open for viewing; mutations restricted to Admin & Pimpinan)
     Route::get('/study-programs', [StudyProgramController::class, 'index'])->name('study-programs.index');
-    Route::middleware('role:Admin,Pimpinan')->group(function () {
+    Route::middleware('role:Admin,Pimpinan,Koordinator Marketing')->group(function () {
         Route::post('/study-programs', [StudyProgramController::class, 'store'])->name('study-programs.store');
         Route::put('/study-programs/{studyProgram}', [StudyProgramController::class, 'update'])->name('study-programs.update');
         Route::delete('/study-programs/{studyProgram}', [StudyProgramController::class, 'destroy'])->name('study-programs.destroy');
@@ -172,9 +206,12 @@ Route::middleware(['auth'])->group(function () {
 
     // 4. Operasional Lapangan (Field Operations - Admin, Pimpinan, Koordinator, Marketing)
     Route::middleware('role:Admin,Pimpinan,Koordinator Marketing,Marketing')->group(function () {
+        Route::post('/visit-plans/bulk-destroy', [VisitPlanController::class, 'bulkDestroy'])->name('visit-plans.bulk-destroy');
         Route::resource('visit-plans', VisitPlanController::class)->except(['show']);
+        Route::get('/visits/export', [SchoolVisitController::class, 'export'])->name('visits.export');
         Route::resource('visits', SchoolVisitController::class)->except(['show']);
         Route::get('/socializations-completed', [FollowUpController::class, 'completedSocializations'])->name('socializations.completed.index');
+        Route::post('/socializations-completed/{followUp}/documentation', [FollowUpController::class, 'uploadDocumentation'])->name('socializations.completed.documentation');
         Route::put('/follow-ups/{followUp}/complete-socialization', [FollowUpController::class, 'confirmSocialization'])->name('socializations.completed.confirm');
         Route::delete('/follow-ups/{followUp}/complete-socialization', [FollowUpController::class, 'reopenSocialization'])->name('socializations.completed.reopen');
 
@@ -186,21 +223,36 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/marketing-routes/{marketingRoute}', [MarketingRouteController::class, 'destroy'])->name('marketing-routes.destroy');
 
         // Aktivitas Marketing
+        Route::get('/activities/{activity}/document', [MarketingActivityController::class, 'document'])->name('activities.document');
         Route::resource('activities', MarketingActivityController::class)->except(['create', 'show', 'edit']);
     });
 
     // 5. Master Data Routes (Admin & Pimpinan)
-    Route::middleware('role:Admin,Pimpinan')->group(function () {
+    Route::middleware('role:Admin,Pimpinan,Koordinator Marketing')->group(function () {
         Route::get('/master-data', [MasterDataController::class, 'index'])->name('master-data.index');
         Route::post('/master-data/school-types', [MasterDataController::class, 'storeSchoolType'])->name('master-data.school-types.store');
         Route::post('/master-data/accreditations', [MasterDataController::class, 'storeAccreditation'])->name('master-data.accreditations.store');
         Route::post('/master-data/positions', [MasterDataController::class, 'storeContactPosition'])->name('master-data.positions.store');
         Route::put('/master-data/scoring/{criterion}', [MasterDataController::class, 'updateScoringCriterion'])->name('master-data.scoring.update');
+
+        // Master Kampus CRUD
+        Route::post('/master-data/campuses', [MasterDataController::class, 'storeCampus'])->name('master-data.campuses.store');
+        Route::put('/master-data/campuses/{campus}', [MasterDataController::class, 'updateCampus'])->name('master-data.campuses.update');
+        Route::delete('/master-data/campuses/{campus}', [MasterDataController::class, 'destroyCampus'])->name('master-data.campuses.destroy');
+
+        // Master Periode Akademik CRUD
+        Route::post('/master-data/academic-periods', [MasterDataController::class, 'storeAcademicPeriod'])->name('master-data.academic-periods.store');
+        Route::put('/master-data/academic-periods/{period}', [MasterDataController::class, 'updateAcademicPeriod'])->name('master-data.academic-periods.update');
+        Route::delete('/master-data/academic-periods/{period}', [MasterDataController::class, 'destroyAcademicPeriod'])->name('master-data.academic-periods.destroy');
     });
 
-    // 6. User Management & Pengaturan Sistem (Admin Only)
-    Route::middleware('role:Admin')->group(function () {
+    // 6. User Management (Admin & Pimpinan Kampus)
+    Route::middleware('role:Admin,Pimpinan')->group(function () {
         Route::resource('users', UserController::class)->except(['create', 'show', 'edit']);
+    });
+
+    // 7. Pengaturan Sistem & Operasional Khusus (Admin Only)
+    Route::middleware('role:Admin')->group(function () {
         Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
         Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
         Route::post('/settings/close-period', [SettingsController::class, 'closePeriod'])->name('settings.close-period');

@@ -23,6 +23,12 @@ class SchoolController extends Controller
         $query = School::with(['schoolType', 'accreditation', 'district', 'village'])
             ->withCount(['contacts', 'visits', 'prospects']);
 
+        // Isolasi Kampus: Saring data sekolah sesuai kampus aktif operasional
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        if ($activeCampus) {
+            $query->where('campus_id', $activeCampus->id);
+        }
+
         // Search NPSN or Name
         if ($request->filled('search')) {
             $search = $request->search;
@@ -77,20 +83,31 @@ class SchoolController extends Controller
 
         $schools = $query->paginate($perPage)->withQueryString();
 
-        // Master lists for filter dropdowns - include all districts that have schools or are active
-        $districts = District::whereHas('schools')
-            ->orWhere(fn($q) => $q->activeDistricts())
-            ->orderBy('name')
-            ->get();
+        // Master lists for filter dropdowns - include all districts that have schools for active campus
+        $districtsQuery = District::whereHas('schools', function ($q) use ($activeCampus) {
+            if ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id);
+            }
+        })->orderBy('name');
+        $districts = $districtsQuery->get();
+        if ($districts->isEmpty()) {
+            $districts = District::activeDistricts()->orderBy('name')->get();
+        }
+
         $schoolTypes = SchoolType::all();
         $accreditations = Accreditation::all();
         $availableRegencies = app(\App\Services\SchoolIntegrationService::class)->getAvailableRegencies();
         $availableProvinces = app(\App\Services\SchoolIntegrationService::class)->getAvailableProvinces();
         $initialDistricts = app(\App\Services\SchoolIntegrationService::class)->getDistrictsByRegency('3215');
-        $trashedSchools = School::onlyTrashed()->with(['schoolType', 'district'])->latest('deleted_at')->get();
+
+        $trashedSchoolsQuery = School::onlyTrashed()->with(['schoolType', 'district'])->latest('deleted_at');
+        if ($activeCampus) {
+            $trashedSchoolsQuery->where('campus_id', $activeCampus->id);
+        }
+        $trashedSchools = $trashedSchoolsQuery->get();
         $trashedCount = $trashedSchools->count();
 
-        return view('schools.index', compact('schools', 'districts', 'schoolTypes', 'accreditations', 'availableRegencies', 'availableProvinces', 'initialDistricts', 'trashedCount', 'trashedSchools', 'perPage'));
+        return view('schools.index', compact('schools', 'districts', 'schoolTypes', 'accreditations', 'availableRegencies', 'availableProvinces', 'initialDistricts', 'trashedCount', 'trashedSchools', 'perPage', 'activeCampus'));
     }
 
     /**
@@ -141,6 +158,11 @@ class SchoolController extends Controller
         if (!empty($validated['latitude']) && !empty($validated['longitude'])) {
             $scoringService = app(\App\Services\SchoolScoringService::class);
             $validated['distance_from_campus'] = $scoringService->calculateDistanceFromCampus((float)$validated['latitude'], (float)$validated['longitude']);
+        }
+
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        if ($activeCampus) {
+            $validated['campus_id'] = $activeCampus->id;
         }
 
         $school = School::create($validated);
@@ -254,22 +276,48 @@ class SchoolController extends Controller
 
     /**
      * Remove the specified school from storage (Soft Delete).
+     * Diizinkan bagi Admin, Pimpinan, dan Koordinator Marketing.
      */
     public function destroy(School $school): RedirectResponse
     {
+        $user = auth()->user();
+        if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator())) {
+            abort(403, 'Akses ditolak. Penghapusan data sekolah hanya dapat dilakukan oleh Admin, Pimpinan, dan Koordinator Marketing.');
+        }
+
         $name = $school->name;
         $school->delete();
 
+        \App\Services\ActivityLogService::log(
+            'DELETE',
+            'school',
+            $school->id,
+            "Menghapus data sekolah: {$name}",
+            ['name' => $name, 'npsn' => $school->npsn]
+        );
+
         return redirect()->route('schools.index')
-            ->with('toast', ['type' => 'success', 'message' => "Sekolah {$name} telah dihapus."]);
+            ->with('toast', ['type' => 'success', 'message' => "Sekolah {$name} telah dipindahkan ke tempat sampah."]);
     }
 
     /**
-     * Restore all soft-deleted schools.
+     * Restore all soft-deleted schools for active campus.
      */
     public function restoreAll(): RedirectResponse
     {
-        $trashed = School::onlyTrashed()->get();
+        $user = auth()->user();
+        if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator())) {
+            abort(403, 'Akses ditolak. Pemulihan data sekolah hanya dapat dilakukan oleh Admin, Pimpinan, dan Koordinator Marketing.');
+        }
+
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $campusLabel = $activeCampus ? " ({$activeCampus->name})" : "";
+
+        $trashedQuery = School::onlyTrashed();
+        if ($activeCampus) {
+            $trashedQuery->where('campus_id', $activeCampus->id);
+        }
+        $trashed = $trashedQuery->get();
         $count = $trashed->count();
 
         foreach ($trashed as $school) {
@@ -277,14 +325,14 @@ class SchoolController extends Controller
             $school->update(['status_school' => 'aktif']);
         }
 
-        app(\App\Services\SchoolScoringService::class)->recalculateAllSchoolScores();
+        app(\App\Services\SchoolScoringService::class)->recalculateAllSchoolScores($activeCampus?->id);
 
         return redirect()->route('schools.index')
             ->with('toast', [
                 'type' => 'success',
                 'message' => $count > 0 
-                    ? "Berhasil memulihkan {$count} data sekolah dari tempat sampah!" 
-                    : "Tidak ada data sekolah di tempat sampah.",
+                    ? "Berhasil memulihkan {$count} data sekolah{$campusLabel} dari tempat sampah!" 
+                    : "Tidak ada data sekolah{$campusLabel} di tempat sampah.",
             ]);
     }
 
@@ -293,12 +341,19 @@ class SchoolController extends Controller
      */
     public function restore(int $id): RedirectResponse
     {
+        $user = auth()->user();
+        if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator())) {
+            abort(403, 'Akses ditolak. Pemulihan data sekolah hanya dapat dilakukan oleh Admin, Pimpinan, dan Koordinator Marketing.');
+        }
+
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+
         $school = School::onlyTrashed()->findOrFail($id);
         $name = $school->name;
         $school->restore();
         $school->update(['status_school' => 'aktif']);
 
-        app(\App\Services\SchoolScoringService::class)->recalculateAllSchoolScores();
+        app(\App\Services\SchoolScoringService::class)->recalculateAllSchoolScores($activeCampus?->id);
 
         return redirect()->route('schools.index')
             ->with('toast', [
@@ -308,47 +363,64 @@ class SchoolController extends Controller
     }
 
     /**
-     * Remove all schools from active storage (Soft Delete / Move to Trash or Force Delete).
+     * Remove all schools for active campus from active storage (Soft Delete / Move to Trash or Force Delete).
+     * Restricted to Admin, Pimpinan, and Koordinator Marketing.
      */
     public function destroyAll(Request $request): RedirectResponse
     {
+        $user = auth()->user();
+        if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator())) {
+            abort(403, 'Akses ditolak. Pengosongan data sekolah secara massal hanya dapat dilakukan oleh Admin, Pimpinan, dan Koordinator Marketing.');
+        }
+
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $campusLabel = $activeCampus ? " ({$activeCampus->name})" : "";
+
         $force = $request->boolean('force_delete', false);
 
         if ($force) {
-            $count = School::withTrashed()->count();
+            $forceQuery = School::withTrashed();
+            if ($activeCampus) {
+                $forceQuery->where('campus_id', $activeCampus->id);
+            }
+            $count = $forceQuery->count();
             if ($count === 0) {
                 return redirect()->route('schools.index')->with('toast', [
                     'type' => 'warning',
-                    'message' => 'Tidak ada data sekolah yang tersimpan untuk dihapus permanen.',
+                    'message' => "Tidak ada data sekolah{$campusLabel} yang tersimpan untuk dihapus permanen.",
                 ]);
             }
 
-            School::withTrashed()->forceDelete();
+            $forceQuery->forceDelete();
 
             return redirect()->route('schools.index')->with('toast', [
                 'type' => 'success',
-                'message' => "Berhasil mengosongkan seluruh {$count} data sekolah secara permanen dari sistem.",
+                'message' => "Berhasil mengosongkan seluruh {$count} data sekolah{$campusLabel} secara permanen dari sistem.",
             ]);
         }
 
-        $count = School::count();
+        $deleteQuery = School::query();
+        if ($activeCampus) {
+            $deleteQuery->where('campus_id', $activeCampus->id);
+        }
+        $count = $deleteQuery->count();
         if ($count === 0) {
             return redirect()->route('schools.index')->with('toast', [
                 'type' => 'warning',
-                'message' => 'Tidak ada data sekolah aktif yang dapat dihapus.',
+                'message' => "Tidak ada data sekolah aktif{$campusLabel} yang dapat dihapus.",
             ]);
         }
 
-        School::whereNotNull('id')->delete();
+        $deleteQuery->delete();
 
         // Recalculate priority scores
         try {
-            app(\App\Services\SchoolScoringService::class)->recalculateAllSchoolScores();
+            app(\App\Services\SchoolScoringService::class)->recalculateAllSchoolScores($activeCampus?->id);
         } catch (\Throwable) {}
 
         return redirect()->route('schools.index')->with('toast', [
             'type' => 'success',
-            'message' => "Berhasil memindahkan seluruh {$count} data sekolah aktif ke Tempat Sampah. Anda dapat memulihkannya kapan saja atau melakukan integrasi ulang Dapodik & Kemenag.",
+            'message' => "Berhasil memindahkan seluruh {$count} data sekolah{$campusLabel} ke Tempat Sampah. Anda dapat memulihkannya kapan saja atau melakukan integrasi ulang Dapodik & Kemenag.",
         ]);
     }
 }

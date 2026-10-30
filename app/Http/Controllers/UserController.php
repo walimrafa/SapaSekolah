@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Campus;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -13,7 +14,22 @@ class UserController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = User::with('role')->withCount(['schoolVisits', 'followUps', 'prospects']);
+        $currentUser = auth()->user();
+        $query = User::with(['role', 'campus'])->withCount(['schoolVisits', 'followUps', 'prospects']);
+
+        // Isolasi Ketat: Pengguna non-admin (misal Pimpinan Kampus) HANYA melihat user kampusnya sendiri
+        if (!$currentUser->isAdmin()) {
+            $campusId = $currentUser->campus_id ?? \App\Services\AppContextService::getActiveCampus()?->id;
+            $query->where('campus_id', $campusId);
+        } elseif ($request->filled('campus_id')) {
+            if ($request->campus_id === 'all') {
+                $query->whereNull('campus_id');
+            } else {
+                $query->where('campus_id', $request->campus_id);
+            }
+        } elseif (\App\Services\AppContextService::getActiveCampus() && session('selected_campus_id') !== 'ALL') {
+            $query->where('campus_id', \App\Services\AppContextService::getActiveCampus()->id);
+        }
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -29,21 +45,50 @@ class UserController extends Controller
         }
 
         $users = $query->paginate(15)->withQueryString();
-        $roles = Role::all();
 
-        return view('users.index', compact('users', 'roles'));
+        // Roles yang dapat dipilih (Pengguna non-admin tidak dapat membuat akun Admin)
+        $rolesQuery = Role::query();
+        if (!$currentUser->isAdmin()) {
+            $rolesQuery->where('name', '!=', 'Admin');
+        }
+        $roles = $rolesQuery->get();
+
+        // Kampus yang tersedia
+        if (!$currentUser->isAdmin()) {
+            $campuses = Campus::where('id', $currentUser->campus_id)->get();
+        } else {
+            $campuses = Campus::where('is_active', true)->orderBy('name')->get();
+        }
+
+        return view('users.index', compact('users', 'roles', 'campuses'));
     }
 
     public function store(Request $request): RedirectResponse
     {
+        $currentUser = auth()->user();
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'string', 'email', 'max:100', 'unique:users,email'],
             'password' => ['required', 'string', 'min:6'],
             'role_id' => ['required', 'exists:roles,id'],
+            'campus_id' => ['nullable', 'exists:campuses,id'],
             'phone' => ['nullable', 'string', 'max:20'],
             'status' => ['required', 'in:active,inactive'],
         ]);
+
+        if (!$currentUser->isAdmin()) {
+            // Otomatis kunci ke kampus akun yang sedang menginput
+            $validated['campus_id'] = $currentUser->campus_id ?? \App\Services\AppContextService::getActiveCampus()?->id;
+
+            $adminRole = Role::where('name', 'Admin')->first();
+            if ($adminRole && (int) $validated['role_id'] === $adminRole->id) {
+                return back()->with('toast', [
+                    'type' => 'danger',
+                    'message' => 'Anda tidak memiliki wewenang untuk membuat akun Administrator.',
+                ]);
+            }
+        }
 
         $validated['password'] = Hash::make($validated['password']);
 
@@ -55,14 +100,32 @@ class UserController extends Controller
 
     public function update(Request $request, User $user): RedirectResponse
     {
+        $currentUser = auth()->user();
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'string', 'email', 'max:100', 'unique:users,email,' . $user->id],
             'password' => ['nullable', 'string', 'min:6'],
             'role_id' => ['required', 'exists:roles,id'],
+            'campus_id' => ['nullable', 'exists:campuses,id'],
             'phone' => ['nullable', 'string', 'max:20'],
             'status' => ['required', 'in:active,inactive'],
         ]);
+
+        if (!$currentUser->isAdmin()) {
+            if ($user->campus_id !== $currentUser->campus_id) {
+                abort(403, 'Akses ditolak. Anda hanya dapat mengelola staf dari kampus Anda sendiri.');
+            }
+            $validated['campus_id'] = $currentUser->campus_id;
+
+            $adminRole = Role::where('name', 'Admin')->first();
+            if ($adminRole && (int) $validated['role_id'] === $adminRole->id) {
+                return back()->with('toast', [
+                    'type' => 'danger',
+                    'message' => 'Anda tidak memiliki wewenang untuk menetapkan role Administrator.',
+                ]);
+            }
+        }
 
         if ($user->id === auth()->id()) {
             if ($validated['status'] === 'inactive') {
@@ -90,9 +153,20 @@ class UserController extends Controller
 
     public function destroy(User $user): RedirectResponse
     {
+        $currentUser = auth()->user();
+
         if ($user->id === auth()->id()) {
             return redirect()->route('users.index')
                 ->with('toast', ['type' => 'danger', 'message' => 'Anda tidak bisa menghapus akun Anda sendiri.']);
+        }
+
+        if (!$currentUser->isAdmin()) {
+            if ($user->campus_id !== $currentUser->campus_id) {
+                abort(403, 'Akses ditolak. Anda hanya dapat menghapus staf dari kampus Anda sendiri.');
+            }
+            if ($user->isAdmin()) {
+                abort(403, 'Akses ditolak. Akun Administrator tidak dapat dihapus.');
+            }
         }
 
         $name = $user->name;
