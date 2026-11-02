@@ -168,6 +168,32 @@
                     <span class="block text-[10px] text-slate-400">Cek persetujuan proposal</span>
                 </div>
             </a>
+
+            @if(auth()->check() && (auth()->user()->isAdmin() || auth()->user()->hasRole('Pimpinan')))
+            <!-- 7. Master Kampus -->
+            <a href="{{ route('master-data.index', ['tab' => 'campuses']) }}" @click="mobileMenuOpen = false"
+                class="p-3 rounded-2xl bg-slate-900 border border-slate-800 hover:border-emerald-400/50 flex flex-col justify-between space-y-2">
+                <div class="w-8 h-8 rounded-xl bg-emerald-400/10 border border-emerald-400/20 text-emerald-400 flex items-center justify-center">
+                    <i data-lucide="graduation-cap" class="w-4 h-4"></i>
+                </div>
+                <div>
+                    <span class="block font-bold text-white text-xs">Master Kampus</span>
+                    <span class="block text-[10px] text-slate-400">Kelola kampus operasional</span>
+                </div>
+            </a>
+
+            <!-- 8. Master Periode -->
+            <a href="{{ route('master-data.index', ['tab' => 'periods']) }}" @click="mobileMenuOpen = false"
+                class="p-3 rounded-2xl bg-slate-900 border border-slate-800 hover:border-sky-400/50 flex flex-col justify-between space-y-2">
+                <div class="w-8 h-8 rounded-xl bg-sky-400/10 border border-sky-400/20 text-sky-400 flex items-center justify-center">
+                    <i data-lucide="calendar" class="w-4 h-4"></i>
+                </div>
+                <div>
+                    <span class="block font-bold text-white text-xs">Master Periode</span>
+                    <span class="block text-[10px] text-slate-400">Atur periode PMB aktif</span>
+                </div>
+            </a>
+            @endif
         </div>
 
         <button type="button" @click="mobileMenuOpen = false"

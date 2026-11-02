@@ -4,54 +4,54 @@
         <p class="text-xs text-slate-500 mt-0.5">Kelola data wilayah aktif, jenis sekolah, akreditasi, jabatan kontak &amp; scoring criteria</p>
     </div>
 
-    <!-- Navigation Tabs -->
-    <div class="flex flex-wrap gap-2 border-b border-slate-200 mb-6 bg-white rounded-2xl p-2 shadow-sm border border-slate-200/80">
+    <!-- Navigation Tabs (Swipeable on Mobile) -->
+    <div class="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 scrollbar-none mb-6 bg-white rounded-2xl p-2 shadow-sm border border-slate-200/80">
         <a href="{{ route('master-data.index', ['tab' => 'campuses']) }}"
-            class="px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 {{ $tab === 'campuses' ? 'bg-brand-navy text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
+            class="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 sm:space-x-2 shrink-0 whitespace-nowrap {{ $tab === 'campuses' ? 'bg-brand-navy text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
             <i data-lucide="graduation-cap" class="w-4 h-4 text-emerald-400"></i>
             <span>Master Kampus</span>
         </a>
 
         <a href="{{ route('master-data.index', ['tab' => 'periods']) }}"
-            class="px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 {{ $tab === 'periods' ? 'bg-brand-navy text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
+            class="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 sm:space-x-2 shrink-0 whitespace-nowrap {{ $tab === 'periods' ? 'bg-brand-navy text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
             <i data-lucide="calendar" class="w-4 h-4 text-sky-400"></i>
             <span>Master Periode Akademik</span>
         </a>
 
         <a href="{{ route('master-data.index', ['tab' => 'portals']) }}"
-            class="px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 {{ $tab === 'portals' ? 'bg-brand-navy text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
+            class="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 sm:space-x-2 shrink-0 whitespace-nowrap {{ $tab === 'portals' ? 'bg-brand-navy text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
             <i data-lucide="shield-alert" class="w-4 h-4 text-amber-400"></i>
             <span>Kontrol Portal Publik</span>
         </a>
 
         <a href="{{ route('master-data.index', ['tab' => 'wilayah']) }}"
-            class="px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 {{ $tab === 'wilayah' ? 'bg-brand-navy text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
+            class="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 sm:space-x-2 shrink-0 whitespace-nowrap {{ $tab === 'wilayah' ? 'bg-brand-navy text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
             <i data-lucide="map-pin" class="w-4 h-4 text-amber-400"></i>
-            <span>Master Wilayah (Kecamatan &amp; Desa)</span>
+            <span>Master Wilayah</span>
         </a>
 
         <a href="{{ route('master-data.index', ['tab' => 'school_types']) }}"
-            class="px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 {{ $tab === 'school_types' ? 'bg-brand-navy text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
+            class="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 sm:space-x-2 shrink-0 whitespace-nowrap {{ $tab === 'school_types' ? 'bg-brand-navy text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
             <i data-lucide="building" class="w-4 h-4 text-blue-400"></i>
             <span>Jenis Sekolah</span>
         </a>
 
         <a href="{{ route('master-data.index', ['tab' => 'accreditations']) }}"
-            class="px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 {{ $tab === 'accreditations' ? 'bg-brand-navy text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
+            class="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 sm:space-x-2 shrink-0 whitespace-nowrap {{ $tab === 'accreditations' ? 'bg-brand-navy text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
             <i data-lucide="award" class="w-4 h-4 text-emerald-400"></i>
             <span>Akreditasi</span>
         </a>
 
         <a href="{{ route('master-data.index', ['tab' => 'positions']) }}"
-            class="px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 {{ $tab === 'positions' ? 'bg-brand-navy text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
+            class="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 sm:space-x-2 shrink-0 whitespace-nowrap {{ $tab === 'positions' ? 'bg-brand-navy text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
             <i data-lucide="user-check" class="w-4 h-4 text-purple-400"></i>
-            <span>Jabatan Kontak PIC</span>
+            <span>Jabatan PIC</span>
         </a>
 
         <a href="{{ route('master-data.index', ['tab' => 'scoring']) }}"
-            class="px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 {{ $tab === 'scoring' ? 'bg-brand-navy text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
+            class="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 sm:space-x-2 shrink-0 whitespace-nowrap {{ $tab === 'scoring' ? 'bg-brand-navy text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
             <i data-lucide="sliders" class="w-4 h-4 text-rose-400"></i>
-            <span>Scoring Criteria &amp; Bobot</span>
+            <span>Scoring</span>
         </a>
     </div>
 

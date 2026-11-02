@@ -482,10 +482,25 @@
                 class="pl-4 ml-4 border-l border-slate-800 space-y-1 pt-1" style="display: none;">
                 
                 @if(auth()->user()->isAdmin() || auth()->user()->hasRole('Pimpinan'))
-                <a href="{{ route('master-data.index') }}"
-                    class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('master-data.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                    <i data-lucide="database" class="w-3.5 h-3.5"></i>
-                    <span>{{ $lbl('submenu_master_data', 'Wilayah') }}</span>
+                <!-- Master Kampus -->
+                <a href="{{ route('master-data.index', ['tab' => 'campuses']) }}"
+                    class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ (request()->routeIs('master-data.*') && request('tab', 'campuses') === 'campuses') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30 font-bold' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <i data-lucide="graduation-cap" class="w-3.5 h-3.5 text-emerald-400"></i>
+                    <span>{{ $lbl('submenu_campuses', 'Master Kampus') }}</span>
+                </a>
+
+                <!-- Master Periode -->
+                <a href="{{ route('master-data.index', ['tab' => 'periods']) }}"
+                    class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ (request()->routeIs('master-data.*') && request('tab') === 'periods') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30 font-bold' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <i data-lucide="calendar" class="w-3.5 h-3.5 text-sky-400"></i>
+                    <span>{{ $lbl('submenu_periods', 'Master Periode') }}</span>
+                </a>
+
+                <!-- Master Wilayah -->
+                <a href="{{ route('master-data.index', ['tab' => 'wilayah']) }}"
+                    class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ (request()->routeIs('master-data.*') && request('tab') === 'wilayah') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30 font-bold' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <i data-lucide="map-pin" class="w-3.5 h-3.5 text-amber-400"></i>
+                    <span>{{ $lbl('submenu_master_data', 'Master Wilayah') }}</span>
                 </a>
                 @endif
 
