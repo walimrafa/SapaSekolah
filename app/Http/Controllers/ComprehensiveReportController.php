@@ -410,7 +410,7 @@ class ComprehensiveReportController extends Controller
             $sheet->setCellValue("D{$row}", $e->school_name);
             $sheet->setCellValue("E{$row}", $e->pic_name);
             $sheet->setCellValueExplicit("F{$row}", $e->pic_phone ?? '-', DataType::TYPE_STRING);
-            $sheet->setCellValue("G{$row}", $e->event_date ? $e->event_date->format('Y-m-d') : '-');
+            $sheet->setCellValue("G{$row}", $e->event_date ? \Carbon\Carbon::parse($e->event_date)->format('Y-m-d') : '-');
             $sheet->setCellValue("H{$row}", $e->event_location);
             $sheet->setCellValue("I{$row}", $e->target_participants);
             $sheet->setCellValue("J{$row}", (float)($e->approved_amount ?? 0));

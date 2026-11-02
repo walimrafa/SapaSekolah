@@ -7,6 +7,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
 
+/**
+ * @property int $id
+ * @property \Carbon\Carbon|null $event_date
+ * @property \Carbon\Carbon|null $event_end_date
+ * @property \Carbon\Carbon|null $reviewed_at
+ * @property \Carbon\Carbon|null $reported_at
+ */
 class SchoolEventProposal extends Model
 {
     use SoftDeletes;
@@ -119,7 +126,7 @@ class SchoolEventProposal extends Model
         }
 
         $schoolName = $this->school?->name ?? $this->school_name ?? 'Sekolah';
-        $date = $this->event_date ? $this->event_date->format('Y-m-d') : null;
+        $date = $this->event_date ? \Carbon\Carbon::parse($this->event_date)->format('Y-m-d') : null;
 
         return \App\Services\GoogleDriveService::buildFolderUrlForSchool($schoolName, $date);
     }

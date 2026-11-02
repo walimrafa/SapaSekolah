@@ -453,7 +453,7 @@ class SchoolEventProposalController extends Controller
 
         // Upload file baru (foto, berkas RAR, ZIP, atau dokumen) tersinkronisasi ke Google Drive Cloud & Local Storage
         if ($request->hasFile('photos')) {
-            $eventDateStr = $proposal->event_date ? $proposal->event_date->format('Y-m-d') : now()->format('Y-m-d');
+            $eventDateStr = $proposal->event_date ? \Carbon\Carbon::parse($proposal->event_date)->format('Y-m-d') : now()->format('Y-m-d');
             $schoolTarget = $proposal->school?->name ?? $proposal->school_name ?? 'Sekolah';
             foreach ($request->file('photos') as $photoFile) {
                 $originalName = $photoFile->getClientOriginalName();
@@ -471,7 +471,7 @@ class SchoolEventProposalController extends Controller
         }
 
         if (empty($proposal->google_drive_folder_url)) {
-            $eventDateStr = $proposal->event_date ? $proposal->event_date->format('Y-m-d') : now()->format('Y-m-d');
+            $eventDateStr = $proposal->event_date ? \Carbon\Carbon::parse($proposal->event_date)->format('Y-m-d') : now()->format('Y-m-d');
             $schoolTarget = $proposal->school?->name ?? $proposal->school_name ?? 'Sekolah';
             $proposal->google_drive_folder_url = \App\Services\GoogleDriveService::buildFolderUrlForSchool($schoolTarget, $eventDateStr);
         }
