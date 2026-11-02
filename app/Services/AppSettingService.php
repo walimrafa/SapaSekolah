@@ -75,7 +75,7 @@ class AppSettingService
             'menu_gis' => 'Data Sekolah',
             'badge_gis' => 'GIS',
             'submenu_map' => 'Peta GIS',
-            'submenu_schools' => 'Data Sekolah',
+            'submenu_schools' => 'Daftar Sekolah',
             'submenu_priorities' => 'Prioritas',
 
             // 3. Interaksi & Kontak (Customer Service)
@@ -85,47 +85,47 @@ class AppSettingService
 
             // 4. Operasional Lapangan (Field)
             'menu_field' => 'Operasional',
-            'submenu_visit_plans' => 'Rencana Kunjungan',
-            'submenu_visits' => 'Data Kunjungan',
+            'submenu_visit_plans' => 'Rencana',
+            'submenu_visits' => 'Kunjungan',
             'submenu_field_followups' => 'Follow Up',
-            'submenu_socializations_completed' => 'Sudah Sosialisasi',
+            'submenu_socializations_completed' => 'Sosialisasi',
             'submenu_marketing_routes' => 'Rute Mobil',
-            'submenu_activities' => 'Aktivitas Event',
+            'submenu_activities' => 'Aktivitas',
 
             // 5. CRM (Prospek & Konversi)
             'menu_crm' => 'Prospek & CRM',
             'badge_crm' => 'CRM',
-            'submenu_prospects' => 'Data Prospek',
+            'submenu_prospects' => 'Prospek',
             'submenu_new_students' => 'Mahasiswa Baru',
             'submenu_questionnaires' => 'Kuisioner',
-            'submenu_student_followups' => 'Follow Up Siswa',
-            'submenu_study_programs' => 'Program Studi',
-            'submenu_reports' => 'Laporan Utama',
+            'submenu_student_followups' => 'Follow Up',
+            'submenu_study_programs' => 'Prodi',
+            'submenu_reports' => 'Laporan',
 
             // 6. Support Event Sekolah
             'menu_events' => 'Support Event',
             'badge_events' => 'Event',
-            'submenu_event_proposals' => 'Proposal Masuk',
-            'submenu_event_reports' => 'Laporan Event',
+            'submenu_event_proposals' => 'Proposal',
+            'submenu_event_reports' => 'Laporan',
             'submenu_event_students' => 'Hasil Event',
 
             // 7. Informasi PMB
             'menu_pmb' => 'Info PMB',
             'badge_pmb' => 'UBSI',
-            'submenu_pmb_portal' => 'Portal PMB',
+            'submenu_pmb_portal' => 'Portal',
             'submenu_ebrochures' => 'E-Brosur',
-            'submenu_pmb_web' => 'Website PMB',
+            'submenu_pmb_web' => 'Website',
             'submenu_pmb_campus' => 'Biaya Kuliah',
-            'submenu_pmb_schedule' => 'Jadwal PMB',
+            'submenu_pmb_schedule' => 'Jadwal',
             'submenu_pmb_procedure' => 'Alur Daftar',
-            'submenu_pmb_scholarship' => 'Info Beasiswa',
+            'submenu_pmb_scholarship' => 'Beasiswa',
 
             // 8. Sistem & Master
             'menu_master' => 'Master & Sistem',
-            'submenu_master_data' => 'Master Wilayah',
-            'submenu_users' => 'Kelola User',
+            'submenu_master_data' => 'Wilayah',
+            'submenu_users' => 'User',
             'submenu_qr_codes' => 'QR Code',
-            'submenu_whatsapp' => 'Notifikasi WA',
+            'submenu_whatsapp' => 'WhatsApp',
             'submenu_settings' => 'Pengaturan',
             'submenu_activity_logs' => 'Log Aktivitas',
             'submenu_period_closing' => 'Tutup Periode',

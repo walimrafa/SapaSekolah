@@ -292,13 +292,13 @@
                         :class="activeTab === 'pmb' ? 'bg-slate-900 text-white font-bold shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 font-semibold'"
                         class="px-3 py-1.5 rounded-xl transition flex items-center gap-1.5">
                         <i data-lucide="graduation-cap" class="w-3.5 h-3.5 text-amber-400"></i>
-                        <span>Informasi PMB</span>
+                        <span>Info PMB</span>
                     </button>
                     <button type="button" @click="activeTab = 'master'"
                         :class="activeTab === 'master' ? 'bg-slate-900 text-white font-bold shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 font-semibold'"
                         class="px-3 py-1.5 rounded-xl transition flex items-center gap-1.5">
                         <i data-lucide="settings-2" class="w-3.5 h-3.5 text-rose-400"></i>
-                        <span>Sistem &amp; Master</span>
+                        <span>Master &amp; Sistem</span>
                     </button>
                 </div>
 
@@ -327,8 +327,8 @@
                             <div>
                                 <label class="block font-semibold text-slate-600 mb-1">Nama Menu Utama (Accordion)</label>
                                 <input type="text" name="sidebar_labels[menu_gis]"
-                                    value="{{ old('sidebar_labels.menu_gis', $settings['sidebar_labels']['menu_gis'] ?? 'Data & GIS Sekolah') }}"
-                                    data-default="Data & GIS Sekolah" placeholder="Default: Data & GIS Sekolah"
+                                    value="{{ old('sidebar_labels.menu_gis', $settings['sidebar_labels']['menu_gis'] ?? 'Data Sekolah') }}"
+                                    data-default="Data Sekolah" placeholder="Default: Data Sekolah"
                                     class="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold">
                             </div>
                             <div>
@@ -346,22 +346,22 @@
                                 <div>
                                     <label class="block text-[11px] font-semibold text-slate-600 mb-1">Sub-Menu Peta</label>
                                     <input type="text" name="sidebar_labels[submenu_map]"
-                                        value="{{ old('sidebar_labels.submenu_map', $settings['sidebar_labels']['submenu_map'] ?? 'Peta Sekolah') }}"
-                                        data-default="Peta Sekolah" placeholder="Peta Sekolah"
+                                        value="{{ old('sidebar_labels.submenu_map', $settings['sidebar_labels']['submenu_map'] ?? 'Peta GIS') }}"
+                                        data-default="Peta GIS" placeholder="Peta GIS"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                                 <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Sub-Menu Data Sekolah</label>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Sub-Menu Daftar Sekolah</label>
                                     <input type="text" name="sidebar_labels[submenu_schools]"
-                                        value="{{ old('sidebar_labels.submenu_schools', $settings['sidebar_labels']['submenu_schools'] ?? 'Data Sekolah') }}"
-                                        data-default="Data Sekolah" placeholder="Data Sekolah"
+                                        value="{{ old('sidebar_labels.submenu_schools', $settings['sidebar_labels']['submenu_schools'] ?? 'Daftar Sekolah') }}"
+                                        data-default="Daftar Sekolah" placeholder="Daftar Sekolah"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                                 <div>
                                     <label class="block text-[11px] font-semibold text-slate-600 mb-1">Sub-Menu Prioritas</label>
                                     <input type="text" name="sidebar_labels[submenu_priorities]"
-                                        value="{{ old('sidebar_labels.submenu_priorities', $settings['sidebar_labels']['submenu_priorities'] ?? 'Prioritas Sekolah') }}"
-                                        data-default="Prioritas Sekolah" placeholder="Prioritas Sekolah"
+                                        value="{{ old('sidebar_labels.submenu_priorities', $settings['sidebar_labels']['submenu_priorities'] ?? 'Prioritas') }}"
+                                        data-default="Prioritas" placeholder="Prioritas"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                             </div>
@@ -379,8 +379,8 @@
                         <div>
                             <label class="block font-semibold text-slate-600 mb-1">Nama Menu Utama (Accordion)</label>
                             <input type="text" name="sidebar_labels[menu_field]"
-                                value="{{ old('sidebar_labels.menu_field', $settings['sidebar_labels']['menu_field'] ?? 'Operasional Lapangan') }}"
-                                data-default="Operasional Lapangan" placeholder="Operasional Lapangan"
+                                value="{{ old('sidebar_labels.menu_field', $settings['sidebar_labels']['menu_field'] ?? 'Operasional') }}"
+                                data-default="Operasional" placeholder="Operasional"
                                 class="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold">
                         </div>
 
@@ -388,10 +388,10 @@
                             <p class="text-[11px] font-bold text-slate-500 mb-3">Sub-Menu Operasional Lapangan:</p>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                                 <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Rencana Kunjungan</label>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Rencana</label>
                                     <input type="text" name="sidebar_labels[submenu_visit_plans]"
-                                        value="{{ old('sidebar_labels.submenu_visit_plans', $settings['sidebar_labels']['submenu_visit_plans'] ?? 'Rencana Kunjungan') }}"
-                                        data-default="Rencana Kunjungan" placeholder="Rencana Kunjungan"
+                                        value="{{ old('sidebar_labels.submenu_visit_plans', $settings['sidebar_labels']['submenu_visit_plans'] ?? 'Rencana') }}"
+                                        data-default="Rencana" placeholder="Rencana"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                                 <div>
@@ -409,24 +409,24 @@
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                                 <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Sekolah Sudah Sosialisasi</label>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Sosialisasi</label>
                                     <input type="text" name="sidebar_labels[submenu_socializations_completed]"
-                                        value="{{ old('sidebar_labels.submenu_socializations_completed', $settings['sidebar_labels']['submenu_socializations_completed'] ?? 'Sekolah Sudah Sosialisasi') }}"
-                                        data-default="Sekolah Sudah Sosialisasi" placeholder="Sekolah Sudah Sosialisasi"
+                                        value="{{ old('sidebar_labels.submenu_socializations_completed', $settings['sidebar_labels']['submenu_socializations_completed'] ?? 'Sosialisasi') }}"
+                                        data-default="Sosialisasi" placeholder="Sosialisasi"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                                 <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Rute Marketing</label>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Rute Mobil</label>
                                     <input type="text" name="sidebar_labels[submenu_marketing_routes]"
-                                        value="{{ old('sidebar_labels.submenu_marketing_routes', $settings['sidebar_labels']['submenu_marketing_routes'] ?? 'Rute Marketing') }}"
-                                        data-default="Rute Marketing" placeholder="Rute Marketing"
+                                        value="{{ old('sidebar_labels.submenu_marketing_routes', $settings['sidebar_labels']['submenu_marketing_routes'] ?? 'Rute Mobil') }}"
+                                        data-default="Rute Mobil" placeholder="Rute Mobil"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                                 <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Aktivitas Marketing</label>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Aktivitas</label>
                                     <input type="text" name="sidebar_labels[submenu_activities]"
-                                        value="{{ old('sidebar_labels.submenu_activities', $settings['sidebar_labels']['submenu_activities'] ?? 'Aktivitas Marketing') }}"
-                                        data-default="Aktivitas Marketing" placeholder="Aktivitas Marketing"
+                                        value="{{ old('sidebar_labels.submenu_activities', $settings['sidebar_labels']['submenu_activities'] ?? 'Aktivitas') }}"
+                                        data-default="Aktivitas" placeholder="Aktivitas"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                             </div>
@@ -436,47 +436,47 @@
                     <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4">
                         <div class="font-bold text-slate-800 flex items-center gap-2">
                             <i data-lucide="phone-call" class="w-4 h-4 text-emerald-500"></i>
-                            <span>Kelompok Khusus Customer Service (Interaksi &amp; Kontak)</span>
+                            <span>Kelompok Khusus Customer Service (Kontak &amp; CS)</span>
                         </div>
                         <div>
                             <label class="block font-semibold text-slate-600 mb-1">Nama Menu Utama CS (Accordion)</label>
                             <input type="text" name="sidebar_labels[menu_cs_interactions]"
-                                value="{{ old('sidebar_labels.menu_cs_interactions', $settings['sidebar_labels']['menu_cs_interactions'] ?? 'Interaksi & Kontak') }}"
-                                data-default="Interaksi & Kontak" placeholder="Interaksi & Kontak"
+                                value="{{ old('sidebar_labels.menu_cs_interactions', $settings['sidebar_labels']['menu_cs_interactions'] ?? 'Kontak & CS') }}"
+                                data-default="Kontak & CS" placeholder="Kontak & CS"
                                 class="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold">
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-slate-200">
                             <div>
-                                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Sub-Menu Follow Up Sekolah</label>
+                                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Sub-Menu Follow Up</label>
                                 <input type="text" name="sidebar_labels[submenu_cs_followups]"
-                                    value="{{ old('sidebar_labels.submenu_cs_followups', $settings['sidebar_labels']['submenu_cs_followups'] ?? 'Follow Up Sekolah') }}"
-                                    data-default="Follow Up Sekolah" placeholder="Follow Up Sekolah"
+                                    value="{{ old('sidebar_labels.submenu_cs_followups', $settings['sidebar_labels']['submenu_cs_followups'] ?? 'Follow Up') }}"
+                                    data-default="Follow Up" placeholder="Follow Up"
                                     class="w-full px-3 py-2 rounded-xl border border-slate-300">
                             </div>
                             <div>
-                                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Sub-Menu Master QR Code (CS)</label>
+                                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Sub-Menu QR Code</label>
                                 <input type="text" name="sidebar_labels[submenu_cs_qrcodes]"
-                                    value="{{ old('sidebar_labels.submenu_cs_qrcodes', $settings['sidebar_labels']['submenu_cs_qrcodes'] ?? 'Master QR Code') }}"
-                                    data-default="Master QR Code" placeholder="Master QR Code"
+                                    value="{{ old('sidebar_labels.submenu_cs_qrcodes', $settings['sidebar_labels']['submenu_cs_qrcodes'] ?? 'QR Code') }}"
+                                    data-default="QR Code" placeholder="QR Code"
                                     class="w-full px-3 py-2 rounded-xl border border-slate-300">
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Tab 3: CRM (Prospek & Konversi) -->
+                <!-- Tab 3: CRM (Prospek & CRM) -->
                 <div x-show="activeTab === 'crm'" class="space-y-4 text-xs" style="display: none;">
                     <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4">
                         <div class="font-bold text-slate-800 flex items-center gap-2">
                             <i data-lucide="users" class="w-4 h-4 text-emerald-600"></i>
-                            <span>Kelompok Accordion CRM &amp; Prospek Siswa</span>
+                            <span>Kelompok Accordion Prospek &amp; CRM</span>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block font-semibold text-slate-600 mb-1">Nama Menu Utama (Accordion)</label>
                                 <input type="text" name="sidebar_labels[menu_crm]"
-                                    value="{{ old('sidebar_labels.menu_crm', $settings['sidebar_labels']['menu_crm'] ?? 'Prospek & Konversi') }}"
-                                    data-default="Prospek & Konversi" placeholder="Prospek & Konversi"
+                                    value="{{ old('sidebar_labels.menu_crm', $settings['sidebar_labels']['menu_crm'] ?? 'Prospek & CRM') }}"
+                                    data-default="Prospek & CRM" placeholder="Prospek & CRM"
                                     class="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold">
                             </div>
                             <div>
@@ -492,10 +492,10 @@
                             <p class="text-[11px] font-bold text-slate-500 mb-3">Sub-Menu Navigasi CRM:</p>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                                 <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Data Prospek</label>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Prospek</label>
                                     <input type="text" name="sidebar_labels[submenu_prospects]"
-                                        value="{{ old('sidebar_labels.submenu_prospects', $settings['sidebar_labels']['submenu_prospects'] ?? 'Data Prospek') }}"
-                                        data-default="Data Prospek" placeholder="Data Prospek"
+                                        value="{{ old('sidebar_labels.submenu_prospects', $settings['sidebar_labels']['submenu_prospects'] ?? 'Prospek') }}"
+                                        data-default="Prospek" placeholder="Prospek"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                                 <div>
@@ -506,31 +506,31 @@
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                                 <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Hasil Kuisioner</label>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Kuisioner</label>
                                     <input type="text" name="sidebar_labels[submenu_questionnaires]"
-                                        value="{{ old('sidebar_labels.submenu_questionnaires', $settings['sidebar_labels']['submenu_questionnaires'] ?? 'Hasil Kuisioner') }}"
-                                        data-default="Hasil Kuisioner" placeholder="Hasil Kuisioner"
+                                        value="{{ old('sidebar_labels.submenu_questionnaires', $settings['sidebar_labels']['submenu_questionnaires'] ?? 'Kuisioner') }}"
+                                        data-default="Kuisioner" placeholder="Kuisioner"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                                 <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Follow Up Siswa</label>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Follow Up</label>
                                     <input type="text" name="sidebar_labels[submenu_student_followups]"
-                                        value="{{ old('sidebar_labels.submenu_student_followups', $settings['sidebar_labels']['submenu_student_followups'] ?? 'Follow Up Siswa') }}"
-                                        data-default="Follow Up Siswa" placeholder="Follow Up Siswa"
+                                        value="{{ old('sidebar_labels.submenu_student_followups', $settings['sidebar_labels']['submenu_student_followups'] ?? 'Follow Up') }}"
+                                        data-default="Follow Up" placeholder="Follow Up"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                                 <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Program Studi</label>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Prodi</label>
                                     <input type="text" name="sidebar_labels[submenu_study_programs]"
-                                        value="{{ old('sidebar_labels.submenu_study_programs', $settings['sidebar_labels']['submenu_study_programs'] ?? 'Program Studi') }}"
-                                        data-default="Program Studi" placeholder="Program Studi"
+                                        value="{{ old('sidebar_labels.submenu_study_programs', $settings['sidebar_labels']['submenu_study_programs'] ?? 'Prodi') }}"
+                                        data-default="Prodi" placeholder="Prodi"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                                 <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Laporan &amp; Analytics</label>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Laporan</label>
                                     <input type="text" name="sidebar_labels[submenu_reports]"
-                                        value="{{ old('sidebar_labels.submenu_reports', $settings['sidebar_labels']['submenu_reports'] ?? 'Laporan & Analytics') }}"
-                                        data-default="Laporan & Analytics" placeholder="Laporan & Analytics"
+                                        value="{{ old('sidebar_labels.submenu_reports', $settings['sidebar_labels']['submenu_reports'] ?? 'Laporan') }}"
+                                        data-default="Laporan" placeholder="Laporan"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                             </div>
@@ -543,14 +543,14 @@
                     <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4">
                         <div class="font-bold text-slate-800 flex items-center gap-2">
                             <i data-lucide="sparkles" class="w-4 h-4 text-purple-600"></i>
-                            <span>Kelompok Accordion Support Event Sekolah</span>
+                            <span>Kelompok Accordion Support Event</span>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block font-semibold text-slate-600 mb-1">Nama Menu Utama (Accordion)</label>
                                 <input type="text" name="sidebar_labels[menu_events]"
-                                    value="{{ old('sidebar_labels.menu_events', $settings['sidebar_labels']['menu_events'] ?? 'Support Event Sekolah') }}"
-                                    data-default="Support Event Sekolah" placeholder="Support Event Sekolah"
+                                    value="{{ old('sidebar_labels.menu_events', $settings['sidebar_labels']['menu_events'] ?? 'Support Event') }}"
+                                    data-default="Support Event" placeholder="Support Event"
                                     class="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold">
                             </div>
                             <div>
@@ -566,24 +566,24 @@
                             <p class="text-[11px] font-bold text-slate-500 mb-3">Sub-Menu Navigasi Event:</p>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                                 <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Data Proposal Masuk</label>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Proposal</label>
                                     <input type="text" name="sidebar_labels[submenu_event_proposals]"
-                                        value="{{ old('sidebar_labels.submenu_event_proposals', $settings['sidebar_labels']['submenu_event_proposals'] ?? 'Data Proposal Masuk') }}"
-                                        data-default="Data Proposal Masuk" placeholder="Data Proposal Masuk"
+                                        value="{{ old('sidebar_labels.submenu_event_proposals', $settings['sidebar_labels']['submenu_event_proposals'] ?? 'Proposal') }}"
+                                        data-default="Proposal" placeholder="Proposal"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                                 <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Laporan Suport Kegiatan</label>
-                                    <input type="text" name="sidebar_labels[submenu_event_reports]"
-                                        value="{{ old('sidebar_labels.submenu_event_reports', $settings['sidebar_labels']['submenu_event_reports'] ?? 'Laporan Suport Kegiatan') }}"
-                                        data-default="Laporan Suport Kegiatan" placeholder="Laporan Suport Kegiatan"
-                                        class="w-full px-3 py-2 rounded-xl border border-slate-300">
-                                </div>
-                                <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Hasil Support Event</label>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Hasil Event</label>
                                     <input type="text" name="sidebar_labels[submenu_event_students]"
-                                        value="{{ old('sidebar_labels.submenu_event_students', $settings['sidebar_labels']['submenu_event_students'] ?? 'Hasil Support Event') }}"
-                                        data-default="Hasil Support Event" placeholder="Hasil Support Event"
+                                        value="{{ old('sidebar_labels.submenu_event_students', $settings['sidebar_labels']['submenu_event_students'] ?? 'Hasil Event') }}"
+                                        data-default="Hasil Event" placeholder="Hasil Event"
+                                        class="w-full px-3 py-2 rounded-xl border border-slate-300">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Laporan</label>
+                                    <input type="text" name="sidebar_labels[submenu_event_reports]"
+                                        value="{{ old('sidebar_labels.submenu_event_reports', $settings['sidebar_labels']['submenu_event_reports'] ?? 'Laporan') }}"
+                                        data-default="Laporan" placeholder="Laporan"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                             </div>
@@ -596,14 +596,14 @@
                     <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4">
                         <div class="font-bold text-slate-800 flex items-center gap-2">
                             <i data-lucide="graduation-cap" class="w-4 h-4 text-amber-500"></i>
-                            <span>Kelompok Accordion Informasi PMB</span>
+                            <span>Kelompok Accordion Info PMB</span>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block font-semibold text-slate-600 mb-1">Nama Menu Utama (Accordion)</label>
                                 <input type="text" name="sidebar_labels[menu_pmb]"
-                                    value="{{ old('sidebar_labels.menu_pmb', $settings['sidebar_labels']['menu_pmb'] ?? 'Informasi PMB') }}"
-                                    data-default="Informasi PMB" placeholder="Informasi PMB"
+                                    value="{{ old('sidebar_labels.menu_pmb', $settings['sidebar_labels']['menu_pmb'] ?? 'Info PMB') }}"
+                                    data-default="Info PMB" placeholder="Info PMB"
                                     class="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold">
                             </div>
                             <div>
@@ -619,52 +619,52 @@
                             <p class="text-[11px] font-bold text-slate-500 mb-3">Sub-Menu Internal &amp; Tautan PMB:</p>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                                 <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Pusat Info &amp; Portal</label>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Portal</label>
                                     <input type="text" name="sidebar_labels[submenu_pmb_portal]"
-                                        value="{{ old('sidebar_labels.submenu_pmb_portal', $settings['sidebar_labels']['submenu_pmb_portal'] ?? 'Pusat Info & Portal') }}"
-                                        data-default="Pusat Info & Portal" placeholder="Pusat Info & Portal"
+                                        value="{{ old('sidebar_labels.submenu_pmb_portal', $settings['sidebar_labels']['submenu_pmb_portal'] ?? 'Portal') }}"
+                                        data-default="Portal" placeholder="Portal"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                                 <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">E-Brosur PMB</label>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">E-Brosur</label>
                                     <input type="text" name="sidebar_labels[submenu_ebrochures]"
-                                        value="{{ old('sidebar_labels.submenu_ebrochures', $settings['sidebar_labels']['submenu_ebrochures'] ?? 'E-Brosur PMB') }}"
-                                        data-default="E-Brosur PMB" placeholder="E-Brosur PMB"
+                                        value="{{ old('sidebar_labels.submenu_ebrochures', $settings['sidebar_labels']['submenu_ebrochures'] ?? 'E-Brosur') }}"
+                                        data-default="E-Brosur" placeholder="E-Brosur"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                                 <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Link: Website PMB</label>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Website</label>
                                     <input type="text" name="sidebar_labels[submenu_pmb_web]"
-                                        value="{{ old('sidebar_labels.submenu_pmb_web', $settings['sidebar_labels']['submenu_pmb_web'] ?? 'Website PMB UBSI') }}"
-                                        data-default="Website PMB UBSI" placeholder="Website PMB UBSI"
+                                        value="{{ old('sidebar_labels.submenu_pmb_web', $settings['sidebar_labels']['submenu_pmb_web'] ?? 'Website') }}"
+                                        data-default="Website" placeholder="Website"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                                 <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Link: Kampus &amp; Biaya Kuliah</label>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Biaya Kuliah</label>
                                     <input type="text" name="sidebar_labels[submenu_pmb_campus]"
-                                        value="{{ old('sidebar_labels.submenu_pmb_campus', $settings['sidebar_labels']['submenu_pmb_campus'] ?? 'Kampus & Biaya Kuliah') }}"
-                                        data-default="Kampus & Biaya Kuliah" placeholder="Kampus & Biaya Kuliah"
+                                        value="{{ old('sidebar_labels.submenu_pmb_campus', $settings['sidebar_labels']['submenu_pmb_campus'] ?? 'Biaya Kuliah') }}"
+                                        data-default="Biaya Kuliah" placeholder="Biaya Kuliah"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                                 <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Link: Jadwal &amp; Gelombang</label>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Jadwal</label>
                                     <input type="text" name="sidebar_labels[submenu_pmb_schedule]"
-                                        value="{{ old('sidebar_labels.submenu_pmb_schedule', $settings['sidebar_labels']['submenu_pmb_schedule'] ?? 'Jadwal & Gelombang') }}"
-                                        data-default="Jadwal & Gelombang" placeholder="Jadwal & Gelombang"
+                                        value="{{ old('sidebar_labels.submenu_pmb_schedule', $settings['sidebar_labels']['submenu_pmb_schedule'] ?? 'Jadwal') }}"
+                                        data-default="Jadwal" placeholder="Jadwal"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                                 <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Link: Alur Pendaftaran</label>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Alur Daftar</label>
                                     <input type="text" name="sidebar_labels[submenu_pmb_procedure]"
-                                        value="{{ old('sidebar_labels.submenu_pmb_procedure', $settings['sidebar_labels']['submenu_pmb_procedure'] ?? 'Alur Pendaftaran') }}"
-                                        data-default="Alur Pendaftaran" placeholder="Alur Pendaftaran"
+                                        value="{{ old('sidebar_labels.submenu_pmb_procedure', $settings['sidebar_labels']['submenu_pmb_procedure'] ?? 'Alur Daftar') }}"
+                                        data-default="Alur Daftar" placeholder="Alur Daftar"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                                 <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Link: Beasiswa PMB</label>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Beasiswa</label>
                                     <input type="text" name="sidebar_labels[submenu_pmb_scholarship]"
-                                        value="{{ old('sidebar_labels.submenu_pmb_scholarship', $settings['sidebar_labels']['submenu_pmb_scholarship'] ?? 'Beasiswa UBSI 2026') }}"
-                                        data-default="Beasiswa UBSI 2026" placeholder="Beasiswa UBSI 2026"
+                                        value="{{ old('sidebar_labels.submenu_pmb_scholarship', $settings['sidebar_labels']['submenu_pmb_scholarship'] ?? 'Beasiswa') }}"
+                                        data-default="Beasiswa" placeholder="Beasiswa"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                             </div>
@@ -677,45 +677,45 @@
                     <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4">
                         <div class="font-bold text-slate-800 flex items-center gap-2">
                             <i data-lucide="settings-2" class="w-4 h-4 text-rose-500"></i>
-                            <span>Kelompok Accordion Sistem &amp; Master</span>
+                            <span>Kelompok Accordion Master &amp; Sistem</span>
                         </div>
                         <div>
                             <label class="block font-semibold text-slate-600 mb-1">Nama Menu Utama (Accordion)</label>
                             <input type="text" name="sidebar_labels[menu_master]"
-                                value="{{ old('sidebar_labels.menu_master', $settings['sidebar_labels']['menu_master'] ?? 'Sistem & Master') }}"
-                                data-default="Sistem & Master" placeholder="Sistem & Master"
+                                value="{{ old('sidebar_labels.menu_master', $settings['sidebar_labels']['menu_master'] ?? 'Master & Sistem') }}"
+                                data-default="Master & Sistem" placeholder="Master & Sistem"
                                 class="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold">
                         </div>
 
                         <div class="pt-2 border-t border-slate-200">
-                            <p class="text-[11px] font-bold text-slate-500 mb-3">Sub-Menu Navigasi Sistem &amp; Master:</p>
+                            <p class="text-[11px] font-bold text-slate-500 mb-3">Sub-Menu Navigasi Master &amp; Sistem:</p>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                                 <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Master Data</label>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Wilayah</label>
                                     <input type="text" name="sidebar_labels[submenu_master_data]"
-                                        value="{{ old('sidebar_labels.submenu_master_data', $settings['sidebar_labels']['submenu_master_data'] ?? 'Master Data') }}"
-                                        data-default="Master Data" placeholder="Master Data"
+                                        value="{{ old('sidebar_labels.submenu_master_data', $settings['sidebar_labels']['submenu_master_data'] ?? 'Wilayah') }}"
+                                        data-default="Wilayah" placeholder="Wilayah"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                                 <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">User Management</label>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">User</label>
                                     <input type="text" name="sidebar_labels[submenu_users]"
-                                        value="{{ old('sidebar_labels.submenu_users', $settings['sidebar_labels']['submenu_users'] ?? 'User Management') }}"
-                                        data-default="User Management" placeholder="User Management"
+                                        value="{{ old('sidebar_labels.submenu_users', $settings['sidebar_labels']['submenu_users'] ?? 'User') }}"
+                                        data-default="User" placeholder="User"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                                 <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Master QR Code</label>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">QR Code</label>
                                     <input type="text" name="sidebar_labels[submenu_qr_codes]"
-                                        value="{{ old('sidebar_labels.submenu_qr_codes', $settings['sidebar_labels']['submenu_qr_codes'] ?? 'Master QR Code') }}"
-                                        data-default="Master QR Code" placeholder="Master QR Code"
+                                        value="{{ old('sidebar_labels.submenu_qr_codes', $settings['sidebar_labels']['submenu_qr_codes'] ?? 'QR Code') }}"
+                                        data-default="QR Code" placeholder="QR Code"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                                 <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Notifikasi WA</label>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">WhatsApp</label>
                                     <input type="text" name="sidebar_labels[submenu_whatsapp]"
-                                        value="{{ old('sidebar_labels.submenu_whatsapp', $settings['sidebar_labels']['submenu_whatsapp'] ?? 'Notifikasi WA') }}"
-                                        data-default="Notifikasi WA" placeholder="Notifikasi WA"
+                                        value="{{ old('sidebar_labels.submenu_whatsapp', $settings['sidebar_labels']['submenu_whatsapp'] ?? 'WhatsApp') }}"
+                                        data-default="WhatsApp" placeholder="WhatsApp"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                                 <div>
@@ -723,6 +723,13 @@
                                     <input type="text" name="sidebar_labels[submenu_settings]"
                                         value="{{ old('sidebar_labels.submenu_settings', $settings['sidebar_labels']['submenu_settings'] ?? 'Pengaturan') }}"
                                         data-default="Pengaturan" placeholder="Pengaturan"
+                                        class="w-full px-3 py-2 rounded-xl border border-slate-300">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Log Aktivitas</label>
+                                    <input type="text" name="sidebar_labels[submenu_activity_logs]"
+                                        value="{{ old('sidebar_labels.submenu_activity_logs', $settings['sidebar_labels']['submenu_activity_logs'] ?? 'Log Aktivitas') }}"
+                                        data-default="Log Aktivitas" placeholder="Log Aktivitas"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                                 <div>

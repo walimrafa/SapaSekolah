@@ -87,7 +87,7 @@
                 <a href="{{ route('schools.index') }}"
                     class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('schools.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <i data-lucide="table" class="w-3.5 h-3.5"></i>
-                    <span>{{ $lbl('submenu_schools', 'Data Sekolah') }}</span>
+                    <span>{{ $lbl('submenu_schools', 'Daftar Sekolah') }}</span>
                 </a>
 
                 @if(!auth()->user()->isCustomerService())
@@ -158,13 +158,13 @@
                 <a href="{{ route('visit-plans.index') }}"
                     class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('visit-plans.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
-                    <span>{{ $lbl('submenu_visit_plans', 'Rencana Kunjungan') }}</span>
+                    <span>{{ $lbl('submenu_visit_plans', 'Rencana') }}</span>
                 </a>
 
                 <a href="{{ route('visits.index') }}"
                     class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('visits.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
-                    <span>{{ $lbl('submenu_visits', 'Data Kunjungan') }}</span>
+                    <span>{{ $lbl('submenu_visits', 'Kunjungan') }}</span>
                 </a>
 
                 <a href="{{ route('follow-ups.index') }}"
@@ -176,7 +176,7 @@
                 <a href="{{ route('socializations.completed.index') }}"
                     class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('socializations.completed.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <i data-lucide="presentation" class="w-3.5 h-3.5 text-emerald-400"></i>
-                    <span>{{ $lbl('submenu_socializations_completed', 'Sudah Sosialisasi') }}</span>
+                    <span>{{ $lbl('submenu_socializations_completed', 'Sosialisasi') }}</span>
                 </a>
 
                 <a href="{{ route('marketing-routes.index') }}"
@@ -188,7 +188,7 @@
                 <a href="{{ route('activities.index') }}"
                     class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('activities.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <i data-lucide="megaphone" class="w-3.5 h-3.5 text-amber-400"></i>
-                    <span>{{ $lbl('submenu_activities', 'Aktivitas Event') }}</span>
+                    <span>{{ $lbl('submenu_activities', 'Aktivitas') }}</span>
                 </a>
             </div>
         </div>
@@ -221,7 +221,7 @@
                     class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('prospects.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <div class="flex items-center space-x-2.5">
                         <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
-                        <span>{{ $lbl('submenu_prospects', 'Data Prospek') }}</span>
+                        <span>{{ $lbl('submenu_prospects', 'Prospek') }}</span>
                     </div>
                     <span class="px-1.5 py-0.2 text-[9px] font-bold bg-slate-800 text-slate-300 rounded">{{ \App\Models\Prospect::where('status', '!=', 'mahasiswa')->count() }}</span>
                 </a>
@@ -244,26 +244,26 @@
                 <a href="{{ route('student-follow-ups.index') }}"
                     class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('student-follow-ups.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <i data-lucide="user-check" class="w-3.5 h-3.5 text-emerald-400"></i>
-                    <span>{{ $lbl('submenu_student_followups', 'Follow Up Siswa') }}</span>
+                    <span>{{ $lbl('submenu_student_followups', 'Follow Up') }}</span>
                 </a>
 
                 <a href="{{ route('study-programs.index') }}"
                     class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('study-programs.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <i data-lucide="graduation-cap" class="w-3.5 h-3.5"></i>
-                    <span>{{ $lbl('submenu_study_programs', 'Program Studi') }}</span>
+                    <span>{{ $lbl('submenu_study_programs', 'Prodi') }}</span>
                 </a>
 
                 <a href="{{ route('reports.index') }}"
                     class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('reports.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <i data-lucide="bar-chart-3" class="w-3.5 h-3.5"></i>
-                    <span>{{ $lbl('submenu_reports', 'Laporan Utama') }}</span>
+                    <span>{{ $lbl('submenu_reports', 'Laporan') }}</span>
                 </a>
 
                 <a href="{{ route('comprehensive-reports.index') }}"
                     class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('comprehensive-reports.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30 font-bold' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <div class="flex items-center space-x-2.5">
                         <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-emerald-400"></i>
-                        <span>Ekspor Khusus</span>
+                        <span>Ekspor</span>
                     </div>
                     <span class="px-1.5 py-0.2 text-[9px] font-bold bg-emerald-500/20 text-emerald-300 rounded">XLSX</span>
                 </a>
@@ -311,7 +311,7 @@
                     class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('event-proposals.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <div class="flex items-center space-x-2.5">
                         <i data-lucide="inbox" class="w-3.5 h-3.5 text-amber-400"></i>
-                        <span>{{ $lbl('submenu_event_proposals', 'Proposal Masuk') }}</span>
+                        <span>{{ $lbl('submenu_event_proposals', 'Proposal') }}</span>
                     </div>
                     @if($pendingProposalsCount > 0)
                         <span class="px-1.5 py-0.2 text-[9px] font-bold bg-amber-500/20 text-amber-300 rounded">{{ $pendingProposalsCount }}</span>
@@ -348,7 +348,7 @@
                     class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('event-reports.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <div class="flex items-center space-x-2.5">
                         <i data-lucide="clipboard-check" class="w-3.5 h-3.5 text-emerald-400"></i>
-                        <span>{{ $lbl('submenu_event_reports', 'Laporan Event') }}</span>
+                        <span>{{ $lbl('submenu_event_reports', 'Laporan') }}</span>
                     </div>
                     @php
                         $approvedEventsQuery = \App\Models\SchoolEventProposal::where('status', \App\Models\SchoolEventProposal::STATUS_DISETUJUI);
@@ -396,7 +396,7 @@
                 <a href="{{ route('pmb.index') }}"
                     class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('pmb.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <i data-lucide="layout" class="w-3.5 h-3.5 text-amber-400"></i>
-                    <span>{{ $lbl('submenu_pmb_portal', 'Portal PMB') }}</span>
+                    <span>{{ $lbl('submenu_pmb_portal', 'Portal') }}</span>
                 </a>
 
                 <a href="{{ route('e-brochures.index') }}"
@@ -412,7 +412,7 @@
                     class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 hover:bg-slate-800 hover:text-white text-slate-400 group">
                     <div class="flex items-center space-x-2.5">
                         <i data-lucide="globe" class="w-3.5 h-3.5 text-blue-400"></i>
-                        <span class="group-hover:text-white">{{ $lbl('submenu_pmb_web', 'Website PMB') }}</span>
+                        <span class="group-hover:text-white">{{ $lbl('submenu_pmb_web', 'Website') }}</span>
                     </div>
                     <i data-lucide="arrow-up-right" class="w-3 h-3 text-slate-500 group-hover:text-amber-400 transition-colors"></i>
                 </a>
@@ -430,7 +430,7 @@
                     class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 hover:bg-slate-800 hover:text-white text-slate-400 group">
                     <div class="flex items-center space-x-2.5">
                         <i data-lucide="calendar" class="w-3.5 h-3.5 text-purple-400"></i>
-                        <span class="group-hover:text-white">{{ $lbl('submenu_pmb_schedule', 'Jadwal PMB') }}</span>
+                        <span class="group-hover:text-white">{{ $lbl('submenu_pmb_schedule', 'Jadwal') }}</span>
                     </div>
                     <i data-lucide="arrow-up-right" class="w-3 h-3 text-slate-500 group-hover:text-amber-400 transition-colors"></i>
                 </a>
@@ -448,7 +448,7 @@
                     class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 hover:bg-slate-800 hover:text-white text-slate-400 group">
                     <div class="flex items-center space-x-2.5">
                         <i data-lucide="award" class="w-3.5 h-3.5 text-amber-400"></i>
-                        <span class="group-hover:text-white">{{ $lbl('submenu_pmb_scholarship', 'Info Beasiswa') }}</span>
+                        <span class="group-hover:text-white">{{ $lbl('submenu_pmb_scholarship', 'Beasiswa') }}</span>
                     </div>
                     <i data-lucide="arrow-up-right" class="w-3 h-3 text-slate-500 group-hover:text-amber-400 transition-colors"></i>
                 </a>
@@ -485,7 +485,7 @@
                 <a href="{{ route('master-data.index') }}"
                     class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('master-data.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <i data-lucide="database" class="w-3.5 h-3.5"></i>
-                    <span>{{ $lbl('submenu_master_data', 'Master Wilayah') }}</span>
+                    <span>{{ $lbl('submenu_master_data', 'Wilayah') }}</span>
                 </a>
                 @endif
 
@@ -493,7 +493,7 @@
                 <a href="{{ route('users.index') }}"
                     class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('users.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
-                    <span>{{ $lbl('submenu_users', 'Kelola User') }}</span>
+                    <span>{{ $lbl('submenu_users', 'User') }}</span>
                 </a>
                 @endif
 
@@ -510,7 +510,7 @@
                     class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('whatsapp-notifications.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <div class="flex items-center space-x-2.5">
                         <i data-lucide="message-square" class="w-3.5 h-3.5 text-emerald-400"></i>
-                        <span>{{ $lbl('submenu_whatsapp', 'Notifikasi WA') }}</span>
+                        <span>{{ $lbl('submenu_whatsapp', 'WhatsApp') }}</span>
                     </div>
                     @php
                         $todayWaCount = \App\Models\WhatsAppNotificationLog::whereDate('created_at', now()->toDateString())->count();
