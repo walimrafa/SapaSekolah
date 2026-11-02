@@ -481,7 +481,7 @@
                 x-transition:leave-end="opacity-0 -translate-y-1"
                 class="pl-4 ml-4 border-l border-slate-800 space-y-1 pt-1" style="display: none;">
                 
-                @if(auth()->user()->isAdmin() || auth()->user()->hasRole('Pimpinan'))
+                @if(auth()->user()->isAdmin() || auth()->user()->hasRole('Pimpinan') || auth()->user()->hasRole('Koordinator Marketing'))
                 <!-- Master Kampus -->
                 <a href="{{ route('master-data.index', ['tab' => 'campuses']) }}"
                     class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ (request()->routeIs('master-data.*') && request('tab', 'campuses') === 'campuses') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30 font-bold' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
@@ -501,6 +501,13 @@
                     class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ (request()->routeIs('master-data.*') && request('tab') === 'wilayah') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30 font-bold' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <i data-lucide="map-pin" class="w-3.5 h-3.5 text-amber-400"></i>
                     <span>{{ $lbl('submenu_master_data', 'Master Wilayah') }}</span>
+                </a>
+
+                <!-- Kontrol Portal Publik -->
+                <a href="{{ route('master-data.index', ['tab' => 'portals']) }}"
+                    class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ (request()->routeIs('master-data.*') && request('tab') === 'portals') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30 font-bold' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-rose-400"></i>
+                    <span>{{ $lbl('submenu_portals', 'Portal Publik') }}</span>
                 </a>
                 @endif
 
