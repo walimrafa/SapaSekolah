@@ -372,7 +372,7 @@ class FollowUpController extends Controller
 
         // Find existing MarketingActivity linked through SchoolActivity or by name and date
         $existingSchoolActivity = SchoolActivity::where('school_id', $followUp->school_id)
-            ->whereDate('date', $completedDate)
+            ->where('date', $completedDate)
             ->first();
 
         $activity = null;
