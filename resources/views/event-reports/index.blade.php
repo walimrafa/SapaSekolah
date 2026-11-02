@@ -44,30 +44,52 @@
             </div>
         </div>
 
+        <!-- Campus Selector Filter Tabs (Pemisahan Karawang & Cikampek) -->
+        <div class="flex flex-wrap items-center justify-between gap-3 bg-white p-2.5 sm:p-3 rounded-2xl border border-slate-200/90 shadow-sm">
+            <div class="flex items-center space-x-2">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Kampus:</span>
+                <div class="inline-flex rounded-xl bg-slate-100 p-1">
+                    <a href="{{ route('event-reports.index', array_merge(request()->except('campus_id'), ['campus_id' => 'all'])) }}"
+                        class="px-3 py-1.5 rounded-lg text-xs font-bold transition {{ ($selectedCampusId === 'all' || !$selectedCampusId) ? 'bg-brand-navy text-white shadow-sm' : 'text-slate-600 hover:text-slate-900' }}">
+                        Semua Kampus ({{ $campusCounts['all'] ?? 0 }})
+                    </a>
+                    @foreach($campuses as $cmp)
+                        <a href="{{ route('event-reports.index', array_merge(request()->except('campus_id'), ['campus_id' => $cmp->id])) }}"
+                            class="px-3 py-1.5 rounded-lg text-xs font-bold transition {{ (string)$selectedCampusId === (string)$cmp->id ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900' }}">
+                            {{ $cmp->name }} ({{ $campusCounts[$cmp->id] ?? 0 }})
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+            <div class="text-xs text-slate-500 font-medium hidden sm:block">
+                Menampilkan laporan: <strong class="text-slate-800">{{ $selectedCampusId === 'all' || !$selectedCampusId ? 'Semua Wilayah Operasional' : ($campuses->firstWhere('id', $selectedCampusId)?->name ?? 'Wilayah Terpilih') }}</strong>
+            </div>
+        </div>
+
         <!-- Metric Stat Cards -->
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-            <a href="{{ route('event-reports.index') }}" 
+            <a href="{{ route('event-reports.index', request()->has('campus_id') ? ['campus_id' => request('campus_id')] : []) }}" 
                 class="p-4 bg-white rounded-2xl border transition hover:shadow-md {{ !request('execution_status') ? 'border-brand-500 ring-2 ring-brand-500/20' : 'border-slate-200/90' }}">
                 <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Disetujui</p>
                 <p class="text-2xl font-extrabold text-slate-900 mt-1">{{ number_format($stats['total_disetujui']) }}</p>
                 <span class="text-[11px] text-slate-500 font-medium">Event Siap Support</span>
             </a>
 
-            <a href="{{ route('event-reports.index', ['execution_status' => 'menunggu_pelaksanaan']) }}" 
+            <a href="{{ route('event-reports.index', array_merge(request()->has('campus_id') ? ['campus_id' => request('campus_id')] : [], ['execution_status' => 'menunggu_pelaksanaan'])) }}" 
                 class="p-4 bg-white rounded-2xl border transition hover:shadow-md {{ request('execution_status') === 'menunggu_pelaksanaan' ? 'border-amber-500 ring-2 ring-amber-500/20' : 'border-slate-200/90' }}">
                 <p class="text-[11px] font-bold text-amber-600 uppercase tracking-wider">Menunggu Acara</p>
                 <p class="text-2xl font-extrabold text-amber-600 mt-1">{{ number_format($stats['menunggu_pelaksanaan']) }}</p>
                 <span class="text-[11px] text-amber-700 font-medium">Jadwal Mendatang</span>
             </a>
 
-            <a href="{{ route('event-reports.index', ['execution_status' => 'sedang_berjalan']) }}" 
+            <a href="{{ route('event-reports.index', array_merge(request()->has('campus_id') ? ['campus_id' => request('campus_id')] : [], ['execution_status' => 'sedang_berjalan'])) }}" 
                 class="p-4 bg-white rounded-2xl border transition hover:shadow-md {{ request('execution_status') === 'sedang_berjalan' ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-slate-200/90' }}">
                 <p class="text-[11px] font-bold text-blue-600 uppercase tracking-wider">Sedang Berjalan</p>
                 <p class="text-2xl font-extrabold text-blue-600 mt-1">{{ number_format($stats['sedang_berjalan']) }}</p>
                 <span class="text-[11px] text-blue-700 font-medium">Dalam Pelaksanaan</span>
             </a>
 
-            <a href="{{ route('event-reports.index', ['execution_status' => 'selesai']) }}" 
+            <a href="{{ route('event-reports.index', array_merge(request()->has('campus_id') ? ['campus_id' => request('campus_id')] : [], ['execution_status' => 'selesai'])) }}" 
                 class="p-4 bg-white rounded-2xl border transition hover:shadow-md {{ request('execution_status') === 'selesai' ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-200/90' }}">
                 <p class="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Terdokumentasi</p>
                 <p class="text-2xl font-extrabold text-emerald-600 mt-1">{{ number_format($stats['selesai']) }}</p>
@@ -84,6 +106,9 @@
         <!-- Filter & Search Bar -->
         <div class="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-sm">
             <form method="GET" action="{{ route('event-reports.index') }}" class="flex flex-col md:flex-row items-center gap-3">
+                @if(request()->has('campus_id'))
+                    <input type="hidden" name="campus_id" value="{{ request('campus_id') }}">
+                @endif
                 <div class="relative flex-1 w-full">
                     <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                         <i data-lucide="search" class="w-4 h-4"></i>

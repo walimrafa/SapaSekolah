@@ -28,41 +28,62 @@
 
     <div class="relative overflow-hidden" x-data="gisMapApp()">
         <!-- Floating Header & Filters Toolbar -->
-        <div class="absolute top-4 left-4 right-4 z-20 bg-white/95 backdrop-blur-md p-3.5 rounded-2xl shadow-xl border border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
-            <!-- Search & Count -->
-            <div class="flex items-center space-x-3 flex-1 min-w-[240px]">
-                <div class="relative flex-1">
+        <div class="absolute top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 z-20 bg-white/95 backdrop-blur-md p-2.5 sm:p-3.5 rounded-2xl shadow-xl border border-slate-200/80 flex flex-col gap-2.5">
+            <!-- Top Row: Search, Count & Mobile Action Buttons -->
+            <div class="flex items-center space-x-2 w-full">
+                <div class="relative flex-1 min-w-0">
                     <input type="text" x-model="search" @input.debounce.300ms="fetchSchools()"
-                        placeholder="Cari nama sekolah / NPSN di peta..."
-                        class="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 text-slate-800">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                        <i data-lucide="search" class="w-4 h-4"></i>
+                        placeholder="Cari nama sekolah / NPSN..."
+                        class="w-full pl-8 pr-3 py-1.5 sm:py-2 text-xs rounded-xl border border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 text-slate-800">
+                    <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                        <i data-lucide="search" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
                     </div>
                 </div>
-                <span class="px-2.5 py-1.5 bg-brand-navy text-white text-xs font-extrabold rounded-xl shrink-0 shadow-sm">
-                    <span x-text="schools.length">0</span> Sekolah Dipetakan
+
+                <!-- Sekolah Count Badge -->
+                <span class="px-2 py-1.5 bg-brand-navy text-white text-[11px] font-extrabold rounded-xl shrink-0 shadow-sm hidden xs:inline-flex items-center gap-1">
+                    <span x-text="schools.length">0</span> <span class="hidden sm:inline">Sekolah</span>
                 </span>
+
+                <!-- Mobile Filter Toggle Button -->
+                <button type="button" @click="filterOpen = !filterOpen"
+                    :class="filterOpen ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-100 text-slate-700 font-bold'"
+                    class="sm:hidden px-2.5 py-1.5 rounded-xl border border-slate-300 text-xs flex items-center gap-1 shrink-0 transition cursor-pointer">
+                    <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i>
+                    <span>Filter</span>
+                </button>
+
+                <!-- Toggle Panel Button (Leaderboard) -->
+                <button @click="panelOpen = !panelOpen"
+                    :class="panelOpen ? 'bg-amber-400 text-slate-950 font-black' : 'bg-slate-900 text-white font-bold'"
+                    class="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs flex items-center space-x-1 hover:opacity-90 transition cursor-pointer shrink-0">
+                    <i data-lucide="list" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
+                    <span class="hidden sm:inline" x-text="panelOpen ? 'Tutup Panel' : 'Daftar'"></span>
+                </button>
             </div>
 
-            <!-- Filters Bar -->
-            <div class="flex flex-wrap items-center gap-2 text-xs">
+            <!-- Filters Bar (Collapsible on Mobile, Horizontal on Desktop) -->
+            <div x-show="filterOpen || window.innerWidth >= 640" 
+                x-transition
+                class="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs pt-1 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                
                 <!-- 1. Kabupaten / Kota Terintegrasi -->
                 <div class="flex items-center space-x-1.5 bg-indigo-50 border border-indigo-200/90 py-1 px-2.5 rounded-xl text-xs shadow-sm">
                     <i data-lucide="map-pin" class="w-3.5 h-3.5 text-indigo-600 shrink-0"></i>
                     <select x-model="regency_id" @change="onRegencyChange()" class="bg-transparent text-indigo-950 font-extrabold border-0 focus:ring-0 p-0 pr-5 text-xs cursor-pointer">
                         @foreach($regencies as $reg)
                             <option value="{{ $reg->id }}" {{ $reg->id == $defaultRegencyId ? 'selected' : '' }}>
-                                {{ $reg->name }} ({{ $reg->schools_count }} Sekolah)
+                                {{ $reg->name }} ({{ $reg->schools_count }})
                             </option>
                         @endforeach
                         @if($regencies->count() > 1)
-                            <option value="all">Semua Kabupaten Terintegrasi</option>
+                            <option value="all">Semua Kabupaten</option>
                         @endif
                     </select>
                 </div>
 
                 <!-- 2. Kecamatan (Otomatis Filter sesuai Kabupaten) -->
-                <select x-model="district_id" @change="fetchSchools(true)" class="py-1.5 px-2.5 text-xs rounded-xl border border-slate-300">
+                <select x-model="district_id" @change="fetchSchools(true)" class="py-1 px-2 text-xs rounded-xl border border-slate-300 bg-white">
                     <option value="">Semua Kecamatan</option>
                     <template x-for="d in filteredDistricts" :key="d.id">
                         <option :value="d.id" x-text="d.name"></option>
@@ -70,15 +91,15 @@
                 </select>
 
                 <!-- Prioritas -->
-                <select x-model="priority_level" @change="fetchSchools()" class="py-1.5 px-2.5 text-xs rounded-xl border border-slate-300">
+                <select x-model="priority_level" @change="fetchSchools()" class="py-1 px-2 text-xs rounded-xl border border-slate-300 bg-white">
                     <option value="">Semua Prioritas</option>
-                    <option value="A">Prioritas A (Merah)</option>
-                    <option value="B">Prioritas B (Kuning)</option>
-                    <option value="C">Prioritas C (Hijau)</option>
+                    <option value="A">Prioritas A</option>
+                    <option value="B">Prioritas B</option>
+                    <option value="C">Prioritas C</option>
                 </select>
 
                 <!-- Jenjang -->
-                <select x-model="school_type_id" @change="fetchSchools()" class="py-1.5 px-2.5 text-xs rounded-xl border border-slate-300">
+                <select x-model="school_type_id" @change="fetchSchools()" class="py-1 px-2 text-xs rounded-xl border border-slate-300 bg-white">
                     <option value="">Semua Jenjang</option>
                     @foreach($schoolTypes as $st)
                         <option value="{{ $st->id }}">{{ $st->name }}</option>
@@ -86,17 +107,11 @@
                 </select>
 
                 <!-- Status -->
-                <select x-model="status" @change="fetchSchools()" class="py-1.5 px-2.5 text-xs rounded-xl border border-slate-300">
+                <select x-model="status" @change="fetchSchools()" class="py-1 px-2 text-xs rounded-xl border border-slate-300 bg-white">
                     <option value="">Semua Status</option>
                     <option value="negeri">NEGERI</option>
                     <option value="swasta">SWASTA</option>
                 </select>
-
-                <!-- Toggle Panel Button -->
-                <button @click="panelOpen = !panelOpen" class="px-3 py-1.5 bg-slate-900 text-white rounded-xl font-bold flex items-center space-x-1 hover:bg-slate-800 transition cursor-pointer">
-                    <i data-lucide="list" class="w-4 h-4"></i>
-                    <span class="hidden sm:inline" x-text="panelOpen ? 'Sembunyikan Panel' : 'Tampilkan Panel'"></span>
-                </button>
             </div>
         </div>
 
@@ -104,32 +119,32 @@
         <div id="gis-map" class="shadow-2xl border border-slate-200"></div>
 
         <!-- Floating Legend Box (Bottom Left) -->
-        <div class="absolute bottom-6 left-6 z-20 bg-white/95 backdrop-blur-md p-3.5 rounded-2xl shadow-xl border border-slate-200 text-xs hidden sm:block">
-            <p class="font-extrabold text-slate-800 uppercase tracking-wider text-[10px] mb-2">Legenda Prioritas Sekolah</p>
-            <div class="space-y-1.5">
+        <div class="absolute bottom-6 left-6 z-20 bg-white/95 backdrop-blur-md p-3 rounded-2xl shadow-xl border border-slate-200 text-xs hidden md:block">
+            <p class="font-extrabold text-slate-800 uppercase tracking-wider text-[10px] mb-1.5">Legenda Skor</p>
+            <div class="space-y-1 text-[11px]">
                 <div class="flex items-center space-x-2">
-                    <span class="w-3 h-3 rounded-full bg-red-500 shadow-sm"></span>
-                    <span class="font-bold text-slate-700">Prioritas A (Score ≥ 80)</span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm"></span>
+                    <span class="font-bold text-slate-700">Prioritas A (≥ 80)</span>
                 </div>
                 <div class="flex items-center space-x-2">
-                    <span class="w-3 h-3 rounded-full bg-amber-400 shadow-sm"></span>
-                    <span class="font-bold text-slate-700">Prioritas B (Score 65 - 79)</span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm"></span>
+                    <span class="font-bold text-slate-700">Prioritas B (65 - 79)</span>
                 </div>
                 <div class="flex items-center space-x-2">
-                    <span class="w-3 h-3 rounded-full bg-emerald-500 shadow-sm"></span>
-                    <span class="font-bold text-slate-700">Prioritas C (Score < 65)</span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm"></span>
+                    <span class="font-bold text-slate-700">Prioritas C (&lt; 65)</span>
                 </div>
             </div>
         </div>
 
-        <!-- Right Sliding School Leaderboard Panel -->
+        <!-- Right Sliding School Leaderboard Panel (Responsive on Mobile) -->
         <div x-show="panelOpen" x-transition:enter="transition ease-out duration-300"
             x-transition:enter-start="translate-x-full"
             x-transition:enter-end="translate-x-0"
             x-transition:leave="transition ease-in duration-200"
             x-transition:leave-start="translate-x-0"
             x-transition:leave-end="translate-x-full"
-            class="absolute top-20 right-4 bottom-6 z-20 w-80 lg:w-96 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden">
+            class="fixed sm:absolute inset-x-2 sm:inset-x-auto top-20 sm:top-20 right-2 sm:right-4 bottom-20 sm:bottom-6 w-auto sm:w-80 lg:w-96 z-30 bg-white/98 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden">
             
             <div class="p-4 border-b border-slate-100 bg-slate-900 text-white flex items-center justify-between">
                 <div>
@@ -185,7 +200,8 @@
                 priority_level: '',
                 school_type_id: '',
                 status: '',
-                panelOpen: true,
+                panelOpen: (window.innerWidth >= 1024),
+                filterOpen: false,
 
                 get filteredDistricts() {
                     if (!this.regency_id || this.regency_id === 'all') {

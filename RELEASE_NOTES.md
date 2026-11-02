@@ -95,6 +95,53 @@
 
 ---
 
+### 8. Pemisahan Data Support Event Karawang & Cikampek
+* **Sebelumnya**:
+  * Di portal pengajuan support event sekolah publik (`/pengajuan-event`), seluruh sekolah dari Karawang dan Cikampek tercampur dalam satu dropdown panjang tanpa filter kampus.
+  * Di halaman internal Data Proposal Masuk (`/event-proposals`) dan Laporan Suport Kegiatan (`/event-reports`), data proposal kedua kampus bercampur dan tidak memiliki tab pemisah wilayah.
+* **Sesudah Perbaikan**:
+  * **Form Publik Pengajuan Event**: Radio button pilihan kampus (UBSI Karawang vs UBSI Cikampek) langsung memfilter opsi sekolah secara reaktif dan otomatis mengelompokkan opsi berdasarkan `<optgroup>` wilayah kampus.
+  * **Dashboard Proposal & Laporan Admin**: Disediakan tab pemisah kampus (*Semua Kampus*, *UBSI Karawang*, *UBSI Cikampek*) lengkap dengan hitungan counter proposal, sehingga data kegiatan Karawang dan Cikampek terpisah rapi dengan 1 klik.
+
+---
+
+### 9. PWA Mobile Bottom Navigation Horizontal & Responsif Smartphone
+* **Sebelumnya**:
+  * Tampilan menu bawah (Bottom Navigation) di smartphone bertumpuk vertikal akibat styling stylesheet Tailwind yang belum terkompilasi penuh untuk komponen PWA mobile.
+* **Sesudah Perbaikan**:
+  * Menggunakan inline flexbox styling (`display: flex; flex-direction: row; justify-content: space-around; height: 58px; position: fixed; bottom: 0; z-index: 45;`) menjamin tata letak horizontal sempurna di semua browser handphone.
+  * Tombol tengah FAB (`+ Kunjungan`) terangkat rapi tanpa merusak barisan tombol lainnya.
+  * Panel drawer aksi cepat lapangan dilengkapi backdrop dimmer ber-z-index tinggi (`z-index: 60`).
+
+---
+
+### 10. Optimalisasi Peta GIS pada Smartphone
+* **Sebelumnya**:
+  * Pada layar HP (<1024px), panel leaderboard skor prioritas sekolah langsung terbuka menutupi peta dan kolom pencarian, serta dropdown filter saling bertumpuk banyak baris.
+* **Sesudah Perbaikan**:
+  * Panel leaderboard GIS kini tertutup secara default pada perangkat mobile (`panelOpen: window.innerWidth >= 1024`), dan dapat dibuka/tutup dengan tombol *"Daftar"* di navbar peta.
+  * Filter GIS mobile dibuat ringkas dan dapat diciutkan (*collapsible*) melalui tombol filter bergambar ikon slider.
+
+---
+
+### 11. Halaman Login Bersih, Ringkas & Mobile-First
+* **Sebelumnya**:
+  * Teks pada hero banner login terlalu panjang dan bertele-tele. Di smartphone, pengguna harus scrolling jauh melewati teks promosi panjang sebelum menemukan kolom input email dan kata sandi.
+* **Sesudah Perbaikan**:
+  * Teks slogan dipadatkan menjadi: *"Digital Mapping & Monitoring PMB Realtime"*.
+  * Kolom hero branding disembunyikan pada viewport kecil (`hidden lg:flex`) sehingga pengguna smartphone langsung disajikan formulir login yang bersih, rapi, dan cepat.
+  * Kartu perkenalan 2 gedung kampus (Karawang & Cikampek) dikompresi ringkas dan proporsional.
+
+---
+
+### 12. Resolusi Peringatan Intelephense (Date Method)
+* **Sebelumnya**:
+  * Terdapat peringatan `Call to unknown method: date::format()` pada Intelephense VS Code di `SchoolEventProposalController.php`.
+* **Sesudah Perbaikan**:
+  * Seluruh pemformatan tanggal model dienkapsulasi menggunakan `\Carbon\Carbon::parse(...)` dan PHPDoc model `SchoolEventProposal` dilengkapi tipe eksplisit `\Illuminate\Support\Carbon|\Carbon\Carbon|null`. Peringatan di Intelephense bersih 100%.
+
+---
+
 ## 🚀 Panduan Rilis di Server Staging / Production
 Ketika melakukan pembaruan di server publik (`sapa.sobi.web.id`), jalankan langkah berikut:
 ```bash

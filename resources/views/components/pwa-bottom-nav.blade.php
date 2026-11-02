@@ -8,64 +8,71 @@
 @endphp
 
 <div x-data="{ mobileMenuOpen: false }">
-    <!-- PWA Bottom Navigation Bar (Khusus Handphone / Layar Kecil) -->
-    <nav class="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/90 shadow-[0_-8px_25px_rgba(0,0,0,0.5)] px-2 py-1.5 safe-area-inset-bottom">
-        <div class="grid grid-cols-5 items-center max-w-md mx-auto relative">
+    <!-- PWA Bottom Navigation Bar (Khusus Smartphone / Layar Kecil, Strict Horizontal Row) -->
+    <nav class="sm:hidden"
+        style="position: fixed !important; bottom: 0 !important; left: 0 !important; right: 0 !important; width: 100% !important; z-index: 45 !important; background-color: rgba(10, 15, 30, 0.98) !important; -webkit-backdrop-filter: blur(16px) !important; backdrop-filter: blur(16px) !important; border-top: 1px solid rgba(255, 255, 255, 0.1) !important; box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.45) !important;">
+        <div style="display: flex !important; flex-direction: row !important; align-items: center !important; justify-content: space-around !important; width: 100% !important; max-width: 480px !important; margin: 0 auto !important; height: 58px !important; padding: 0 4px !important;">
             
             <!-- 1. Dashboard Ringkas -->
             <a href="{{ route('dashboard') }}" 
-                class="flex flex-col items-center justify-center py-1 rounded-xl transition {{ $isDashboard ? 'text-amber-400 font-bold' : 'text-slate-400 hover:text-slate-200' }}">
+                style="flex: 1 1 0% !important; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; text-decoration: none !important; min-width: 0 !important;"
+                class="py-1 rounded-xl transition {{ $isDashboard ? 'text-amber-400 font-bold' : 'text-slate-400 hover:text-slate-200' }}">
                 <div class="relative">
                     <i data-lucide="layout-dashboard" class="w-5 h-5 {{ $isDashboard ? 'stroke-[2.5]' : 'stroke-[1.8]' }}"></i>
                     @if($isDashboard)
                         <span class="absolute -top-1 -right-1 w-1.5 h-1.5 bg-amber-400 rounded-full animate-ping"></span>
                     @endif
                 </div>
-                <span class="text-[10px] mt-1 leading-none">Dashboard</span>
+                <span style="font-size: 10px !important; line-height: 1 !important; margin-top: 3px !important; white-space: nowrap !important;">Dashboard</span>
             </a>
 
             <!-- 2. Jadwal Kunjungan Lapangan -->
             <a href="{{ route('visit-plans.index') }}" 
-                class="flex flex-col items-center justify-center py-1 rounded-xl transition {{ $isVisitPlans ? 'text-amber-400 font-bold' : 'text-slate-400 hover:text-slate-200' }}">
+                style="flex: 1 1 0% !important; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; text-decoration: none !important; min-width: 0 !important;"
+                class="py-1 rounded-xl transition {{ $isVisitPlans ? 'text-amber-400 font-bold' : 'text-slate-400 hover:text-slate-200' }}">
                 <div class="relative">
                     <i data-lucide="calendar" class="w-5 h-5 {{ $isVisitPlans ? 'stroke-[2.5]' : 'stroke-[1.8]' }}"></i>
                 </div>
-                <span class="text-[10px] mt-1 leading-none">Jadwal</span>
+                <span style="font-size: 10px !important; line-height: 1 !important; margin-top: 3px !important; white-space: nowrap !important;">Jadwal</span>
             </a>
 
-            <!-- 3. TOMBOL UTAMA TENGAH: Catat Kunjungan Baru (Elevated Floating Action Button) -->
-            <div class="flex flex-col items-center justify-center -mt-6">
+            <!-- 3. TOMBOL UTAMA TENGAH: Catat Kunjungan Baru (Raised Floating Action Button) -->
+            <div style="flex: 1 1 0% !important; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; position: relative !important; min-width: 0 !important;">
                 <a href="{{ route('visits.create') }}" 
                     title="Catat Kunjungan Sekolah Baru"
-                    class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-600 to-rose-500 hover:from-brand-500 hover:to-rose-400 text-white flex items-center justify-center shadow-lg shadow-rose-600/40 border-2 border-slate-900 active:scale-95 transition-transform duration-150">
-                    <i data-lucide="plus" class="w-6 h-6 stroke-[3]"></i>
+                    style="margin-top: -18px !important; width: 42px !important; height: 42px !important; border-radius: 14px !important; display: flex !important; align-items: center !important; justify-content: center !important; box-shadow: 0 4px 15px rgba(223, 11, 43, 0.45) !important;"
+                    class="bg-gradient-to-tr from-brand-600 to-rose-500 hover:from-brand-500 hover:to-rose-400 text-white border-2 border-slate-900 active:scale-95 transition-transform duration-150">
+                    <i data-lucide="plus" class="w-5 h-5 stroke-[3]"></i>
                 </a>
-                <span class="text-[9px] font-black uppercase text-rose-400 mt-1 tracking-wider leading-none">Kunjungan</span>
+                <span style="font-size: 9px !important; font-weight: 800 !important; text-transform: uppercase !important; margin-top: 2px !important; line-height: 1 !important; white-space: nowrap !important;" class="text-rose-400">Kunjungan</span>
             </div>
 
             <!-- 4. Peta GIS & Navigasi Rute -->
             <a href="{{ route('map.index') }}" 
-                class="flex flex-col items-center justify-center py-1 rounded-xl transition {{ $isMap ? 'text-amber-400 font-bold' : 'text-slate-400 hover:text-slate-200' }}">
+                style="flex: 1 1 0% !important; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; text-decoration: none !important; min-width: 0 !important;"
+                class="py-1 rounded-xl transition {{ $isMap ? 'text-amber-400 font-bold' : 'text-slate-400 hover:text-slate-200' }}">
                 <div class="relative">
                     <i data-lucide="map-pin" class="w-5 h-5 {{ $isMap ? 'stroke-[2.5]' : 'stroke-[1.8]' }}"></i>
                 </div>
-                <span class="text-[10px] mt-1 leading-none">Peta GIS</span>
+                <span style="font-size: 10px !important; line-height: 1 !important; margin-top: 3px !important; white-space: nowrap !important;">Peta GIS</span>
             </a>
 
             <!-- 5. Kuisioner & Menu Cepat Lapangan -->
             <button type="button" @click="mobileMenuOpen = !mobileMenuOpen"
-                class="flex flex-col items-center justify-center py-1 rounded-xl transition {{ $isQuestionnaire ? 'text-amber-400 font-bold' : 'text-slate-400 hover:text-slate-200' }}">
+                style="flex: 1 1 0% !important; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; background: transparent !important; border: none !important; cursor: pointer !important; min-width: 0 !important;"
+                class="py-1 rounded-xl transition {{ $isQuestionnaire ? 'text-amber-400 font-bold' : 'text-slate-400 hover:text-slate-200' }}">
                 <div class="relative">
                     <i data-lucide="grid" class="w-5 h-5 {{ $isQuestionnaire ? 'stroke-[2.5]' : 'stroke-[1.8]' }}"></i>
                 </div>
-                <span class="text-[10px] mt-1 leading-none">Aksi Cepat</span>
+                <span style="font-size: 10px !important; line-height: 1 !important; margin-top: 3px !important; white-space: nowrap !important;">Aksi Cepat</span>
             </button>
 
         </div>
     </nav>
 
     <!-- Bottom Sheet / Drawer Aksi Cepat Lapangan -->
-    <div x-show="mobileMenuOpen" style="display: none;" 
+    <div x-show="mobileMenuOpen" 
+        style="display: none; position: fixed !important; left: 0 !important; right: 0 !important; bottom: 0 !important; z-index: 60 !important; max-height: 85vh !important; background-color: #020617 !important;"
         x-transition:enter="transition ease-out duration-200"
         x-transition:enter-start="opacity-0 translate-y-full"
         x-transition:enter-end="opacity-100 translate-y-0"
@@ -171,7 +178,7 @@
 
     <!-- Backdrop Dimmer for Quick Drawer -->
     <div x-show="mobileMenuOpen" @click="mobileMenuOpen = false" 
-        style="display: none;"
+        style="display: none; position: fixed !important; inset: 0 !important; z-index: 55 !important; background-color: rgba(2, 6, 23, 0.75) !important; -webkit-backdrop-filter: blur(4px) !important; backdrop-filter: blur(4px) !important;"
         class="sm:hidden fixed inset-0 z-40 bg-slate-950/70 backdrop-blur-xs"></div>
 </div>
 

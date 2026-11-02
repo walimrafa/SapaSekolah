@@ -45,16 +45,26 @@
         fileSizeFormatted: '',
         isSubmitting: false,
         otherSupportChecked: {{ old('support_type_other') ? 'true' : 'false' }},
-        get filteredSchools() {
-            let list = this.allSchools;
-            if (this.selectedCampusId) {
-                list = list.filter(s => s.campus_id == this.selectedCampusId);
+        filterSchoolOptions() {
+            const sel = document.getElementById('school_id');
+            if (!sel) return;
+            const cid = this.selectedCampusId;
+            Array.from(sel.querySelectorAll('optgroup')).forEach(grp => {
+                const grpCampus = grp.getAttribute('data-campus-id');
+                const match = !cid || grpCampus === String(cid);
+                grp.hidden = !match;
+                grp.style.display = match ? '' : 'none';
+                Array.from(grp.querySelectorAll('option')).forEach(opt => {
+                    opt.hidden = !match;
+                    opt.disabled = !match;
+                    opt.style.display = match ? '' : 'none';
+                });
+            });
+            const curOpt = sel.querySelector(`option[value='${sel.value}']`);
+            if (curOpt && curOpt.getAttribute('data-campus') && cid && curOpt.getAttribute('data-campus') !== String(cid)) {
+                sel.value = '';
+                this.selectedSchoolId = '';
             }
-            if (this.schoolSearch) {
-                const q = this.schoolSearch.toLowerCase().trim();
-                list = list.filter(s => s.name.toLowerCase().includes(q) || (s.district && s.district.toLowerCase().includes(q)));
-            }
-            return list;
         },
         handleFileSelect(event) {
             const file = event.target.files[0];
@@ -67,7 +77,7 @@
                 this.fileSizeFormatted = '';
             }
         }
-    }">
+    }" x-init="filterSchoolOptions()">
 
         <!-- Header Branding Bar -->
         <div class="bg-gradient-to-r from-slate-900 via-slate-900 to-brand-950 text-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6">
@@ -149,9 +159,9 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                                 @foreach($campuses as $cmp)
                                     <label class="flex items-center space-x-3 p-3 rounded-xl border cursor-pointer transition"
-                                        @click="selectedCampusId = '{{ $cmp->id }}'; selectedSchoolId = ''; schoolSearch = ''"
+                                        @click="selectedCampusId = '{{ $cmp->id }}'; selectedSchoolId = ''; schoolSearch = ''; filterSchoolOptions()"
                                         :class="selectedCampusId == {{ $cmp->id }} ? 'bg-brand-600/20 border-brand-500 text-white font-bold ring-1 ring-brand-500' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500'">
-                                        <input type="radio" name="campus_id" value="{{ $cmp->id }}" x-model="selectedCampusId" @change="selectedSchoolId = ''; schoolSearch = ''" class="text-brand-500 focus:ring-brand-500">
+                                        <input type="radio" name="campus_id" value="{{ $cmp->id }}" x-model="selectedCampusId" @change="selectedSchoolId = ''; schoolSearch = ''; filterSchoolOptions()" class="text-brand-500 focus:ring-brand-500">
                                         <div class="text-left">
                                             <span class="block text-xs font-bold">{{ $cmp->name }}</span>
                                             <span class="block text-[10px] text-slate-400">{{ $cmp->code == 'CKP' ? 'Wilayah Cikampek & Sekitarnya' : 'Wilayah Karawang Barat & Sekitarnya' }}</span>
@@ -161,7 +171,7 @@
                             </div>
                         </div>
 
-                        <!-- Pilihan Sekolah Terdaftar / Input Manual -->
+                        <!-- Pilihan Sekolah Terdaftar / Input Manual (Terpisah Karawang & Cikampek) -->
                         <div>
                             <div class="flex items-center justify-between mb-2">
                                 <label class="text-sm font-semibold text-slate-300">
@@ -183,18 +193,24 @@
                             </div>
 
                             <div x-show="schoolMode === 'select'" class="space-y-2">
-                                <select id="school_id" name="school_id" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 transition">
-                                    <option value="">-- Ketik / Cari Asal Sekolah --</option>
-                                    @foreach($schools as $sch)
-                                        <option value="{{ $sch->id }}" data-campus="{{ $sch->campus_id }}" {{ (string)old('school_id') === (string)$sch->id ? 'selected' : '' }}>
-                                            {{ $sch->name }} {{ $sch->district ? '(' . $sch->district->name . ')' : '' }}
-                                        </option>
+                                <select id="school_id" name="school_id" x-model="selectedSchoolId"
+                                    @change="if ($event.target.value === 'other') { schoolMode = 'manual'; selectedSchoolId = ''; }"
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 transition">
+                                    <option value="">-- Pilih Sekolah Asal Anda --</option>
+                                    @foreach($campuses as $cmp)
+                                        <optgroup data-campus-id="{{ $cmp->id }}" label="🏢 {{ $cmp->name }} ({{ $cmp->code == 'CKP' ? 'Wilayah Cikampek & Sekitarnya' : 'Wilayah Karawang & Sekitarnya' }})">
+                                            @foreach($schools->where('campus_id', $cmp->id) as $sch)
+                                                <option value="{{ $sch->id }}" data-campus="{{ $sch->campus_id }}" {{ (string)old('school_id') === (string)$sch->id ? 'selected' : '' }}>
+                                                    {{ $sch->name }} {{ $sch->district ? '(' . $sch->district->name . ')' : '' }}
+                                                </option>
+                                            @endforeach
+                                        </optgroup>
                                     @endforeach
                                     <option value="other" {{ old('school_id') === 'other' || old('school_name') ? 'selected' : '' }}>-- Sekolah Lainnya (Tulis Manual) --</option>
                                 </select>
                                 <p class="text-[11px] text-slate-400 flex items-center justify-between">
-                                    <span>Pilih dari <strong class="text-amber-300">{{ count($schools) }}</strong> sekolah terdaftar.</span>
-                                    <span>Jika belum terdaftar, pilih "Sekolah Lain / Manual".</span>
+                                    <span class="text-amber-300 font-semibold" x-text="'Daftar sekolah tersinkronisasi otomatis dengan pilihan ' + (selectedCampusId == 2 ? 'UBSI Kampus Cikampek' : 'UBSI Kampus Karawang')"></span>
+                                    <span>Jika belum terdaftar, klik "Sekolah Lain / Manual".</span>
                                 </p>
                             </div>
 

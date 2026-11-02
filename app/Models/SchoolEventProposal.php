@@ -9,10 +9,10 @@ use Illuminate\Support\Facades\Storage;
 
 /**
  * @property int $id
- * @property \Carbon\Carbon|null $event_date
- * @property \Carbon\Carbon|null $event_end_date
- * @property \Carbon\Carbon|null $reviewed_at
- * @property \Carbon\Carbon|null $reported_at
+ * @property \Illuminate\Support\Carbon|\Carbon\Carbon|null $event_date
+ * @property \Illuminate\Support\Carbon|\Carbon\Carbon|null $event_end_date
+ * @property \Illuminate\Support\Carbon|\Carbon\Carbon|null $reviewed_at
+ * @property \Illuminate\Support\Carbon|\Carbon\Carbon|null $reported_at
  */
 class SchoolEventProposal extends Model
 {
