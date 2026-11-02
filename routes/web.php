@@ -44,8 +44,8 @@ Route::post('/kuisioner-siswa', [StudentQuestionnaireController::class, 'store']
 Route::get('/pengajuan-event', [\App\Http\Controllers\SchoolEventProposalController::class, 'publicCreate'])->name('school-events.create');
 Route::post('/pengajuan-event', [\App\Http\Controllers\SchoolEventProposalController::class, 'publicStore'])->name('school-events.store')->middleware('throttle:30,1');
 Route::get('/pengajuan-event/sukses/{reference_no}', [\App\Http\Controllers\SchoolEventProposalController::class, 'publicSuccess'])->name('school-events.success');
-Route::get('/tracking-proposal', [\App\Http\Controllers\SchoolEventProposalController::class, 'tracking'])->name('school-events.tracking');
-Route::get('/pengajuan-event/tracking', [\App\Http\Controllers\SchoolEventProposalController::class, 'tracking'])->name('school-events.tracking.alias');
+Route::get('/tracking-proposal', [\App\Http\Controllers\SchoolEventProposalController::class, 'tracking'])->name('school-events.tracking')->middleware('throttle:60,1');
+Route::get('/pengajuan-event/tracking', [\App\Http\Controllers\SchoolEventProposalController::class, 'tracking'])->name('school-events.tracking.alias')->middleware('throttle:60,1');
 
 // Hasil Support Event - Pendaftaran Siswa Event (Tanpa Login & Tanpa Kuisioner)
 Route::get('/hasil-support-event', [\App\Http\Controllers\EventStudentLeadController::class, 'publicCreate'])->name('event-students.create');
@@ -81,7 +81,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Profile & Password Mandiri
     Route::get('/profile', [\App\Http\Controllers\ContextController::class, 'showProfile'])->name('profile.show');
-    Route::put('/profile/password', [\App\Http\Controllers\ContextController::class, 'updatePassword'])->name('profile.password');
+    Route::put('/profile/password', [\App\Http\Controllers\ContextController::class, 'updatePassword'])->name('profile.password')->middleware('throttle:10,1');
 
     // Audit Trail / Log Aktivitas Sistem (Admin, Pimpinan, Koordinator Marketing)
     Route::get('/activity-logs', [\App\Http\Controllers\ActivityLogController::class, 'index'])

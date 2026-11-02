@@ -4,7 +4,7 @@
 [![PHP](https://img.shields.io/badge/PHP-8.2%20%7C%208.3-777BB4?style=for-the-badge&logo=php&logoColor=white)](https://php.net)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.x-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
 [![PWA](https://img.shields.io/badge/PWA-Ready-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)](https://web.dev/progressive-web-apps/)
-[![Status](https://img.shields.io/badge/Tests-45%20Passed%20(100%25)-success?style=for-the-badge)](RELEASE_NOTES.md)
+[![Status](https://img.shields.io/badge/Tests-46%20Passed%20(100%25)-success?style=for-the-badge)](RELEASE_NOTES.md)
 
 **SAPA Sekolah** adalah sistem informasi pemetaan digital (*digital mapping*) dan monitoring pemasaran sekolah yang dirancang khusus untuk mendukung operasional divisi **Marketing Communication & Admisi Penerimaan Mahasiswa Baru (PMB)** multi-kampus **Universitas BSI (UBSI Kampus Karawang & UBSI Kampus Cikampek)**.
 

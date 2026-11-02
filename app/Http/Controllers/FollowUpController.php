@@ -300,6 +300,7 @@ class FollowUpController extends Controller
                 'required',
                 'file',
                 'max:51200', // 50MB
+                'mimes:jpg,jpeg,png,webp,pdf,rar,zip,doc,docx,7z',
                 function ($attribute, $value, $fail) {
                     $ext = strtolower($value->getClientOriginalExtension());
                     $allowed = ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'rar', 'zip', 'doc', 'docx', '7z'];

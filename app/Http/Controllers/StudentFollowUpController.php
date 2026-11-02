@@ -533,6 +533,8 @@ class StudentFollowUpController extends Controller
                     $item->followup_notes ?? '-',
                 ];
 
+                $rowData = \App\Support\SecuritySanitizer::sanitizeSpreadsheetRow($rowData);
+
                 foreach ($rowData as $colIdx => $val) {
                     $coord = Coordinate::stringFromColumnIndex($colIdx + 1) . $row;
                     $sheet->setCellValueExplicit($coord, (string) $val, DataType::TYPE_STRING);

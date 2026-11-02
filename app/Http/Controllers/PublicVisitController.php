@@ -80,6 +80,7 @@ class PublicVisitController extends Controller
                 'nullable',
                 'file',
                 'max:51200',
+                'mimes:jpg,jpeg,png,webp,pdf,rar,zip,doc,docx,7z',
                 function ($attribute, $value, $fail) {
                     $ext = strtolower($value->getClientOriginalExtension());
                     $allowed = ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'rar', 'zip', 'doc', 'docx', '7z'];

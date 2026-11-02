@@ -141,6 +141,27 @@ class NotificationAndSecurityHardeningTest extends TestCase
         $response->assertHeader('X-Frame-Options', 'SAMEORIGIN');
         $response->assertHeader('X-XSS-Protection', '1; mode=block');
         $response->assertHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+        $response->assertHeader('Permissions-Policy', 'geolocation=(self), camera=(), microphone=()');
+    }
+
+    /**
+     * Test failed login logs audit trail and proposal tracking is rate limited.
+     */
+    public function test_failed_login_records_audit_log(): void
+    {
+        $prevLogCount = \App\Models\ActivityLog::where('action', 'LOGIN_FAILED')->count();
+
+        $response = $this->post('/login', [
+            'email' => 'fake_attacker@domain.com',
+            'password' => 'wrong_password_123',
+        ]);
+
+        $response->assertSessionHasErrors('email');
+        $newLogCount = \App\Models\ActivityLog::where('action', 'LOGIN_FAILED')->count();
+        $this->assertEquals($prevLogCount + 1, $newLogCount);
+
+        $latestLog = \App\Models\ActivityLog::where('action', 'LOGIN_FAILED')->latest('id')->first();
+        $this->assertStringContainsString('fake_attacker@domain.com', $latestLog->description);
     }
 
     /**

@@ -139,7 +139,7 @@ class MapController extends Controller
                     'name' => $s->primaryContact->name,
                     'phone' => $s->primaryContact->whatsapp ?? $s->primaryContact->phone,
                 ] : null,
-                'last_visit' => $s->latestVisit ? $s->latestVisit->visit_date->format('d M Y') : 'Belum Pernah',
+                'last_visit' => ($s->latestVisit && $s->latestVisit->visit_date) ? \Carbon\Carbon::parse($s->latestVisit->visit_date)->format('d M Y') : 'Belum Pernah',
             ];
         });
 

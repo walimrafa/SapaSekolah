@@ -139,6 +139,7 @@ class SchoolVisitController extends Controller
                 'nullable',
                 'file',
                 'max:51200', // 50MB
+                'mimes:jpg,jpeg,png,webp,pdf,rar,zip,doc,docx,7z',
                 function ($attribute, $value, $fail) {
                     $ext = strtolower($value->getClientOriginalExtension());
                     $allowed = ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'rar', 'zip', 'doc', 'docx', '7z'];
@@ -281,6 +282,7 @@ class SchoolVisitController extends Controller
                 'nullable',
                 'file',
                 'max:51200', // 50MB
+                'mimes:jpg,jpeg,png,webp,pdf,rar,zip,doc,docx,7z',
                 function ($attribute, $value, $fail) {
                     $ext = strtolower($value->getClientOriginalExtension());
                     $allowed = ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'rar', 'zip', 'doc', 'docx', '7z'];
@@ -435,20 +437,20 @@ class SchoolVisitController extends Controller
 
             $sheet->setCellValue("A{$rowNum}", $idx + 1);
             $sheet->setCellValue("B{$rowNum}", $v->visit_date ? $v->visit_date->format('Y-m-d') : '-');
-            $sheet->setCellValue("C{$rowNum}", $school?->name ?? '-');
+            $sheet->setCellValue("C{$rowNum}", \App\Support\SecuritySanitizer::sanitizeSpreadsheetCell($school?->name ?? '-'));
             $sheet->setCellValueExplicit("D{$rowNum}", $school?->npsn ?? '-', DataType::TYPE_STRING);
-            $sheet->setCellValue("E{$rowNum}", $school?->district?->name ?? '-');
-            $sheet->setCellValue("F{$rowNum}", $school?->schoolType?->name ?? '-');
-            $sheet->setCellValue("G{$rowNum}", $user?->name ?? '-');
+            $sheet->setCellValue("E{$rowNum}", \App\Support\SecuritySanitizer::sanitizeSpreadsheetCell($school?->district?->name ?? '-'));
+            $sheet->setCellValue("F{$rowNum}", \App\Support\SecuritySanitizer::sanitizeSpreadsheetCell($school?->schoolType?->name ?? '-'));
+            $sheet->setCellValue("G{$rowNum}", \App\Support\SecuritySanitizer::sanitizeSpreadsheetCell($user?->name ?? '-'));
             $sheet->setCellValueExplicit("H{$rowNum}", $user?->phone ?? '-', DataType::TYPE_STRING);
-            $sheet->setCellValue("I{$rowNum}", $user?->email ?? '-');
-            $sheet->setCellValue("J{$rowNum}", $school?->headmaster_name ?? ($v->headmaster_name ?? '-'));
-            $sheet->setCellValue("K{$rowNum}", $v->recipient_name ?? '-');
-            $sheet->setCellValue("L{$rowNum}", $v->recipient_position ?? '-');
+            $sheet->setCellValue("I{$rowNum}", \App\Support\SecuritySanitizer::sanitizeSpreadsheetCell($user?->email ?? '-'));
+            $sheet->setCellValue("J{$rowNum}", \App\Support\SecuritySanitizer::sanitizeSpreadsheetCell($school?->headmaster_name ?? ($v->headmaster_name ?? '-')));
+            $sheet->setCellValue("K{$rowNum}", \App\Support\SecuritySanitizer::sanitizeSpreadsheetCell($v->recipient_name ?? '-'));
+            $sheet->setCellValue("L{$rowNum}", \App\Support\SecuritySanitizer::sanitizeSpreadsheetCell($v->recipient_position ?? '-'));
             $sheet->setCellValueExplicit("M{$rowNum}", $v->recipient_phone ?? '-', DataType::TYPE_STRING);
-            $sheet->setCellValue("N{$rowNum}", $targetStr);
+            $sheet->setCellValue("N{$rowNum}", \App\Support\SecuritySanitizer::sanitizeSpreadsheetCell($targetStr));
             $sheet->setCellValue("O{$rowNum}", $totalSiswa > 0 ? "{$totalSiswa} Siswa ({$v->grade_12_class_count} kls)" : '-');
-            $sheet->setCellValue("P{$rowNum}", $v->socialization_method ?? '-');
+            $sheet->setCellValue("P{$rowNum}", \App\Support\SecuritySanitizer::sanitizeSpreadsheetCell($v->socialization_method ?? '-'));
             $sheet->setCellValue("Q{$rowNum}", strtoupper($v->status));
 
             // Column R: Google Drive Folder Link (Hyperlink)
@@ -458,7 +460,7 @@ class SchoolVisitController extends Controller
             $driveFont->getColor()->setRGB('0B023E');
             $driveFont->setUnderline(true);
 
-            $sheet->setCellValue("S{$rowNum}", $v->notes ?? '-');
+            $sheet->setCellValue("S{$rowNum}", \App\Support\SecuritySanitizer::sanitizeSpreadsheetCell($v->notes ?? '-'));
 
             $rowNum++;
         }

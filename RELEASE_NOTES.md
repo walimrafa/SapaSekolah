@@ -1,10 +1,10 @@
 # 📋 CATATAN PERBAIKAN & UPDATE SISTEM SAPA SEKOLAH
 
 ### 📌 Ringkasan Versi
-- **Versi**: 2.1.1 (Validasi Kelas Mahasiswa Baru, Netralisasi Event Form Multi-Kampus & Hardening)
+- **Versi**: 2.2.0 (Audit Keamanan Menyeluruh, Mitigasi ISU, Penutupan Celah Spreadsheet Injection & Optimalisasi Query)
 - **Tanggal Pembaruan**: 2 November 2026
 - **Status Repository**: Terhubung & Tersinkronisasi ke GitHub (`main`)
-- **Hasil Pengujian Otomatis**: 45 Test Berhasil (242 Assertions) — **0 Bug, 0 Error, 100% Pass**
+- **Hasil Pengujian Otomatis**: 46 Test Berhasil (248 Assertions) — **0 Bug, 0 Error, 100% Pass**
 
 ---
 
@@ -201,6 +201,31 @@
     * Menghapus kata statis *"Kampus Karawang"* dari header kartu form pendataan siswa hasil support event (`resources/views/public-events/student-form.blade.php`).
     * Header kini menampilkan secara netral dan elegan: **Universitas Bina Sarana Informatika (UBSI)**, sehingga dapat digunakan secara universal baik untuk kegiatan di UBSI Kampus Karawang maupun UBSI Kampus Cikampek.
     * Nilai fallback pengaturan nama kampus di `AppSettingService` dan `storage/app/app_settings.json` diselaraskan menjadi nama universitas umum netral.
+
+---
+
+### 16. Audit Keamanan Menyeluruh & Optimalisasi ISU Berjalan
+* **Latar Belakang Audit**:
+  * Melakukan inspeksi sistematis menyeluruh pada alur aplikasi berjalan, mencakup vektor serangan injeksi formula spreadsheet, kebocoran mime-type upload, ketiadaan audit jejak login gagal, potensi scraping nomor pelacakan proposal publik, hingga latensi query database.
+* **Hasil Temuan & Tindakan Perbaikan**:
+  1. **Audit Trail Percobaan Login Gagal (`LOGIN_FAILED`)**:
+     * *Sebelumnya*: Jika penyerang melakukan *brute force* kata sandi akun staf, kegagalan login hanya dilempar sebagai error validasi biasa tanpa tercatat di log audit sistem.
+     * *Sesudah Perbaikan*: Ditambahkan pencatatan otomatis ke tabel database `activity_logs` dengan aksi `LOGIN_FAILED`, mendokumentasikan alamat email yang dicoba, alamat IP pelaku, dan informasi User Agent untuk pemantauan keamanan berkala oleh Administrator.
+  2. **Perlindungan Terhadap Spreadsheet Formula Injection (CSV/Excel Injection - CWE-1236)**:
+     * *Sebelumnya*: Sanitasi formula Excel baru diterapkan pada sebagian modul. Modul ekspor lain seperti *Data Mahasiswa Baru* (`/new-students/export`), *Kunjungan Lapangan* (`/visits/export`), *Follow Up Siswa* (`/student-follow-ups/export`), dan *Hasil Support Event* (`/hasil-support-event-data/export`) belum memproteksi sel teks yang diawali karakter formula berbahaya.
+     * *Sesudah Perbaikan*: Seluruh sel teks data ekspor pada seluruh controller kini disanitasi menggunakan `SecuritySanitizer::sanitizeSpreadsheetCell` dan `sanitizeSpreadsheetRow`. Input yang diawali `=`, `+`, `-`, `@`, atau karakter kontrol tab/CR otomatis di-escape dengan aman, melindungi komputer admin saat membuka file Excel.
+  3. **Pengetatan Validasi MIME-Type Berkas Unggahan**:
+     * *Sebelumnya*: Upload foto kunjungan sekolah (`PublicVisitController` & `SchoolVisitController`), berkas follow-up (`FollowUpController`), dan foto event (`SchoolEventProposalController`) hanya mengecek ekstensi dari string nama file client (`getClientOriginalExtension`).
+     * *Sesudah Perbaikan*: Ditambahkan aturan validasi resmi Laravel `mimes:jpg,jpeg,png,webp,pdf,rar,zip,doc,docx,7z` yang memverifikasi magic bytes / binary structure berkas secara langsung, menggagalkan teknik kamuflase ekstensi file berbahaya.
+  4. **Proteksi Rate Limiting (Anti-Brute Force & Anti-Scraping)**:
+     * Menambahkan `middleware('throttle:60,1')` pada rute publik pelacakan status proposal event (`/tracking-proposal` dan `/pengajuan-event/tracking`) guna mencegah bot menebak nomor referensi proposal secara otomatis.
+     * Menambahkan `middleware('throttle:10,1')` pada rute ganti kata sandi mandiri (`/profile/password`).
+  5. **Header Keamanan Permissions-Policy**:
+     * Menambahkan header `Permissions-Policy: geolocation=(self), camera=(), microphone=()` pada `SecurityHeadersMiddleware.php` guna memastikan akses fitur hardware browser hanya diberikan pada domain sendiri dan menonaktifkan mikrofon yang tidak digunakan.
+  6. **Optimalisasi Query & Penambahan Database Index**:
+     * Menambahkan database index untuk kolom `student_class` pada tabel `prospects` melalui migration `2026_11_02_051000_add_index_to_student_class_on_prospects_table.php`, mempercepat eksekusi query pencarian dan penyaringan data mahasiswa baru.
+     * Mengeliminasi potensi N+1 query pada Dashboard Command Center dengan menerapkan *eager loading* relasi sekolah (`with('schoolActivities.school')`) pada daftar aktivitas marketing terkini.
+     * Memperkuat format tanggal kunjungan pada endpoint Leaflet GIS Map (`MapController::apiSchools`).
 
 ---
 

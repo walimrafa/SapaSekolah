@@ -63,6 +63,15 @@ class LoginController extends Controller
                 ]);
         }
 
+        \App\Services\ActivityLogService::log(
+            'LOGIN_FAILED',
+            'auth',
+            null,
+            "Percobaan login gagal untuk email: {$credentials['email']} dari IP: {$request->ip()}.",
+            null,
+            ['email' => $credentials['email'], 'ip' => $request->ip(), 'user_agent' => substr((string)$request->userAgent(), 0, 255)]
+        );
+
         throw ValidationException::withMessages([
             'email' => 'Email atau password yang Anda masukkan salah.',
         ]);

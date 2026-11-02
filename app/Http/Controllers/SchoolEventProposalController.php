@@ -435,6 +435,7 @@ class SchoolEventProposalController extends Controller
                 'nullable',
                 'file',
                 'max:51200', // max 50MB per file / archive
+                'mimes:jpg,jpeg,png,webp,rar,zip,7z,pdf,doc,docx',
                 function ($attribute, $value, $fail) {
                     if ($value instanceof \Illuminate\Http\UploadedFile) {
                         $ext = strtolower($value->getClientOriginalExtension());

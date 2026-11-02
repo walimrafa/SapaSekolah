@@ -211,7 +211,7 @@ class NewStudentController extends Controller
 
             $rowIdx = 2;
             foreach ($students as $idx => $s) {
-                $sheet->fromArray([[
+                $sheet->fromArray([\App\Support\SecuritySanitizer::sanitizeSpreadsheetRow([
                     $idx + 1,
                     $s->nim ?: '-',
                     $s->student_class ?: '-',
@@ -227,7 +227,7 @@ class NewStudentController extends Controller
                     $s->graduation_year ?: '-',
                     $s->validated_at ? $s->validated_at->format('d/m/Y H:i') : '-',
                     'Mahasiswa Baru Resmi',
-                ]], null, 'A' . $rowIdx);
+                ])], null, 'A' . $rowIdx);
                 $rowIdx++;
             }
 

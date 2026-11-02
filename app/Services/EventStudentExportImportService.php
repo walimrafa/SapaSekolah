@@ -481,20 +481,20 @@ class EventStudentExportImportService
 
                 $sheet->setCellValue('A' . $currentRow, $idx + 1);
                 $sheet->setCellValue('B' . $currentRow, $s->created_at->format('d/m/Y H:i'));
-                $sheet->setCellValue('C' . $currentRow, $s->student_name);
-                $sheet->setCellValue('D' . $currentRow, $s->gender_label ?: '-');
-                $sheet->setCellValue('E' . $currentRow, $s->school_display_name ?: '-');
-                $sheet->setCellValue('F' . $currentRow, $s->student_class ?: '-');
-                $sheet->setCellValue('G' . $currentRow, $s->student_major ?: '-');
+                $sheet->setCellValue('C' . $currentRow, \App\Support\SecuritySanitizer::sanitizeSpreadsheetCell($s->student_name));
+                $sheet->setCellValue('D' . $currentRow, \App\Support\SecuritySanitizer::sanitizeSpreadsheetCell($s->gender_label ?: '-'));
+                $sheet->setCellValue('E' . $currentRow, \App\Support\SecuritySanitizer::sanitizeSpreadsheetCell($s->school_display_name ?: '-'));
+                $sheet->setCellValue('F' . $currentRow, \App\Support\SecuritySanitizer::sanitizeSpreadsheetCell($s->student_class ?: '-'));
+                $sheet->setCellValue('G' . $currentRow, \App\Support\SecuritySanitizer::sanitizeSpreadsheetCell($s->student_major ?: '-'));
                 $sheet->setCellValueExplicit('H' . $currentRow, (string)$s->student_phone, DataType::TYPE_STRING);
-                $sheet->setCellValue('I' . $currentRow, $s->student_email ?: '-');
-                $sheet->setCellValue('J' . $currentRow, $s->student_social_media ?: '-');
-                $sheet->setCellValue('K' . $currentRow, $s->guardian_name ?: '-');
+                $sheet->setCellValue('I' . $currentRow, \App\Support\SecuritySanitizer::sanitizeSpreadsheetCell($s->student_email ?: '-'));
+                $sheet->setCellValue('J' . $currentRow, \App\Support\SecuritySanitizer::sanitizeSpreadsheetCell($s->student_social_media ?: '-'));
+                $sheet->setCellValue('K' . $currentRow, \App\Support\SecuritySanitizer::sanitizeSpreadsheetCell($s->guardian_name ?: '-'));
                 $sheet->setCellValueExplicit('L' . $currentRow, (string)$s->guardian_phone, DataType::TYPE_STRING);
-                $sheet->setCellValue('M' . $currentRow, $s->guardian_social_media ?: '-');
-                $sheet->setCellValue('N' . $currentRow, $scholarshipDisplay);
-                $sheet->setCellValue('O' . $currentRow, $eventDisplay);
-                $sheet->setCellValue('P' . $currentRow, $statusDisplay);
+                $sheet->setCellValue('M' . $currentRow, \App\Support\SecuritySanitizer::sanitizeSpreadsheetCell($s->guardian_social_media ?: '-'));
+                $sheet->setCellValue('N' . $currentRow, \App\Support\SecuritySanitizer::sanitizeSpreadsheetCell($scholarshipDisplay));
+                $sheet->setCellValue('O' . $currentRow, \App\Support\SecuritySanitizer::sanitizeSpreadsheetCell($eventDisplay));
+                $sheet->setCellValue('P' . $currentRow, \App\Support\SecuritySanitizer::sanitizeSpreadsheetCell($statusDisplay));
 
                 // Alternating zebra row background
                 $rowFillColor = ($idx % 2 === 0) ? 'FFFFFF' : 'F8FAFC';

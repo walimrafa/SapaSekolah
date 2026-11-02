@@ -136,8 +136,9 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
-        // Recent Marketing Activities
-        $recentActivities = MarketingActivity::orderBy('start_date', 'desc')
+        // Recent Marketing Activities (Eager load school relationship to prevent N+1 query)
+        $recentActivities = MarketingActivity::with('schoolActivities.school')
+            ->orderBy('start_date', 'desc')
             ->limit(5)
             ->get();
 
