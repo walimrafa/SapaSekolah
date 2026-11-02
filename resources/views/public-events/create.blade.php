@@ -20,6 +20,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <!-- Select2 Searchable Dropdown Assets -->
+    <link rel="stylesheet" href="{{ asset('vendor/select2/select2.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('vendor/select2/select2-tailwind.css') }}">
+    <script src="{{ asset('vendor/jquery/jquery.min.js') }}"></script>
+    <script src="{{ asset('vendor/select2/select2.min.js') }}"></script>
 </head>
 <body class="font-sans antialiased text-slate-800 bg-slate-950 min-h-screen py-8 px-4 sm:px-6 relative overflow-x-hidden selection:bg-brand-500 selection:text-white">
 
@@ -168,6 +174,7 @@
                                         Pilih Dari Daftar
                                     </button>
                                     <button type="button" @click="schoolMode = 'manual'; selectedSchoolId = ''" 
+                                        data-mode-manual="true"
                                         :class="schoolMode === 'manual' ? 'bg-brand-600 text-white font-bold' : 'bg-slate-800 text-slate-400 hover:text-white'"
                                         class="px-2.5 py-1 rounded-lg transition">
                                         Sekolah Lain / Manual
@@ -176,20 +183,18 @@
                             </div>
 
                             <div x-show="schoolMode === 'select'" class="space-y-2">
-                                <div class="relative">
-                                    <input type="text" x-model="schoolSearch" placeholder="Cari nama sekolah atau kecamatan..."
-                                        class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-brand-500 mb-1.5">
-                                    <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5"></i>
-                                </div>
-                                <select name="school_id" x-model="selectedSchoolId" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 transition">
-                                    <option value="">-- Pilih Sekolah Asal Anda --</option>
-                                    <template x-for="sch in filteredSchools" :key="sch.id">
-                                        <option :value="sch.id" x-text="sch.name + (sch.district ? ' (' + sch.district + ')' : '')" :selected="selectedSchoolId == sch.id"></option>
-                                    </template>
+                                <select id="school_id" name="school_id" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 transition">
+                                    <option value="">-- Ketik / Cari Asal Sekolah --</option>
+                                    @foreach($schools as $sch)
+                                        <option value="{{ $sch->id }}" data-campus="{{ $sch->campus_id }}" {{ (string)old('school_id') === (string)$sch->id ? 'selected' : '' }}>
+                                            {{ $sch->name }} {{ $sch->district ? '(' . $sch->district->name . ')' : '' }}
+                                        </option>
+                                    @endforeach
+                                    <option value="other" {{ old('school_id') === 'other' || old('school_name') ? 'selected' : '' }}>-- Sekolah Lainnya (Tulis Manual) --</option>
                                 </select>
                                 <p class="text-[11px] text-slate-400 flex items-center justify-between">
-                                    <span>Menampilkan <strong class="text-amber-300" x-text="filteredSchools.length"></strong> sekolah terdaftar.</span>
-                                    <span>Jika tidak ada di daftar, klik "Sekolah Lain / Manual".</span>
+                                    <span>Pilih dari <strong class="text-amber-300">{{ count($schools) }}</strong> sekolah terdaftar.</span>
+                                    <span>Jika belum terdaftar, pilih "Sekolah Lain / Manual".</span>
                                 </p>
                             </div>
 
@@ -440,6 +445,29 @@
         document.addEventListener('DOMContentLoaded', function() {
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
+            }
+
+            if (typeof $ !== 'undefined' && typeof $.fn.select2 !== 'undefined') {
+                const $select = $('#school_id');
+                $select.select2({
+                    placeholder: '-- Ketik / Cari Asal Sekolah --',
+                    allowClear: true,
+                    width: '100%',
+                    language: {
+                        noResults: function () {
+                            return 'Sekolah tidak ditemukan. Silakan klik tombol "Sekolah Lain / Manual"';
+                        },
+                        searching: function () {
+                            return 'Mencari sekolah...';
+                        }
+                    }
+                }).on('change', function() {
+                    const val = $(this).val();
+                    if (val === 'other') {
+                        const manualBtn = document.querySelector('[data-mode-manual]');
+                        if (manualBtn) manualBtn.click();
+                    }
+                });
             }
         });
     </script>

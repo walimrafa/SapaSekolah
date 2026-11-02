@@ -161,6 +161,8 @@ class StudentQuestionnaireController extends Controller
             ['student_name' => $validated['student_name'], 'school' => $schoolName]
         );
 
+        \App\Services\NotificationService::notifyQuestionnaireSubmitted($questionnaire);
+
         return redirect()->route('student-questionnaire.create')
             ->with('success_message', 'Terima kasih! Jawaban kuisioner Anda berhasil dikirim.');
     }
@@ -265,6 +267,7 @@ class StudentQuestionnaireController extends Controller
                     $values[] = $response->answers[$key] ?? '';
                 }
                 $values[] = $response->scholarship_interest === 'ya' ? 'Ya' : 'Tidak';
+                $values = array_map([\App\Support\SecuritySanitizer::class, 'sanitizeSpreadsheetCell'], $values);
 
                 foreach ($values as $index => $value) {
                     $type = is_int($value) ? DataType::TYPE_NUMERIC : DataType::TYPE_STRING;

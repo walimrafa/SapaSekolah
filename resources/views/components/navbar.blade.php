@@ -166,31 +166,112 @@
             </div>
         </div>
 
-        <!-- Notification Bell Center -->
-        <div x-data="{ open: false }" class="relative">
-            <button @click="open = !open" @click.away="open = false" class="p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 relative transition duration-150">
+        <!-- Notification Bell Center (Real-Time Database Backed) -->
+        @php
+            $navbarUser = auth()->user();
+            $unreadNotifCount = \App\Services\NotificationService::getUnreadCount($navbarUser);
+            $recentNotifs = \App\Services\NotificationService::getRecentForUser($navbarUser, 6);
+        @endphp
+        <div x-data="{
+                open: false,
+                unreadCount: {{ $unreadNotifCount }},
+                async markAsRead(id, actionUrl) {
+                    try {
+                        const res = await fetch(`/notifications/${id}/read`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+                        const data = await res.json();
+                        if (data && data.success) {
+                            this.unreadCount = data.unread_count;
+                        }
+                    } catch (e) {
+                        console.error('Mark as read error:', e);
+                    }
+                    if (actionUrl && actionUrl !== '') {
+                        window.location.href = actionUrl;
+                    }
+                },
+                async markAllAsRead() {
+                    try {
+                        const res = await fetch(`{{ route('notifications.read-all') }}`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+                        const data = await res.json();
+                        if (data && data.success) {
+                            this.unreadCount = 0;
+                            window.location.reload();
+                        }
+                    } catch (e) {
+                        window.location.reload();
+                    }
+                }
+            }"
+            class="relative">
+            <button @click="open = !open" @click.away="open = false" class="p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 relative transition duration-150" title="Notifikasi Sistem">
                 <i data-lucide="bell" class="w-5 h-5"></i>
-                <span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-amber-500 rounded-full ring-2 ring-white"></span>
+                <template x-if="unreadCount > 0">
+                    <span class="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 bg-rose-500 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center ring-2 ring-white"
+                          x-text="unreadCount > 99 ? '99+' : unreadCount"></span>
+                </template>
             </button>
 
             <!-- Notifications Panel -->
             <div x-show="open" x-transition
-                class="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-100 py-3 z-50">
+                class="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-slate-100 py-3 z-50">
                 <div class="px-4 py-2 border-b border-slate-100 flex items-center justify-between">
-                    <span class="text-xs font-bold text-slate-800">Notifikasi System</span>
-                    <span class="text-[10px] font-semibold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full">3 Baru</span>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-slate-800">Notifikasi Sistem</span>
+                        <template x-if="unreadCount > 0">
+                            <span class="text-[10px] font-extrabold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full" x-text="unreadCount + ' Baru'"></span>
+                        </template>
+                    </div>
+                    <template x-if="unreadCount > 0">
+                        <button type="button" @click="markAllAsRead()" class="text-[11px] font-bold text-brand-600 hover:text-brand-700">
+                            Tandai Semua Dibaca
+                        </button>
+                    </template>
                 </div>
-                <div class="divide-y divide-slate-50 max-h-64 overflow-y-auto">
-                    <div class="p-3 hover:bg-slate-50 transition cursor-pointer">
-                        <p class="text-xs font-semibold text-slate-800">Follow-up Terlambat</p>
-                        <p class="text-[11px] text-slate-500 mt-0.5">SMAN 1 Ciampel jatuh tempo hari ini.</p>
-                        <span class="text-[9px] text-slate-400 mt-1 block">10 menit lalu</span>
-                    </div>
-                    <div class="p-3 hover:bg-slate-50 transition cursor-pointer">
-                        <p class="text-xs font-semibold text-slate-800">Rencana Kunjungan Baru</p>
-                        <p class="text-[11px] text-slate-500 mt-0.5">Budi Santoso membuat kunjungan ke SMKS Texmaco.</p>
-                        <span class="text-[9px] text-slate-400 mt-1 block">1 jam lalu</span>
-                    </div>
+                <div class="divide-y divide-slate-50 max-h-80 overflow-y-auto">
+                    @forelse($recentNotifs as $notif)
+                        <div @click="markAsRead({{ $notif->id }}, '{{ $notif->action_url ?: '' }}')"
+                             class="p-3 transition cursor-pointer flex items-start gap-3 hover:bg-slate-50 {{ $notif->is_read ? 'opacity-75' : 'bg-brand-50/20' }}">
+                            <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 {{ $notif->is_read ? 'bg-slate-100 text-slate-500' : 'bg-brand-100 text-brand-700' }}">
+                                <i data-lucide="{{ $notif->icon ?: 'bell' }}" class="w-4 h-4"></i>
+                            </div>
+                            <div class="flex-1 min-w-0 text-left">
+                                <div class="flex items-center justify-between gap-1">
+                                    <p class="text-xs font-bold text-slate-800 truncate">{{ $notif->title }}</p>
+                                    @if(!$notif->is_read)
+                                        <span class="w-2 h-2 rounded-full bg-rose-500 shrink-0"></span>
+                                    @endif
+                                </div>
+                                <p class="text-[11px] text-slate-600 mt-0.5 line-clamp-2 leading-relaxed">{{ $notif->message }}</p>
+                                <span class="text-[9px] text-slate-400 mt-1 block">{{ $notif->created_at ? $notif->created_at->diffForHumans() : '' }}</span>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="p-6 text-center text-slate-400">
+                            <i data-lucide="bell-off" class="w-6 h-6 mx-auto mb-1.5 opacity-50"></i>
+                            <p class="text-xs font-semibold">Tidak ada notifikasi baru</p>
+                        </div>
+                    @endforelse
+                </div>
+
+                <div class="px-4 pt-2.5 mt-1 border-t border-slate-100 text-center">
+                    <a href="{{ route('notifications.index') }}" class="text-xs font-bold text-brand-600 hover:text-brand-700 inline-flex items-center gap-1">
+                        <span>Lihat Semua Notifikasi</span>
+                        <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                    </a>
                 </div>
             </div>
         </div>

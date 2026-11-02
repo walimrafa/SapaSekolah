@@ -138,38 +138,41 @@
             <!-- Integrasi Dapodik & Kemenag Button -->
             <button type="button" @click="showIntegrateModal = true"
                 style="background-color: #4f46e5; color: #ffffff;"
-                class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-600/30 flex items-center space-x-2 transition hover-lift cursor-pointer">
+                title="Integrasi Dapodik & Kemenag"
+                class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-600/30 flex items-center space-x-1.5 transition hover-lift cursor-pointer">
                 <i data-lucide="cloud-download" class="w-4 h-4 text-white"></i>
-                <span class="font-extrabold text-white">Integrasi Dapodik &amp; Kemenag</span>
+                <span class="font-bold text-white">Integrasi</span>
             </button>
 
             <!-- Download Master Data Sekolah Button -->
             <a href="{{ route('schools.export', request()->query()) }}"
-                title="Download seluruh data master sekolah (CSV / Excel)"
-                class="px-3.5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl text-xs shadow-md flex items-center space-x-1.5 transition">
+                title="Export data sekolah ke Excel"
+                class="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl text-xs shadow-md flex items-center space-x-1.5 transition">
                 <i data-lucide="download-cloud" class="w-4 h-4"></i>
-                <span>Download Data Sekolah</span>
+                <span>Export</span>
             </a>
 
             <!-- Direct Download Template Button -->
             <a href="{{ route('schools.export-template') }}"
-                class="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl text-xs border border-slate-300 flex items-center space-x-1.5 transition">
+                title="Unduh format template excel"
+                class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl text-xs border border-slate-300 flex items-center space-x-1.5 transition">
                 <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600"></i>
-                <span>Template Excel</span>
+                <span>Template</span>
             </a>
 
             <!-- Import Modal Trigger Button -->
             <button @click="showImportModal = true"
-                class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md shadow-emerald-600/20 flex items-center space-x-2 transition">
+                title="Import data sekolah dari file Excel / CSV"
+                class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md shadow-emerald-600/20 flex items-center space-x-1.5 transition">
                 <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
-                <span>Import Excel / CSV</span>
+                <span>Import</span>
             </button>
 
             <!-- Add School Button -->
             <a href="{{ route('schools.create') }}"
-                class="px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl text-xs shadow-md shadow-brand-600/20 flex items-center space-x-2 transition">
+                class="px-3.5 py-2 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl text-xs shadow-md shadow-brand-600/20 flex items-center space-x-1.5 transition">
                 <i data-lucide="plus-circle" class="w-4 h-4"></i>
-                <span>Tambah Sekolah</span>
+                <span>+ Tambah</span>
             </a>
 
             <!-- Hapus Semua Data Sekolah Button (Khusus Admin, Pimpinan, dan Koordinator Marketing) -->
@@ -177,7 +180,7 @@
                 <button type="button" @click="showDeleteAllModal = true"
                     style="background-color: #dc2626 !important; color: #ffffff !important;"
                     title="Hapus Seluruh Data Sekolah {{ $activeCampus ? '— ' . $activeCampus->name : '' }}"
-                    class="px-3.5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-extrabold rounded-xl text-xs shadow-md shadow-red-600/30 flex items-center space-x-1.5 transition hover-lift cursor-pointer">
+                    class="px-3 py-2 bg-red-600 hover:bg-red-700 text-white font-extrabold rounded-xl text-xs shadow-md shadow-red-600/30 flex items-center space-x-1.5 transition hover-lift cursor-pointer">
                     <i data-lucide="trash-2" class="w-4 h-4 text-white"></i>
                     <span class="text-white font-extrabold">Hapus Semua</span>
                 </button>

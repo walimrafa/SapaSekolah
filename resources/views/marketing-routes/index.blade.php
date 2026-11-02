@@ -73,11 +73,16 @@
     </style>
     @endpush
 
+    @php
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $campusName = $activeCampus ? $activeCampus->name : 'Kampus UBSI';
+    @endphp
+
     <!-- Header & 10-Day Campaign Trigger -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-            <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Rute Mobil Marketing &amp; Kampanye Outing 10 Hari</h1>
-            <p class="text-xs text-slate-500 mt-0.5">Navigasi mobil harian (10 sekolah/hari) berpusat dari Kampus UBSI Karawang</p>
+            <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Rute Mobil Marketing</h1>
+            <p class="text-xs text-slate-500 mt-0.5">Navigasi kunjungan harian berpusat dari {{ $campusName }}</p>
         </div>
 
         <form method="POST" action="{{ route('marketing-routes.store-campaign') }}" onsubmit="return confirm('Generate otomatis kampanye rute mobil 10 Hari (Hari #1 s/d Hari #10)?')">
@@ -85,7 +90,7 @@
             <input type="hidden" name="user_id" value="{{ auth()->id() }}">
             <button type="submit" class="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold rounded-xl text-xs shadow-md shadow-amber-500/20 flex items-center space-x-2 transition">
                 <i data-lucide="car" class="w-4 h-4"></i>
-                <span>Generate Kampanye Outing Mobil 10 Hari</span>
+                <span>Generate Kampanye 10 Hari</span>
             </button>
         </form>
     </div>
@@ -100,7 +105,7 @@
                         <i data-lucide="navigation" class="w-4 h-4 text-brand-600"></i>
                         <span>Visualisasi Peta Rute Mobil (Driving Route)</span>
                     </h3>
-                    <p class="text-[11px] text-slate-500 mt-0.5">Start: Kampus UBSI Karawang &rarr; Sekolah Terpilih &rarr; Kampus UBSI Karawang</p>
+                    <p class="text-[11px] text-slate-500 mt-0.5">Start: {{ $campusName }} &rarr; Sekolah Terpilih &rarr; {{ $campusName }}</p>
                 </div>
 
                 <div x-show="routePreview" class="text-right">

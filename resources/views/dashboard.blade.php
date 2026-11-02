@@ -1,5 +1,7 @@
 @php
     $appSettings = \App\Services\AppSettingService::all();
+    $activeCampus = \App\Services\AppContextService::getActiveCampus();
+    $campusLabel = $activeCampus ? $activeCampus->name : 'Seluruh Kampus';
 @endphp
 <x-app-layout title="Dashboard Command Center">
     <!-- Top Welcome Banner & Marketing Target Bar -->
@@ -14,13 +16,13 @@
             <div>
                 <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold mb-3 border border-amber-500/30">
                     <i data-lucide="zap" class="w-3.5 h-3.5"></i>
-                    <span>SAPA Sekolah Marketing Command Center</span>
+                    <span>{{ $campusLabel }} Command Center</span>
                 </div>
                 <h1 class="text-2xl lg:text-3xl font-extrabold tracking-tight">
-                    Halo, {{ auth()->user()->name }}! 👋
+                    Halo, {{ auth()->user()->name }} 👋
                 </h1>
-                <p class="text-slate-300 text-sm mt-1 max-w-xl">
-                    Pantau pemetaan sekolah SLTA Karawang, optimalkan rencana kunjungan marketing, dan tingkatkan konversi PMB kampus secara realtime.
+                <p class="text-slate-300 text-xs sm:text-sm mt-1 max-w-xl">
+                    Monitoring digital mapping sekolah, agenda marketing, dan konversi PMB secara realtime.
                 </p>
             </div>
 
@@ -29,7 +31,7 @@
                 <a href="{{ route('map.index') }}"
                     class="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold rounded-xl text-xs shadow-lg shadow-amber-500/20 flex items-center space-x-2 transition duration-150">
                     <i data-lucide="map-pin" class="w-4 h-4"></i>
-                    <span>Buka Peta GIS</span>
+                    <span>Peta GIS</span>
                 </a>
                 <a href="{{ route('schools.index') }}"
                     class="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl text-xs border border-white/20 flex items-center space-x-2 transition duration-150">
@@ -39,7 +41,7 @@
                 <a href="{{ route('visit-plans.index') }}"
                     class="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl text-xs border border-white/20 flex items-center space-x-2 transition duration-150">
                     <i data-lucide="calendar-plus" class="w-4 h-4"></i>
-                    <span>Buat Rencana</span>
+                    <span>Rencana Kunjungan</span>
                 </a>
             </div>
         </div>
@@ -47,7 +49,7 @@
 
     <!-- 10 KPI Cards Grid -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-        <x-stat-card title="Total Sekolah" :value="$totalSchools" icon="school" color="navy" subtitle="30 Kecamatan Karawang" />
+        <x-stat-card title="Total Sekolah" :value="$totalSchools" icon="school" color="navy" :subtitle="$campusLabel" />
         <x-stat-card title="Prioritas A" :value="$priorityA" icon="star" color="red" subtitle="Skor 80 - 100" />
         <x-stat-card title="Prioritas B" :value="$priorityB" icon="check-circle" color="amber" subtitle="Skor 60 - 79" />
         <x-stat-card title="Prioritas C" :value="$priorityC" icon="shield" color="emerald" subtitle="Skor < 60" />
@@ -66,8 +68,8 @@
         <div class="lg:col-span-8 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-soft">
             <div class="flex items-center justify-between mb-6">
                 <div>
-                    <h3 class="text-base font-bold text-slate-900">Distribution Sekolah per Kecamatan</h3>
-                    <p class="text-xs text-slate-500">Jumlah sekolah SLTA sederajat di Kabupaten Karawang</p>
+                    <h3 class="text-base font-bold text-slate-900">Distribusi Sekolah per Kecamatan</h3>
+                    <p class="text-xs text-slate-500">Jumlah sekolah SLTA {{ $activeCampus ? 'wilayah ' . $activeCampus->name : 'seluruh wilayah' }}</p>
                 </div>
                 <span class="px-2.5 py-1 bg-brand-50 text-brand-700 text-xs font-bold rounded-lg border border-brand-100">
                     {{ count($schoolsPerDistrict) }} Kecamatan
@@ -102,8 +104,8 @@
                         <i data-lucide="trophy" class="w-5 h-5"></i>
                     </div>
                     <div>
-                        <h3 class="text-base font-bold text-slate-900">Top 10 Sekolah Paling Potensial</h3>
-                        <p class="text-xs text-slate-500">Berdasarkan algoritma weighted scoring SAPA Sekolah</p>
+                        <h3 class="text-base font-bold text-slate-900">Top 10 Sekolah Potensial</h3>
+                        <p class="text-xs text-slate-500">Peringkat skor potensi konversi PMB</p>
                     </div>
                 </div>
                 <a href="{{ route('priorities.index') }}" class="text-xs font-bold text-brand-600 hover:text-brand-700">Lihat Semua &rarr;</a>

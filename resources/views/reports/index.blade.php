@@ -1,6 +1,10 @@
 <x-app-layout title="Laporan & Analytics">
 @php
     $appSettings = \App\Services\AppSettingService::all();
+    $activeCampus = \App\Services\AppContextService::getActiveCampus();
+    $campusName = $activeCampus ? $activeCampus->name : ($appSettings['campus_name'] ?? 'Universitas Bina Sarana Informatika');
+    $campusAddress = $activeCampus ? ($activeCampus->address ?: ($appSettings['campus_address'] ?? '')) : ($appSettings['campus_address'] ?? '');
+    $campusPhone = $activeCampus ? ($activeCampus->phone ?: ($appSettings['campus_phone'] ?? '')) : ($appSettings['campus_phone'] ?? '');
     $exportParams = array_merge(request()->query(), ['tab' => $activeTab]);
     $exportUrl = route('reports.export', $exportParams);
 @endphp
@@ -67,9 +71,9 @@
                     </div>
                 @endif
                 <div>
-                    <h2 class="text-base font-extrabold text-slate-900 uppercase tracking-tight">{{ $appSettings['campus_name'] ?? 'UNIVERSITAS BINA SARANA INFORMATIKA (UBSI) KAMPUS KARAWANG' }}</h2>
-                    <p class="text-xs text-slate-600 mt-0.5">{{ $appSettings['campus_address'] ?? 'Jl. Banten No.1, Karangpawitan, Karawang Barat, Karawang, Jawa Barat 41315' }}</p>
-                    <p class="text-xs text-slate-500">Telp: {{ $appSettings['campus_phone'] ?? '(0267) 8451234' }} • Email: {{ $appSettings['campus_email'] ?? 'karawang@bsi.ac.id' }} • Web: bsi.ac.id</p>
+                    <h2 class="text-base font-extrabold text-slate-900 uppercase tracking-tight">{{ $campusName }}</h2>
+                    <p class="text-xs text-slate-600 mt-0.5">{{ $campusAddress }}</p>
+                    <p class="text-xs text-slate-500">Telp: {{ $campusPhone }} • Web: bsi.ac.id</p>
                 </div>
             </div>
             <div class="text-right">
@@ -1690,11 +1694,11 @@
                 <p class="text-[10px] text-slate-500">Marketing &amp; Public Relations</p>
             </div>
             <div>
-                <p class="text-slate-600">Karawang, {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}</p>
+                <p class="text-slate-600">{{ $activeCampus ? ($activeCampus->city ?: ($activeCampus->short_name ?: $activeCampus->name)) : 'Karawang' }}, {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}</p>
                 <p class="font-bold text-slate-900 mt-0.5">Mengetahui &amp; Menyetujui,</p>
                 <div class="h-20"></div>
                 <p class="font-extrabold text-slate-900 underline">Kepala Kampus / Koordinator Marketing</p>
-                <p class="text-[10px] text-slate-500">{{ $appSettings['campus_name'] ?? 'UBSI Kampus Karawang' }}</p>
+                <p class="text-[10px] text-slate-500">{{ $campusName }}</p>
             </div>
         </div>
     </div>

@@ -177,6 +177,8 @@ class SchoolEventProposalController extends Controller
             ['ref_no' => $refNo, 'event_name' => $request->event_name, 'school' => $schoolName]
         );
 
+        \App\Services\NotificationService::notifyProposalSubmitted($proposal);
+
         // Kirim Notifikasi WhatsApp Instan (H-0) saat proposal baru diajukan di hari itu
         try {
             app(\App\Services\WhatsAppNotificationService::class)->notifyNewProposal($proposal);

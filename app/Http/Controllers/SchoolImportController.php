@@ -176,35 +176,37 @@ class SchoolImportController extends Controller
             fputs($file, "</tr></thead><tbody>");
 
             foreach ($schools as $index => $s) {
+                $cleanCell = fn($val) => htmlspecialchars(\App\Support\SecuritySanitizer::sanitizeSpreadsheetCell((string)($val ?? '-')));
+
                 fputs($file, "<tr>");
                 fputs($file, "<td align=\"center\">" . ($index + 1) . "</td>");
-                fputs($file, "<td style=\"mso-number-format:'\@';\">" . htmlspecialchars($s->npsn ?? '-') . "</td>");
-                fputs($file, "<td>" . htmlspecialchars($s->name) . "</td>");
-                fputs($file, "<td>" . htmlspecialchars($s->schoolType ? $s->schoolType->name : '-') . "</td>");
-                fputs($file, "<td>" . htmlspecialchars(strtoupper($s->status ?? '-')) . "</td>");
-                fputs($file, "<td>" . htmlspecialchars($s->district ? $s->district->name : '-') . "</td>");
-                fputs($file, "<td>" . htmlspecialchars($s->village ? $s->village->name : '-') . "</td>");
-                fputs($file, "<td>" . htmlspecialchars($s->address ?? '-') . "</td>");
-                fputs($file, "<td style=\"mso-number-format:'\@';\">" . htmlspecialchars($s->postal_code ?? '-') . "</td>");
-                fputs($file, "<td style=\"mso-number-format:'\@';\">" . htmlspecialchars($s->phone ?? '-') . "</td>");
-                fputs($file, "<td>" . htmlspecialchars($s->email ?? '-') . "</td>");
-                fputs($file, "<td>" . htmlspecialchars($s->website ?? '-') . "</td>");
-                fputs($file, "<td>" . htmlspecialchars($s->instagram ?? '-') . "</td>");
-                fputs($file, "<td>" . htmlspecialchars($s->accreditation ? $s->accreditation->code : '-') . "</td>");
-                fputs($file, "<td>" . htmlspecialchars($s->latitude ?? '-') . "</td>");
-                fputs($file, "<td>" . htmlspecialchars($s->longitude ?? '-') . "</td>");
+                fputs($file, "<td style=\"mso-number-format:'\@';\">" . $cleanCell($s->npsn) . "</td>");
+                fputs($file, "<td>" . $cleanCell($s->name) . "</td>");
+                fputs($file, "<td>" . $cleanCell($s->schoolType ? $s->schoolType->name : '-') . "</td>");
+                fputs($file, "<td>" . $cleanCell(strtoupper($s->status ?? '-')) . "</td>");
+                fputs($file, "<td>" . $cleanCell($s->district ? $s->district->name : '-') . "</td>");
+                fputs($file, "<td>" . $cleanCell($s->village ? $s->village->name : '-') . "</td>");
+                fputs($file, "<td>" . $cleanCell($s->address ?? '-') . "</td>");
+                fputs($file, "<td style=\"mso-number-format:'\@';\">" . $cleanCell($s->postal_code) . "</td>");
+                fputs($file, "<td style=\"mso-number-format:'\@';\">" . $cleanCell($s->phone) . "</td>");
+                fputs($file, "<td>" . $cleanCell($s->email) . "</td>");
+                fputs($file, "<td>" . $cleanCell($s->website) . "</td>");
+                fputs($file, "<td>" . $cleanCell($s->instagram) . "</td>");
+                fputs($file, "<td>" . $cleanCell($s->accreditation ? $s->accreditation->code : '-') . "</td>");
+                fputs($file, "<td>" . $cleanCell($s->latitude) . "</td>");
+                fputs($file, "<td>" . $cleanCell($s->longitude) . "</td>");
                 fputs($file, "<td><a href=\"" . htmlspecialchars($s->gmaps_search_url) . "\">Google Maps</a></td>");
                 fputs($file, "<td><a href=\"" . htmlspecialchars($s->waze_url) . "\">Navigasi Waze</a></td>");
-                fputs($file, "<td align=\"right\">" . htmlspecialchars($s->distance_from_campus ?? '0') . "</td>");
-                fputs($file, "<td align=\"right\">" . htmlspecialchars($s->student_count ?? 0) . "</td>");
-                fputs($file, "<td align=\"right\">" . htmlspecialchars($s->grade_10_count ?? 0) . "</td>");
-                fputs($file, "<td align=\"right\">" . htmlspecialchars($s->grade_11_count ?? 0) . "</td>");
-                fputs($file, "<td align=\"right\">" . htmlspecialchars($s->grade_12_count ?? 0) . "</td>");
-                fputs($file, "<td align=\"right\">" . htmlspecialchars($s->potential_score ?? '0') . "</td>");
-                fputs($file, "<td align=\"center\">" . htmlspecialchars($s->priority_level ?? 'C') . "</td>");
-                fputs($file, "<td>" . htmlspecialchars($s->primaryContact ? $s->primaryContact->name . ($s->primaryContact->position ? ' (' . $s->primaryContact->position . ')' : '') : '-') . "</td>");
-                fputs($file, "<td style=\"mso-number-format:'\@';\">" . htmlspecialchars($s->primaryContact ? $s->primaryContact->phone : '-') . "</td>");
-                fputs($file, "<td>" . htmlspecialchars(strtoupper($s->status_school ?? 'AKTIF')) . "</td>");
+                fputs($file, "<td align=\"right\">" . $cleanCell($s->distance_from_campus ?? '0') . "</td>");
+                fputs($file, "<td align=\"right\">" . $cleanCell($s->student_count ?? 0) . "</td>");
+                fputs($file, "<td align=\"right\">" . $cleanCell($s->grade_10_count ?? 0) . "</td>");
+                fputs($file, "<td align=\"right\">" . $cleanCell($s->grade_11_count ?? 0) . "</td>");
+                fputs($file, "<td align=\"right\">" . $cleanCell($s->grade_12_count ?? 0) . "</td>");
+                fputs($file, "<td align=\"right\">" . $cleanCell($s->potential_score ?? '0') . "</td>");
+                fputs($file, "<td align=\"center\">" . $cleanCell($s->priority_level ?? 'C') . "</td>");
+                fputs($file, "<td>" . $cleanCell($s->primaryContact ? $s->primaryContact->name . ($s->primaryContact->position ? ' (' . $s->primaryContact->position . ')' : '') : '-') . "</td>");
+                fputs($file, "<td style=\"mso-number-format:'\@';\">" . $cleanCell($s->primaryContact ? $s->primaryContact->phone : '-') . "</td>");
+                fputs($file, "<td>" . $cleanCell(strtoupper($s->status_school ?? 'AKTIF')) . "</td>");
                 fputs($file, "</tr>");
             }
 

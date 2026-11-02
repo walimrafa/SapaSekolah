@@ -65,10 +65,10 @@ class SchoolController extends Controller
 
         // Sorting
         $sortField = $request->get('sort', 'name');
-        $sortDir = $request->get('direction', 'asc');
-        $allowedSorts = ['name', 'npsn', 'student_count', 'grade_12_count', 'potential_score', 'priority_level'];
+        $sortDir = strtolower((string)$request->get('direction', 'asc')) === 'desc' ? 'desc' : 'asc';
+        $allowedSorts = ['name', 'npsn', 'student_count', 'grade_12_count', 'potential_score', 'priority_level', 'distance_from_campus'];
         
-        if (in_array($sortField, $allowedSorts)) {
+        if (in_array($sortField, $allowedSorts, true)) {
             $query->orderBy($sortField, $sortDir);
         } else {
             $query->orderBy('name', 'asc');

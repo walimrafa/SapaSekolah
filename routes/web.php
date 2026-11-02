@@ -55,7 +55,7 @@ Route::get('/hasil-support-event/sukses', [\App\Http\Controllers\EventStudentLea
 // Authentication Routes
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [LoginController::class, 'login']);
+    Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:10,1');
 });
 
 Route::post('/logout', [LogoutController::class, 'logout'])->name('logout')->middleware('auth');
@@ -67,6 +67,12 @@ Route::middleware(['auth'])->group(function () {
 
     // Context Switcher (Kampus & Periode Aktif)
     Route::post('/context/switch', [\App\Http\Controllers\ContextController::class, 'switchContext'])->name('context.switch');
+
+    // In-App Real-Time Notification System
+    Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/feed', [\App\Http\Controllers\NotificationController::class, 'feed'])->name('notifications.feed');
+    Route::post('/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
 
     // Public Portal Status Toggle (Admin, Pimpinan, Koordinator Marketing)
     Route::post('/portal-status/toggle', [\App\Http\Controllers\ContextController::class, 'togglePortal'])

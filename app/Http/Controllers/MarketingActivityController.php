@@ -95,16 +95,18 @@ class MarketingActivityController extends Controller
      */
     public function document(MarketingActivity $activity)
     {
-        // 1. If uploaded to Google Drive with real drive URL, redirect directly
-        if (!empty($activity->google_drive_file_url) && str_contains($activity->google_drive_file_url, 'drive.google.com')) {
-            return redirect()->away($activity->google_drive_file_url);
-        }
-
-        // 2. Serve local file directly with proper headers
+        // 1. Serve local file directly with proper headers if present on disk
         if (!empty($activity->document_path) && Storage::disk('public')->exists($activity->document_path)) {
             return response()->file(Storage::disk('public')->path($activity->document_path), [
                 'Content-Disposition' => 'inline; filename="' . ($activity->document_name ?: basename($activity->document_path)) . '"',
             ]);
+        }
+
+        // 2. If uploaded to Google Drive with direct file link (not just default root folder)
+        if (!empty($activity->google_drive_file_url) && 
+            str_contains($activity->google_drive_file_url, 'drive.google.com') && 
+            $activity->google_drive_file_url !== \App\Services\GoogleDriveService::ROOT_FOLDER_URL) {
+            return redirect()->away($activity->google_drive_file_url);
         }
 
         // 3. Fallback to Google Drive Folder

@@ -2,20 +2,20 @@
     <!-- Header Title & Calculation Info -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6" x-data="{ showIntakeImport: {{ $errors->has('intake_file') ? 'true' : 'false' }} }">
         <div>
-            <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Leaderboard Prioritas Sekolah SLTA</h1>
-            <p class="text-xs text-slate-500 mt-0.5">Prioritas kunjungan dihitung juga dari jumlah mahasiswa baru UBSI per sekolah asal</p>
+            <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Leaderboard Prioritas Sekolah</h1>
+            <p class="text-xs text-slate-500 mt-0.5">Peringkat prioritas kunjungan dan potensi konversi PMB {{ $activeCampus ? $activeCampus->name : '' }}</p>
         </div>
         
         <div class="flex flex-wrap items-center gap-2">
-            <button type="button" @click="showIntakeImport = true" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md flex items-center space-x-2 transition">
+            <button type="button" @click="showIntakeImport = true" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md flex items-center space-x-1.5 transition">
                 <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
-                <span>Import Mahasiswa Baru</span>
+                <span>Import Maba</span>
             </button>
             <form method="POST" action="{{ route('priorities.recalculate') }}">
                 @csrf
-                <button type="submit" class="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold rounded-xl text-xs shadow-md shadow-amber-500/20 flex items-center space-x-2 transition">
+                <button type="submit" class="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold rounded-xl text-xs shadow-md shadow-amber-500/20 flex items-center space-x-1.5 transition">
                     <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                    <span>Hitung Ulang Skor Prioritas</span>
+                    <span>Hitung Ulang</span>
                 </button>
             </form>
         </div>
