@@ -280,11 +280,11 @@
         <div x-data="{ open: false }" class="relative">
             <button @click="open = !open" @click.away="open = false" class="flex items-center space-x-2.5 p-1 rounded-xl hover:bg-slate-100 transition duration-150">
                 <div class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-700/30 text-white font-extrabold text-xs flex items-center justify-center shadow-sm">
-                    {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
+                    {{ strtoupper(substr(auth()->user()->name ?? 'US', 0, 2)) }}
                 </div>
                 <div class="hidden md:block text-left">
-                    <span class="text-xs font-bold text-slate-800 block leading-tight">{{ auth()->user()->name }}</span>
-                    <span class="text-[10px] text-slate-500 font-medium block leading-tight">{{ auth()->user()->role ? auth()->user()->role->name : 'Marketing' }}</span>
+                    <span class="text-xs font-bold text-slate-800 block leading-tight">{{ auth()->user()->name ?? 'User' }}</span>
+                    <span class="text-[10px] text-slate-500 font-medium block leading-tight">{{ auth()->user()->role?->name ?? 'Marketing' }}</span>
                 </div>
                 <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 hidden md:block"></i>
             </button>

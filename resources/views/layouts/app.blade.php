@@ -153,7 +153,7 @@
                             <div>
                                 <span class="font-extrabold tracking-wide uppercase text-[10px] bg-white/25 px-2 py-0.5 rounded-full mr-1.5">Persetujuan Diperlukan</span>
                                 <span class="font-bold">Permohonan Tutup Periode Pemasaran &amp; PMB.</span>
-                                <span class="opacity-95 hidden md:inline">Membutuhkan persetujuan Anda sebagai <strong>{{ auth()->user()->role->name ?? 'Approver' }}</strong>.</span>
+                                <span class="opacity-95 hidden md:inline">Membutuhkan persetujuan Anda sebagai <strong>{{ auth()->user()->role?->name ?? 'Approver' }}</strong>.</span>
                             </div>
                         </div>
                         <a href="{{ route('period-closing.index') }}" class="px-3.5 py-1.5 bg-white text-slate-900 font-extrabold text-xs rounded-xl hover:bg-slate-100 shadow transition flex items-center space-x-1.5 shrink-0">

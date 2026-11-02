@@ -15,10 +15,14 @@ class PeriodClosingService
      */
     public static function getActiveRequest(): ?PeriodClosingRequest
     {
-        return PeriodClosingRequest::with(['requester', 'pimpinan', 'koordinator', 'customerService'])
-            ->where('status', 'pending')
-            ->latest()
-            ->first();
+        try {
+            return PeriodClosingRequest::with(['requester', 'pimpinan', 'koordinator', 'customerService'])
+                ->where('status', 'pending')
+                ->latest()
+                ->first();
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     /**
@@ -26,9 +30,13 @@ class PeriodClosingService
      */
     public static function getLatestRequest(): ?PeriodClosingRequest
     {
-        return PeriodClosingRequest::with(['requester', 'pimpinan', 'koordinator', 'customerService'])
-            ->latest()
-            ->first();
+        try {
+            return PeriodClosingRequest::with(['requester', 'pimpinan', 'koordinator', 'customerService'])
+                ->latest()
+                ->first();
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     /**
@@ -38,10 +46,14 @@ class PeriodClosingService
     {
         if (!$user) return null;
 
-        $active = self::getActiveRequest();
-        if (!$active) return null;
+        try {
+            $active = self::getActiveRequest();
+            if (!$active) return null;
 
-        return $active->canUserApprove($user) ? $active : null;
+            return $active->canUserApprove($user) ? $active : null;
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     /**

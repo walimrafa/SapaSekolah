@@ -574,11 +574,11 @@
     <div class="p-3 theme-sidebar-footer bg-slate-950/80 border-t border-slate-800 shrink-0">
         <div class="flex items-center space-x-3 px-2 py-2 rounded-xl bg-slate-900">
             <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-brand-600 to-amber-500 flex items-center justify-center text-white font-bold text-sm shrink-0">
-                {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
+                {{ strtoupper(substr(auth()->user()->name ?? 'US', 0, 2)) }}
             </div>
             <a href="{{ route('profile.show') }}" class="flex-1 min-w-0 hover:opacity-80 transition" title="Buka Profil & Ganti Password Mandiri">
-                <p class="text-xs font-semibold text-white truncate">{{ auth()->user()->name }}</p>
-                <p class="text-[10px] text-amber-400 font-medium truncate">{{ auth()->user()->role ? auth()->user()->role->name : 'Marketing' }}</p>
+                <p class="text-xs font-semibold text-white truncate">{{ auth()->user()->name ?? 'User' }}</p>
+                <p class="text-[10px] text-amber-400 font-medium truncate">{{ auth()->user()->role?->name ?? 'Marketing' }}</p>
             </a>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
