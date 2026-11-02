@@ -142,6 +142,23 @@
 
 ---
 
+### 13. Visibilitas Master Kampus & Master Periode pada Smartphone
+* **Sebelumnya**:
+  * Di layar smartphone (<640px), tombol pemilih kampus operasional dan tahun periode PMB di top navbar disembunyikan menggunakan class `hidden sm:flex` agar tidak bertumpuk di layar kecil.
+  * Di dalam menu sidebar *Master & Sistem*, tautan hanya bertuliskan *"Wilayah"* (`/master-data`), tanpa adanya submenu khusus untuk *"Master Kampus"* dan *"Master Periode"*. Akibatnya, pengguna HP tidak menemukan menu pengelolaan maupun pengalihan kampus dan periode.
+* **Sesudah Perbaikan**:
+  * **Sub-Navbar Khusus Smartphone**: Ditambahkan utility bar modern gelap tepat di bawah top header HP (`sm:hidden`) yang menampilkan:
+    * `[ 🎓 UBSI Kampus Karawang ⌵ ]` / `[ 🎓 UBSI Kampus Cikampek ⌵ ]` (lengkap dengan dropdown beralih kampus & tautan kelola *Master Kampus →*).
+    * `[ 📅 T.A. 2026/2027 ⌵ ]` (lengkap dengan dropdown beralih periode & tautan kelola *Master Periode →*).
+  * **Submenu Langsung di Sidebar**: Pada menu *Master & Sistem*, kini tersedia submenu resmi:
+    * 🎓 **Master Kampus** (`/master-data?tab=campuses`)
+    * 📅 **Master Periode** (`/master-data?tab=periods`)
+    * 📍 **Master Wilayah** (`/master-data?tab=wilayah`)
+  * **Shortcut Cepat di Drawer PWA**: Menu drawer cepat di bagian bawah smartphone dilengkapi kartu pintasan langsung ke *Master Kampus* dan *Master Periode*.
+  * **Tab Swipeable di Master Data**: Halaman master data kini dapat di-geser horizontal (*swipe*) dengan mulus di smartphone.
+
+---
+
 ## 🚀 Panduan Rilis di Server Staging / Production
 Ketika melakukan pembaruan di server publik (`sapa.sobi.web.id`), jalankan langkah berikut:
 ```bash
