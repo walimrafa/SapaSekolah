@@ -132,6 +132,24 @@
                             class="w-full px-3.5 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500">
                     </div>
 
+                    <!-- Jenis Kelamin -->
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">
+                            Jenis Kelamin <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="grid grid-cols-2 gap-2 mt-0.5">
+                            <label class="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-300 bg-white cursor-pointer hover:bg-slate-50 transition">
+                                <input type="radio" name="gender" value="L" {{ old('gender', 'L') === 'L' ? 'checked' : '' }} required class="text-brand-600 focus:ring-brand-500">
+                                <span class="font-bold text-slate-800 text-xs">Laki-laki (L)</span>
+                            </label>
+                            <label class="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-300 bg-white cursor-pointer hover:bg-slate-50 transition">
+                                <input type="radio" name="gender" value="P" {{ old('gender') === 'P' ? 'checked' : '' }} required class="text-brand-600 focus:ring-brand-500">
+                                <span class="font-bold text-slate-800 text-xs">Perempuan (P)</span>
+                            </label>
+                        </div>
+                        @error('gender')<p class="mt-1 text-rose-600">{{ $message }}</p>@enderror
+                    </div>
+
                     <!-- Asal Sekolah -->
                     <div>
                         <label for="school_id" class="block font-bold text-slate-700 mb-1">

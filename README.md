@@ -39,10 +39,11 @@ Untuk melihat riwayat lengkap perubahan sistem, audit performa, perbaikan bug, d
 * Dashboard workflow persetujuan berjenjang: *Menunggu Review*, *Diajukan ke Pusat*, *Menunggu ACC*, *Disetujui*, hingga *Laporan Terdokumentasi*.
 * Integrasi berkas dan dokumentasi kegiatan langsung ke Google Drive Cloud.
 
-### 5. 📊 CRM Prospek Siswa & Kuisioner Beasiswa
-* Pengumpulan data minat beasiswa dan peminatan prodi siswa SLTA.
-* Pengisian kuisioner evaluasi berstandar sistematis (Skala 1–5 motivasi, sosial, biaya, dan niat kuliah).
+### 5. 📊 CRM Prospek Siswa, Kuisioner Beasiswa & Mahasiswa Baru
+* Pengumpulan data profil lengkap siswa (termasuk jenis kelamin L/P, kontak WA, email, media sosial siswa & wali, serta minat beasiswa/prodi).
+* Pengisian kuisioner evaluasi berstandar sistematis (Skala 1–5 motivasi, sosial, biaya, dan niat kuliah) baik via portal publik mandiri maupun input sistem internal staf.
 * Pipeline follow-up terintegrasi: *Belum Dihubungi*, *Respon*, *Berminat*, *Daftar Aplikasi*, hingga *Closing Registrasi PMB*.
+* Sinkronisasi data otomatis dari Kuisioner & Hasil Event langsung ke CRM Prospek hingga *Data Mahasiswa Baru* (`/new-students`) lengkap dengan rasio gender KPI L/P.
 
 ---
 

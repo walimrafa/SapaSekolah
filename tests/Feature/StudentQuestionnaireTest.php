@@ -142,8 +142,9 @@ class StudentQuestionnaireTest extends TestCase
 
             $this->assertSame(['Data Responden', 'Statistik'], $spreadsheet->getSheetNames());
             $this->assertSame('Nama Lengkap', $spreadsheet->getSheetByNameOrThrow('Data Responden')->getCell('B1')->getValue());
+            $this->assertSame('Jenis Kelamin', $spreadsheet->getSheetByNameOrThrow('Data Responden')->getCell('C1')->getValue());
             $this->assertSame('Statistik Kuisioner Siswa', $spreadsheet->getSheetByNameOrThrow('Statistik')->getCell('A1')->getValue());
-            $this->assertSame('Berminat Program Beasiswa UBSI', $spreadsheet->getSheetByNameOrThrow('Data Responden')->getCell('AB1')->getValue());
+            $this->assertSame('Berminat Program Beasiswa UBSI', $spreadsheet->getSheetByNameOrThrow('Data Responden')->getCell('AC1')->getValue());
 
             $spreadsheet->disconnectWorksheets();
         } finally {

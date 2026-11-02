@@ -24,6 +24,7 @@ class StudentQuestionnaire extends Model
         'school_event_proposal_id',
         'school_name',
         'student_name',
+        'gender',
         'student_class',
         'student_major',
         'student_phone',
@@ -61,6 +62,15 @@ class StudentQuestionnaire extends Model
             self::STATUS_BERMINAT => 'Berminat',
             self::STATUS_DAFTAR_APLIKASI => 'Daftar Aplikasi',
         ];
+    }
+
+    public function getGenderLabelAttribute(): string
+    {
+        return match($this->gender) {
+            'L' => 'Laki-laki',
+            'P' => 'Perempuan',
+            default => '-'
+        };
     }
 
     public function school()

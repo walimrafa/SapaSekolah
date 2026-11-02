@@ -479,6 +479,7 @@ class StudentFollowUpController extends Controller
             $headers = [
                 'Waktu Kuisioner',
                 'Nama Lengkap Siswa',
+                'Jenis Kelamin',
                 'Asal Sekolah',
                 'Kelas',
                 'Jurusan',
@@ -515,6 +516,7 @@ class StudentFollowUpController extends Controller
                 $rowData = [
                     $item->created_at->format('Y-m-d H:i'),
                     $item->student_name,
+                    $item->gender_label ?: '-',
                     $item->school_display_name,
                     $item->student_class,
                     $item->student_major,
@@ -863,6 +865,8 @@ class StudentFollowUpController extends Controller
             'student' => [
                 'id' => $studentQuestionnaire->id,
                 'student_name' => $studentQuestionnaire->student_name,
+                'gender' => $studentQuestionnaire->gender,
+                'gender_label' => $studentQuestionnaire->gender_label,
                 'school_id' => $studentQuestionnaire->school_id,
                 'school_name' => $studentQuestionnaire->school_name,
                 'school_display_name' => $studentQuestionnaire->school_display_name,
@@ -899,6 +903,7 @@ class StudentFollowUpController extends Controller
 
         $validated = $request->validate([
             'student_name' => ['required', 'string', 'max:150'],
+            'gender' => ['nullable', 'string', 'in:L,P,laki-laki,perempuan,Laki-laki,Perempuan'],
             'school_id' => ['nullable'],
             'school_name' => ['nullable', 'string', 'max:150'],
             'student_class' => ['nullable', 'string', 'max:50'],
@@ -929,6 +934,7 @@ class StudentFollowUpController extends Controller
 
         $dataToUpdate = [
             'student_name' => $validated['student_name'],
+            'gender' => $request->filled('gender') ? (strtoupper(substr($request->gender, 0, 1)) === 'P' ? 'P' : 'L') : $studentQuestionnaire->gender,
             'school_id' => $schoolId,
             'school_name' => $schoolName ?: $studentQuestionnaire->school_name,
             'student_class' => $validated['student_class'] ?? null,
@@ -961,6 +967,7 @@ class StudentFollowUpController extends Controller
         } elseif ($studentQuestionnaire->prospect) {
             $studentQuestionnaire->prospect->update([
                 'name' => $validated['student_name'],
+                'gender' => $studentQuestionnaire->gender ?: $studentQuestionnaire->prospect->gender,
                 'phone' => $validated['student_phone'],
                 'email' => $validated['student_email'] ?? $studentQuestionnaire->prospect->email,
                 'school_id' => $schoolId ?: $studentQuestionnaire->prospect->school_id,

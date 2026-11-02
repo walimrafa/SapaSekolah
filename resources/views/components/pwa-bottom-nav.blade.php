@@ -11,7 +11,7 @@
     <!-- PWA Bottom Navigation Bar (Khusus Smartphone / Layar Kecil, Strict Horizontal Row) -->
     <nav class="sm:hidden"
         style="position: fixed !important; bottom: 0 !important; left: 0 !important; right: 0 !important; width: 100% !important; z-index: 45 !important; background-color: rgba(10, 15, 30, 0.98) !important; -webkit-backdrop-filter: blur(16px) !important; backdrop-filter: blur(16px) !important; border-top: 1px solid rgba(255, 255, 255, 0.1) !important; box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.45) !important;">
-        <div style="display: flex !important; flex-direction: row !important; align-items: center !important; justify-content: space-around !important; width: 100% !important; max-width: 480px !important; margin: 0 auto !important; height: 58px !important; padding: 0 4px !important;">
+        <div style="display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; align-items: center !important; justify-content: space-around !important; width: 100% !important; max-width: 480px !important; margin: 0 auto !important; height: 58px !important; padding: 0 4px !important;">
             
             <!-- 1. Dashboard Ringkas -->
             <a href="{{ route('dashboard') }}" 

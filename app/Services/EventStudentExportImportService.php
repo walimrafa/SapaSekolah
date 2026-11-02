@@ -34,6 +34,7 @@ class EventStudentExportImportService
 
             $headers = [
                 'Nama Lengkap Siswa*',
+                'Jenis Kelamin (L/P)*',
                 'Asal Sekolah*',
                 'Kelas*',
                 'Jurusan*',
@@ -78,6 +79,7 @@ class EventStudentExportImportService
             $sampleData = [
                 [
                     'Ahmad Fauzi Rizki',
+                    'L',
                     'SMAN 1 Karawang',
                     'XII MIPA 1',
                     'IPA',
@@ -92,6 +94,7 @@ class EventStudentExportImportService
                 ],
                 [
                     'Siti Nurhaliza',
+                    'P',
                     'SMKN 1 Cikampek',
                     'XII RPL 2',
                     'Rekayasa Perangkat Lunak',
@@ -286,11 +289,22 @@ class EventStudentExportImportService
                     ? 'Berminat Program Beasiswa UBSI' 
                     : 'Non-Beasiswa / Jalur Mandiri';
 
+                $genderVal = null;
+                if (!empty($values['gender'])) {
+                    $rawGender = strtoupper(trim((string)$values['gender']));
+                    if (str_starts_with($rawGender, 'P') || str_contains($rawGender, 'PEREMPUAN') || str_contains($rawGender, 'WANITA')) {
+                        $genderVal = 'P';
+                    } elseif (str_starts_with($rawGender, 'L') || str_contains($rawGender, 'LAKI') || str_contains($rawGender, 'PRIA')) {
+                        $genderVal = 'L';
+                    }
+                }
+
                 $payload = [
                     'school_id' => $schoolId,
                     'school_event_proposal_id' => $eventProposalId,
                     'school_name' => $schoolName,
                     'student_name' => $values['student_name'],
+                    'gender' => $genderVal,
                     'student_class' => $values['student_class'] ?? 'XII',
                     'student_major' => $values['student_major'] ?? 'Umum',
                     'student_phone' => $values['student_phone'],
@@ -314,6 +328,7 @@ class EventStudentExportImportService
                         'school_id' => $payload['school_id'] ?? $existing->school_id,
                         'school_event_proposal_id' => $payload['school_event_proposal_id'] ?? $existing->school_event_proposal_id,
                         'student_name' => $payload['student_name'],
+                        'gender' => $payload['gender'] ?? $existing->gender,
                         'student_class' => $payload['student_class'],
                         'student_major' => $payload['student_major'],
                         'student_email' => $payload['student_email'],
@@ -413,7 +428,7 @@ class EventStudentExportImportService
             $sheet->getRowDimension(1)->setRowHeight(32);
 
             $sheet->setCellValue('A2', 'Diekspor pada: ' . date('d F Y H:i') . ' | Total: ' . count($students) . ' Siswa Terdaftar');
-            $sheet->mergeCells('A2:O2');
+            $sheet->mergeCells('A2:P2');
             $sheet->getStyle('A2')->applyFromArray([
                 'font' => ['italic' => true, 'size' => 10, 'color' => ['rgb' => '475569']],
                 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
@@ -424,6 +439,7 @@ class EventStudentExportImportService
                 'No',
                 'Waktu Daftar',
                 'Nama Lengkap Siswa',
+                'Jenis Kelamin',
                 'Asal Sekolah',
                 'Kelas',
                 'Jurusan',
@@ -466,22 +482,23 @@ class EventStudentExportImportService
                 $sheet->setCellValue('A' . $currentRow, $idx + 1);
                 $sheet->setCellValue('B' . $currentRow, $s->created_at->format('d/m/Y H:i'));
                 $sheet->setCellValue('C' . $currentRow, $s->student_name);
-                $sheet->setCellValue('D' . $currentRow, $s->school_display_name ?: '-');
-                $sheet->setCellValue('E' . $currentRow, $s->student_class ?: '-');
-                $sheet->setCellValue('F' . $currentRow, $s->student_major ?: '-');
-                $sheet->setCellValueExplicit('G' . $currentRow, (string)$s->student_phone, DataType::TYPE_STRING);
-                $sheet->setCellValue('H' . $currentRow, $s->student_email ?: '-');
-                $sheet->setCellValue('I' . $currentRow, $s->student_social_media ?: '-');
-                $sheet->setCellValue('J' . $currentRow, $s->guardian_name ?: '-');
-                $sheet->setCellValueExplicit('K' . $currentRow, (string)$s->guardian_phone, DataType::TYPE_STRING);
-                $sheet->setCellValue('L' . $currentRow, $s->guardian_social_media ?: '-');
-                $sheet->setCellValue('M' . $currentRow, $scholarshipDisplay);
-                $sheet->setCellValue('N' . $currentRow, $eventDisplay);
-                $sheet->setCellValue('O' . $currentRow, $statusDisplay);
+                $sheet->setCellValue('D' . $currentRow, $s->gender_label ?: '-');
+                $sheet->setCellValue('E' . $currentRow, $s->school_display_name ?: '-');
+                $sheet->setCellValue('F' . $currentRow, $s->student_class ?: '-');
+                $sheet->setCellValue('G' . $currentRow, $s->student_major ?: '-');
+                $sheet->setCellValueExplicit('H' . $currentRow, (string)$s->student_phone, DataType::TYPE_STRING);
+                $sheet->setCellValue('I' . $currentRow, $s->student_email ?: '-');
+                $sheet->setCellValue('J' . $currentRow, $s->student_social_media ?: '-');
+                $sheet->setCellValue('K' . $currentRow, $s->guardian_name ?: '-');
+                $sheet->setCellValueExplicit('L' . $currentRow, (string)$s->guardian_phone, DataType::TYPE_STRING);
+                $sheet->setCellValue('M' . $currentRow, $s->guardian_social_media ?: '-');
+                $sheet->setCellValue('N' . $currentRow, $scholarshipDisplay);
+                $sheet->setCellValue('O' . $currentRow, $eventDisplay);
+                $sheet->setCellValue('P' . $currentRow, $statusDisplay);
 
                 // Alternating zebra row background
                 $rowFillColor = ($idx % 2 === 0) ? 'FFFFFF' : 'F8FAFC';
-                $sheet->getStyle("A{$currentRow}:O{$currentRow}")->applyFromArray([
+                $sheet->getStyle("A{$currentRow}:P{$currentRow}")->applyFromArray([
                     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $rowFillColor]],
                     'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'E2E8F0']]],
                     'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
@@ -489,7 +506,7 @@ class EventStudentExportImportService
 
                 // Highlight Minat Beasiswa
                 if ($s->scholarship_interest === 'ya') {
-                    $sheet->getStyle('M' . $currentRow)->getFont()->setBold(true)->getColor()->setRGB('065F46'); // Emerald
+                    $sheet->getStyle('N' . $currentRow)->getFont()->setBold(true)->getColor()->setRGB('065F46'); // Emerald
                 }
 
                 $sheet->getRowDimension($currentRow)->setRowHeight(22);
@@ -524,6 +541,8 @@ class EventStudentExportImportService
 
             if (str_contains($normalized, 'namasiswa') || str_contains($normalized, 'namalengkap') || $normalized === 'nama') {
                 $map['student_name'] = $index;
+            } elseif (str_contains($normalized, 'jeniskelamin') || $normalized === 'jk' || $normalized === 'gender') {
+                $map['gender'] = $index;
             } elseif (str_contains($normalized, 'sekolah') || str_contains($normalized, 'asalsekolah')) {
                 $map['school_name'] = $index;
             } elseif (str_contains($normalized, 'kelas')) {

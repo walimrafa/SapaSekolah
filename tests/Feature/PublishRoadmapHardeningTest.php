@@ -589,6 +589,7 @@ class PublishRoadmapHardeningTest extends TestCase
             'campus_id' => $defaultCampus?->id,
             'academic_period_id' => $defaultPeriod?->id,
             'student_name' => 'Calon Maba Auto Sync',
+            'gender' => 'P',
             'student_phone' => $phone,
             'student_email' => 'calon_maba@test.com',
             'student_class' => 'XII',
@@ -618,6 +619,7 @@ class PublishRoadmapHardeningTest extends TestCase
         $prospect = Prospect::where('phone', $phone)->first();
         $this->assertNotNull($prospect);
         $this->assertEquals('Calon Maba Auto Sync', $prospect->name);
+        $this->assertEquals('P', $prospect->gender);
         $this->assertEquals($school->id, $prospect->school_id);
         $this->assertEquals($defaultCampus?->id, $prospect->campus_id);
         $this->assertEquals($defaultPeriod?->id, $prospect->academic_period_id);

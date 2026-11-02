@@ -128,6 +128,7 @@ class ProspectSyncService
 
         $prospectData = [
             'name' => $student->student_name,
+            'gender' => $student->gender ?: ($prospect?->gender ?? null),
             'phone' => $student->student_phone,
             'email' => $student->student_email ?: ($prospect?->email ?? null),
             'school_id' => $schoolId,

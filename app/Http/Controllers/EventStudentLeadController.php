@@ -62,6 +62,7 @@ class EventStudentLeadController extends Controller
 
         $request->validate([
             'student_name' => 'required|string|max:150',
+            'gender' => 'nullable|string|in:L,P,laki-laki,perempuan,Laki-laki,Perempuan',
             'school_id' => 'required',
             'school_name' => 'nullable|string|max:150',
             'student_class' => 'required|string|max:50',
@@ -122,6 +123,10 @@ class EventStudentLeadController extends Controller
 
         $targetCampusId = $event?->campus_id ?: ($school?->campus_id ?: ($activeCampus?->id ?? 1));
 
+        $gender = $request->filled('gender')
+            ? (strtoupper(substr($request->gender, 0, 1)) === 'P' ? 'P' : 'L')
+            : null;
+
         // Simpan ke database student_questionnaires agar tersinkronisasi otomatis ke CRM Follow Up Siswa
         $lead = StudentQuestionnaire::create([
             'school_id' => $schoolId,
@@ -130,6 +135,7 @@ class EventStudentLeadController extends Controller
             'school_event_proposal_id' => $request->school_event_proposal_id,
             'school_name' => $schoolName,
             'student_name' => $request->student_name,
+            'gender' => $gender,
             'student_class' => $request->student_class,
             'student_major' => $request->student_major,
             'student_phone' => $request->student_phone,

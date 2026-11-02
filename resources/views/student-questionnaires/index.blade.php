@@ -181,7 +181,14 @@
                         <tr class="align-top hover:bg-slate-50" id="student-row-{{ $response->id }}">
                             <td class="py-4 px-4 whitespace-nowrap">{{ $response->created_at->format('d/m/Y H:i') }}</td>
                             <td class="py-4 px-4">
-                                <p class="font-bold text-slate-900">{{ $response->student_name }}</p>
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <p class="font-bold text-slate-900">{{ $response->student_name }}</p>
+                                    @if($response->gender)
+                                        <span class="px-1.5 py-0.5 rounded text-[9px] font-extrabold {{ $response->gender === 'P' ? 'bg-pink-100 text-pink-700 border border-pink-200' : 'bg-sky-100 text-sky-700 border border-sky-200' }}" title="{{ $response->gender_label }}">
+                                            {{ $response->gender }}
+                                        </span>
+                                    @endif
+                                </div>
                                 <p class="text-slate-500 mt-1">{{ $response->student_social_media ?: 'Medsos: -' }}</p>
                             </td>
                             <td class="py-4 px-4">
@@ -429,6 +436,9 @@
                 document.getElementById('editStudentModalDesc').textContent = 'Input profil calon mahasiswa dan isi 16 poin kuisioner secara sistem';
                 document.getElementById('editStudentMethod').value = 'POST';
                 document.getElementById('editStudentId').value = '';
+                if (document.getElementById('editStudentGender')) {
+                    document.getElementById('editStudentGender').value = '';
+                }
                 form.action = '{{ route('student-questionnaires.store-system') }}';
                 
                 document.querySelectorAll('input[type="radio"][name^="answers["]').forEach(r => r.checked = false);
@@ -460,6 +470,9 @@
                     if (res.ok && json.success) {
                         const s = json.student;
                         document.getElementById('editStudentName').value = s.student_name || '';
+                        if (document.getElementById('editStudentGender')) {
+                            document.getElementById('editStudentGender').value = s.gender || '';
+                        }
                         document.getElementById('editStudentPhone').value = s.student_phone || '';
                         document.getElementById('editStudentEmail').value = s.student_email || '';
                         document.getElementById('editStudentClass').value = s.student_class || '';
@@ -627,10 +640,20 @@
 
                 <!-- TAB 1: PROFIL & KONTAK -->
                 <div id="tabContentProfile" class="space-y-4">
-                    <!-- Nama Siswa -->
-                    <div>
-                        <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Nama Lengkap Siswa <span class="text-rose-500">*</span></label>
-                        <input type="text" name="student_name" id="editStudentName" required class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs focus:ring-brand-500 focus:border-brand-500 font-semibold text-slate-900">
+                    <!-- Nama Siswa & Jenis Kelamin -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="sm:col-span-2">
+                            <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Nama Lengkap Siswa <span class="text-rose-500">*</span></label>
+                            <input type="text" name="student_name" id="editStudentName" required class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs focus:ring-brand-500 focus:border-brand-500 font-semibold text-slate-900">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Jenis Kelamin</label>
+                            <select name="gender" id="editStudentGender" class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs focus:ring-brand-500 focus:border-brand-500 bg-white font-semibold">
+                                <option value="">-- Pilih --</option>
+                                <option value="L">Laki-laki (L)</option>
+                                <option value="P">Perempuan (P)</option>
+                            </select>
+                        </div>
                     </div>
 
                     <!-- Asal Sekolah -->

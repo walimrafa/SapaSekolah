@@ -268,8 +268,13 @@
                                 <tr class="hover:bg-slate-50/80 transition duration-150 align-top">
                                     <!-- Siswa & Sekolah -->
                                     <td class="py-3.5 px-4">
-                                        <div class="font-extrabold text-slate-900 text-sm flex items-center gap-1.5">
-                                            {{ $student->student_name }}
+                                        <div class="font-extrabold text-slate-900 text-sm flex items-center gap-1.5 flex-wrap">
+                                            <span>{{ $student->student_name }}</span>
+                                            @if($student->gender)
+                                                <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-bold {{ $student->gender === 'P' ? 'bg-pink-100 text-pink-700 border border-pink-200' : 'bg-sky-100 text-sky-700 border border-sky-200' }}" title="{{ $student->gender_label }}">
+                                                    {{ $student->gender }}
+                                                </span>
+                                            @endif
                                             <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-bold bg-purple-100 text-purple-700 border border-purple-200">
                                                 Event
                                             </span>

@@ -92,6 +92,7 @@ class StudentQuestionnaireController extends Controller
             'school_name' => ['nullable', 'string', 'max:150'],
             'school_event_proposal_id' => ['nullable', 'exists:school_event_proposals,id'],
             'student_name' => ['required', 'string', 'max:150'],
+            'gender' => ['nullable', 'string', 'in:L,P,laki-laki,perempuan,Laki-laki,Perempuan'],
             'student_class' => ['required', 'string', 'max:50'],
             'student_major' => ['required', 'string', 'max:100'],
             'student_phone' => ['required', 'string', 'max:30'],
@@ -132,6 +133,10 @@ class StudentQuestionnaireController extends Controller
         $activeCampus = \App\Services\AppContextService::getActiveCampus();
         $activePeriod = \App\Services\AppContextService::getActivePeriod();
 
+        $gender = !empty($validated['gender'])
+            ? (strtoupper(substr($validated['gender'], 0, 1)) === 'P' ? 'P' : 'L')
+            : null;
+
         $questionnaire = StudentQuestionnaire::create([
             'school_id' => $schoolId,
             'campus_id' => $school?->campus_id ?: $activeCampus?->id,
@@ -140,6 +145,7 @@ class StudentQuestionnaireController extends Controller
             'source' => $eventProposalId ? 'support_event' : 'kuisioner',
             'school_name' => $schoolName,
             'student_name' => $validated['student_name'],
+            'gender' => $gender,
             'student_class' => $validated['student_class'],
             'student_major' => $validated['student_major'],
             'student_phone' => $validated['student_phone'],
@@ -223,6 +229,7 @@ class StudentQuestionnaireController extends Controller
             $headers = [
                 'Waktu Kirim',
                 'Nama Lengkap',
+                'Jenis Kelamin',
                 'Asal Sekolah',
                 'Kelas',
                 'Jurusan',
@@ -253,6 +260,7 @@ class StudentQuestionnaireController extends Controller
                 $values = [
                     $response->created_at->format('Y-m-d H:i:s'),
                     $response->student_name,
+                    $response->gender_label,
                     $response->school_display_name,
                     $response->student_class,
                     $response->student_major,
@@ -416,6 +424,7 @@ class StudentQuestionnaireController extends Controller
     {
         $validated = $request->validate([
             'student_name' => ['required', 'string', 'max:150'],
+            'gender' => ['nullable', 'string', 'in:L,P,laki-laki,perempuan,Laki-laki,Perempuan'],
             'school_id' => ['nullable'],
             'school_name' => ['nullable', 'string', 'max:150'],
             'student_class' => ['nullable', 'string', 'max:50'],
@@ -448,6 +457,7 @@ class StudentQuestionnaireController extends Controller
 
         $dataToUpdate = [
             'student_name' => $validated['student_name'],
+            'gender' => $request->filled('gender') ? (strtoupper(substr($request->gender, 0, 1)) === 'P' ? 'P' : 'L') : $studentQuestionnaire->gender,
             'school_id' => $schoolId,
             'school_name' => $schoolName ?: $studentQuestionnaire->school_name,
             'student_class' => $validated['student_class'] ?? null,
@@ -510,6 +520,7 @@ class StudentQuestionnaireController extends Controller
     {
         $validated = $request->validate([
             'student_name' => ['required', 'string', 'max:150'],
+            'gender' => ['nullable', 'string', 'in:L,P,laki-laki,perempuan,Laki-laki,Perempuan'],
             'school_id' => ['nullable'],
             'school_name' => ['nullable', 'string', 'max:150'],
             'student_class' => ['nullable', 'string', 'max:50'],
@@ -557,12 +568,17 @@ class StudentQuestionnaireController extends Controller
             $statusVal = StudentQuestionnaire::STATUS_DAFTAR_APLIKASI;
         }
 
+        $gender = !empty($validated['gender'])
+            ? (strtoupper(substr($validated['gender'], 0, 1)) === 'P' ? 'P' : 'L')
+            : null;
+
         $studentQuestionnaire = StudentQuestionnaire::create([
             'school_id' => $schoolId,
             'campus_id' => $school?->campus_id ?: ($activeCampus?->id ?? 1),
             'academic_period_id' => $activePeriod?->id,
             'school_name' => $schoolName ?: 'Sekolah Lain',
             'student_name' => $validated['student_name'],
+            'gender' => $gender,
             'student_class' => $validated['student_class'] ?? null,
             'student_major' => $validated['student_major'] ?? null,
             'student_phone' => $validated['student_phone'],

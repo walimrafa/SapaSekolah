@@ -91,10 +91,21 @@ class StudentQuestionnaireImportService
                     }
                 }
 
+                $genderVal = null;
+                if (!empty($values['gender'])) {
+                    $rawGender = strtoupper(trim((string)$values['gender']));
+                    if (str_starts_with($rawGender, 'P') || str_contains($rawGender, 'PEREMPUAN') || str_contains($rawGender, 'WANITA')) {
+                        $genderVal = 'P';
+                    } elseif (str_starts_with($rawGender, 'L') || str_contains($rawGender, 'LAKI') || str_contains($rawGender, 'PRIA')) {
+                        $genderVal = 'L';
+                    }
+                }
+
                 $payload = [
                     'school_id' => $schoolId,
                     'school_name' => $schoolName,
                     'student_name' => $values['student_name'],
+                    'gender' => $genderVal,
                     'student_class' => $values['student_class'] ?? null,
                     'student_major' => $values['student_major'] ?? null,
                     'student_phone' => $values['student_phone'],
@@ -164,6 +175,7 @@ class StudentQuestionnaireImportService
 
             $headers = [
                 'Nama Lengkap Siswa *',
+                'Jenis Kelamin (L/P)',
                 'No. HP Siswa *',
                 'Asal Sekolah',
                 'Kelas',
@@ -195,6 +207,7 @@ class StudentQuestionnaireImportService
             $sampleRows = [
                 [
                     'Muhammad Rizky Pratama',
+                    'L',
                     '081234567890',
                     'SMAN 1 Karawang',
                     'XII IPA 2',
@@ -211,6 +224,7 @@ class StudentQuestionnaireImportService
                 ],
                 [
                     'Siti Nurhaliza',
+                    'P',
                     '085712345678',
                     'SMKN 1 Karawang',
                     'XII RPL 1',
@@ -328,6 +342,16 @@ class StudentQuestionnaireImportService
                 str_contains($normalized, 'nama')
             )) {
                 $map['student_name'] = $index;
+                continue;
+            }
+
+            if (!isset($map['gender']) && (
+                str_contains($normalized, 'jenis kelamin') ||
+                str_contains($normalized, 'jeniskelamin') ||
+                $normalized === 'jk' ||
+                str_contains($normalized, 'gender')
+            )) {
+                $map['gender'] = $index;
                 continue;
             }
 

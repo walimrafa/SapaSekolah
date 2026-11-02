@@ -376,7 +376,12 @@
                             <!-- Siswa & Kelas -->
                             <td class="py-3.5 px-4">
                                 <div class="font-extrabold text-slate-900 text-sm flex items-center gap-1.5 flex-wrap">
-                                    {{ $student->student_name }}
+                                    <span>{{ $student->student_name }}</span>
+                                    @if($student->gender)
+                                        <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-bold {{ $student->gender === 'P' ? 'bg-pink-100 text-pink-700 border border-pink-200' : 'bg-sky-100 text-sky-700 border border-sky-200' }}" title="{{ $student->gender_label }}">
+                                            {{ $student->gender }}
+                                        </span>
+                                    @endif
                                     @if($student->source === 'support_event' || $student->school_event_proposal_id)
                                         <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200" title="{{ $student->eventProposal ? $student->eventProposal->event_name : 'Support Event' }}">
                                             <i data-lucide="sparkles" class="w-3 h-3 text-purple-600"></i>
@@ -892,10 +897,20 @@
                 <input type="hidden" name="_method" value="PUT">
                 <input type="hidden" id="editStudentId" value="">
 
-                <!-- Nama Siswa -->
-                <div>
-                    <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Nama Lengkap Siswa <span class="text-rose-500">*</span></label>
-                    <input type="text" name="student_name" id="editStudentName" required class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs focus:ring-brand-500 focus:border-brand-500 font-semibold text-slate-900">
+                <!-- Nama Siswa & Jenis Kelamin -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="sm:col-span-2">
+                        <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Nama Lengkap Siswa <span class="text-rose-500">*</span></label>
+                        <input type="text" name="student_name" id="editStudentName" required class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs focus:ring-brand-500 focus:border-brand-500 font-semibold text-slate-900">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Jenis Kelamin</label>
+                        <select name="gender" id="editStudentGender" class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs focus:ring-brand-500 focus:border-brand-500 bg-white font-semibold">
+                            <option value="">-- Pilih --</option>
+                            <option value="L">Laki-laki (L)</option>
+                            <option value="P">Perempuan (P)</option>
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Asal Sekolah -->
@@ -2021,6 +2036,9 @@
                 if (res.ok && json.success) {
                     const s = json.student;
                     document.getElementById('editStudentName').value = s.student_name || '';
+                    if (document.getElementById('editStudentGender')) {
+                        document.getElementById('editStudentGender').value = s.gender || '';
+                    }
                     document.getElementById('editStudentPhone').value = s.student_phone || '';
                     document.getElementById('editStudentEmail').value = s.student_email || '';
                     document.getElementById('editStudentClass').value = s.student_class || '';

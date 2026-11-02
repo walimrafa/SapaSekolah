@@ -96,6 +96,20 @@
                         @error('student_name')<p class="mt-1 text-red-600">{{ $message }}</p>@enderror
                     </div>
                     <div>
+                        <label class="block font-bold text-slate-700 mb-1">Jenis Kelamin <span class="text-red-500">*</span></label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <label class="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-300 bg-white cursor-pointer hover:bg-slate-50 transition">
+                                <input type="radio" name="gender" value="L" {{ old('gender', 'L') === 'L' ? 'checked' : '' }} required class="text-brand-600 focus:ring-brand-500">
+                                <span class="font-bold text-slate-800 text-xs">Laki-laki (L)</span>
+                            </label>
+                            <label class="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-300 bg-white cursor-pointer hover:bg-slate-50 transition">
+                                <input type="radio" name="gender" value="P" {{ old('gender') === 'P' ? 'checked' : '' }} required class="text-brand-600 focus:ring-brand-500">
+                                <span class="font-bold text-slate-800 text-xs">Perempuan (P)</span>
+                            </label>
+                        </div>
+                        @error('gender')<p class="mt-1 text-red-600">{{ $message }}</p>@enderror
+                    </div>
+                    <div>
                         <label for="school_id" class="block font-bold text-slate-700 mb-1">Asal Sekolah <span class="text-red-500">*</span></label>
                         <select id="school_id" name="school_id" class="w-full px-3.5 py-3 rounded-xl border border-slate-300 font-semibold focus:border-brand-500">
                             <option value="">-- Ketik / Cari Asal Sekolah --</option>
@@ -185,7 +199,7 @@
                     <legend class="text-xs sm:text-sm font-semibold text-slate-800">Apakah Anda berminat mengikuti program beasiswa UBSI? <span class="text-red-500">*</span></legend>
                     <div class="flex flex-col sm:flex-row gap-3 text-sm">
                         <label class="flex items-center gap-2 p-3 rounded-xl border border-slate-200 hover:border-brand-400 cursor-pointer">
-                            <input type="radio" name="scholarship_interest" value="ya" required {{ old('scholarship_interest') === 'ya' ? 'checked' : '' }} class="text-brand-600 focus:ring-brand-500">
+                            <input type="radio" name="scholarship_interest" value="ya" required {{ old('scholarship_interest', 'ya') === 'ya' ? 'checked' : '' }} class="text-brand-600 focus:ring-brand-500">
                             <span>Ya</span>
                         </label>
                         <label class="flex items-center gap-2 p-3 rounded-xl border border-slate-200 hover:border-brand-400 cursor-pointer">
@@ -207,6 +221,7 @@
         <footer class="text-center text-xs text-slate-500 pt-4 pb-8 border-t border-slate-200">
             <p>{{ $appSettings['footer_text'] }}</p>
             <p class="text-slate-400 mt-0.5">{{ $appSettings['footer_subtext'] }}</p>
+        </footer>
     </main>
 
     <script>

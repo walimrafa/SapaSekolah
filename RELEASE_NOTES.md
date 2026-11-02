@@ -4,7 +4,7 @@
 - **Versi**: 2.1.0 (Audit, Optimalisasi, Keamanan & Notifikasi Real-Time)
 - **Tanggal Pembaruan**: 2 November 2026
 - **Status Repository**: Terhubung & Tersinkronisasi ke GitHub (`main`)
-- **Hasil Pengujian Otomatis**: 44 Test Berhasil (229 Assertions) — **0 Bug, 0 Error, 100% Pass**
+- **Hasil Pengujian Otomatis**: 44 Test Berhasil (231 Assertions) — **0 Bug, 0 Error, 100% Pass**
 
 ---
 
@@ -156,6 +156,28 @@
     * 📍 **Master Wilayah** (`/master-data?tab=wilayah`)
   * **Shortcut Cepat di Drawer PWA**: Menu drawer cepat di bagian bawah smartphone dilengkapi kartu pintasan langsung ke *Master Kampus* dan *Master Periode*.
   * **Tab Swipeable di Master Data**: Halaman master data kini dapat di-geser horizontal (*swipe*) dengan mulus di smartphone.
+
+---
+
+### 14. Integrasi Kolom Jenis Kelamin & Sinkronisasi Sampai Data Mahasiswa Baru
+* **Sebelumnya**:
+  * Form Kuisioner Siswa Publik dan Form Hasil Support Event belum memiliki kolom isian **Jenis Kelamin (Laki-laki / Perempuan)**.
+  * Ketika siswa mengisi kuisioner atau terdaftar dari event, data tersimpan tanpa informasi jenis kelamin sehingga saat prospek closing/daftar aplikasi dan berstatus menjadi Mahasiswa Baru (`status = 'mahasiswa'`), kolom jenis kelamin di halaman *Data Mahasiswa Baru* kosong (`-`), dan rasio gender L/P tidak akurat.
+* **Sesudah Perbaikan**:
+  * **Database Migration**: Menambahkan kolom `gender` (`varchar(10)`, nullable) pada tabel `student_questionnaires` dengan index dan accessor `gender_label` ('Laki-laki' / 'Perempuan').
+  * **Formulir Publik & Modal Internal**:
+    * Form Kuisioner Siswa Publik (`/kuisioner-siswa`): Pilihan radio button Jenis Kelamin L/P yang responsif dan mudah disentuh.
+    * Form Hasil Support Event (`/event-siswa/daftar`): Pilihan radio button Jenis Kelamin L/P.
+    * Modal Input Internal & Edit Siswa (`/hasil-kuisioner` & `/student-follow-ups`): Dropdown pilihan Jenis Kelamin (L/P).
+  * **Sinkronisasi Otomatis ke CRM Prospek & Mahasiswa Baru**:
+    * `ProspectSyncService::syncStudentQuestionnaire` memetakan `gender` dari kuisioner ke `prospects.gender`.
+    * Ketika prospek berstatus `mahasiswa`, halaman *Data Mahasiswa Baru* (`/new-students`) langsung menampilkan nama siswa beserta badge gender, filter gender (L/P), dan persentase KPI mahasiswa baru L/P yang sinkron dan akurat secara *end-to-end*.
+  * **Dukungan Import & Export Excel**:
+    * Template dan importer kuisioner/event mengenali kolom `Jenis Kelamin`, `JK`, atau `Gender` ('L'/'P', 'Laki-laki'/'Perempuan').
+    * Seluruh ekspor Excel (Kuisioner, Hasil Event, Follow-Up) menyertakan kolom resmi *Jenis Kelamin*.
+  * **Optimalisasi Tampilan Smartphone**:
+    * **Avatar Profil Top Navbar**: Memperbaiki kontras inisial user (misal: "SU") pada navbar atas smartphone dengan latar belakang tegas dan elegan.
+    * **Bottom Navigation Bar PWA**: Memastikan menu bawah (Dashboard, Jadwal, + Kunjungan, Peta GIS, Aksi Cepat) selalu terkunci rapat secara horizontal (`flex-wrap: nowrap !important`) di atas peta dan dashboard pada seluruh ukuran layar handphone.
 
 ---
 
