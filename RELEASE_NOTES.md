@@ -1,10 +1,10 @@
 # 📋 CATATAN PERBAIKAN & UPDATE SISTEM SAPA SEKOLAH
 
 ### 📌 Ringkasan Versi
-- **Versi**: 2.1.0 (Audit, Optimalisasi, Keamanan & Notifikasi Real-Time)
+- **Versi**: 2.1.1 (Validasi Kelas Mahasiswa Baru, Netralisasi Event Form Multi-Kampus & Hardening)
 - **Tanggal Pembaruan**: 2 November 2026
 - **Status Repository**: Terhubung & Tersinkronisasi ke GitHub (`main`)
-- **Hasil Pengujian Otomatis**: 44 Test Berhasil (231 Assertions) — **0 Bug, 0 Error, 100% Pass**
+- **Hasil Pengujian Otomatis**: 45 Test Berhasil (242 Assertions) — **0 Bug, 0 Error, 100% Pass**
 
 ---
 
@@ -178,6 +178,29 @@
   * **Optimalisasi Tampilan Smartphone**:
     * **Avatar Profil Top Navbar**: Memperbaiki kontras inisial user (misal: "SU") pada navbar atas smartphone dengan latar belakang tegas dan elegan.
     * **Bottom Navigation Bar PWA**: Memastikan menu bawah (Dashboard, Jadwal, + Kunjungan, Peta GIS, Aksi Cepat) selalu terkunci rapat secara horizontal (`flex-wrap: nowrap !important`) di atas peta dan dashboard pada seluruh ukuran layar handphone.
+
+---
+
+### 15. Penambahan Input Kelas Mahasiswa Baru & Netralisasi Header Form Event Multi-Kampus
+* **Sebelumnya**:
+  * Pada modal *"Validasi Mahasiswa Baru Resmi"* di halaman CRM Prospek (`/prospects`), hanya ada inputan Nomor Induk Mahasiswa (NIM), tanpa ada inputan **Kelas Mahasiswa Baru** (seperti `12.1A.01` atau `Reguler A`), sehingga informasi pembagian kelas harus dicatat manual di tempat terpisah.
+  * Pada formulir publik *"PENDATAAN SISWA - HASIL SUPPORT EVENT"* (`/hasil-support-event`), header di bagian kanan atas tertulis statis *"Universitas Bina Sarana Informatika (UBSI) Kampus Karawang"*. Ketika event diselenggarakan untuk **UBSI Kampus Cikampek**, header tetap menampilkan Karawang, sehingga kurang sesuai dan membingungkan peserta.
+* **Sesudah Perbaikan**:
+  * **Input Kelas Mahasiswa Baru (NIM & Kelas Berdampingan)**:
+    * **Database Migration**: Menambahkan kolom `student_class` (`string(50)`, nullable) pada tabel `prospects` via migration `2026_11_02_044500_add_student_class_to_prospects_table.php`.
+    * **Modal Validasi Mahasiswa Baru**: Menghadirkan layout 2 kolom responsif:
+      1. *Nomor Induk Mahasiswa (NIM) Resmi \**
+      2. *Kelas Mahasiswa Baru \** (contoh placeholder: `12.1A.01 / Reguler A`), lengkap dengan validasi required server-side.
+    * **Integrasi Data Mahasiswa Baru (`/new-students`)**:
+      - Kolom NIM kini menyertakan badge identitas kelas siswa (`Kls: 12.1A.01`).
+      - Modal detail mahasiswa baru menampilkan informasi kelas lengkap.
+      - Input pencarian mendukung pencarian instan berdasarkan kode kelas.
+      - Ekspor Excel Mahasiswa Baru kini memiliki kolom resmi **Kelas** di kolom C.
+    * **Modal Tambah Prospek**: Menyertakan inputan *Kelas Asal* opsional untuk melengkapi data siswa dari awal.
+  * **Netralisasi Header Form Hasil Support Event**:
+    * Menghapus kata statis *"Kampus Karawang"* dari header kartu form pendataan siswa hasil support event (`resources/views/public-events/student-form.blade.php`).
+    * Header kini menampilkan secara netral dan elegan: **Universitas Bina Sarana Informatika (UBSI)**, sehingga dapat digunakan secara universal baik untuk kegiatan di UBSI Kampus Karawang maupun UBSI Kampus Cikampek.
+    * Nilai fallback pengaturan nama kampus di `AppSettingService` dan `storage/app/app_settings.json` diselaraskan menjadi nama universitas umum netral.
 
 ---
 

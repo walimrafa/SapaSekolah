@@ -813,4 +813,58 @@ class PublishRoadmapHardeningTest extends TestCase
         $this->assertEquals(5, $student->answers['information_social_media']);
         $this->assertEquals(4, $student->answers['campus_cost']);
     }
+
+    public function test_validate_new_student_with_nim_and_class_and_general_event_form_title(): void
+    {
+        $adminRole = Role::firstOrCreate(['name' => 'Admin'], ['description' => 'Admin']);
+        $admin = User::factory()->create(['role_id' => $adminRole->id]);
+
+        $defaultCampus = Campus::first();
+        $defaultPeriod = AcademicPeriod::getCurrent() ?: AcademicPeriod::first();
+        $school = School::first();
+
+        // 1. Prospect in Tahap 5 (berkas_lengkap)
+        $prospect = Prospect::create([
+            'name' => 'Calon Maba Validasi Kelas',
+            'phone' => '0812' . rand(10000000, 99999999),
+            'school_id' => $school->id,
+            'campus_id' => $defaultCampus?->id,
+            'academic_period_id' => $defaultPeriod?->id,
+            'graduation_year' => (int) date('Y'),
+            'interest_program' => 'S1 Sistem Informasi',
+            'study_time' => 'reguler_pagi',
+            'status' => Prospect::STATUS_BERKAS_LENGKAP,
+        ]);
+
+        $uniqueNim = '1226' . rand(1000, 9999);
+        $assignedClass = '12.1A.01';
+
+        // 2. Validate to Mahasiswa Baru requires NIM and student_class
+        $response = $this->actingAs($admin)->post(url('/prospects/' . $prospect->id . '/validate'), [
+            'nim' => $uniqueNim,
+            'student_class' => $assignedClass,
+            'interest_program' => 'S1 Sistem Informasi',
+            'study_time' => 'reguler_pagi',
+            'scholarship_type' => 'Beasiswa KIP-Kuliah',
+        ]);
+
+        $response->assertRedirect(route('new-students.index'));
+
+        $prospect->refresh();
+        $this->assertEquals(Prospect::STATUS_MAHASISWA, $prospect->status);
+        $this->assertEquals($uniqueNim, $prospect->nim);
+        $this->assertEquals($assignedClass, $prospect->student_class);
+
+        // 3. Verify on new-students page
+        $newStudentsPage = $this->actingAs($admin)->get(route('new-students.index', ['search' => $uniqueNim]));
+        $newStudentsPage->assertOk();
+        $newStudentsPage->assertSee($uniqueNim);
+        $newStudentsPage->assertSee($assignedClass);
+
+        // 4. Verify public event student lead form has general UBSI title without static Kampus Karawang
+        $publicEventForm = $this->get(route('event-students.create'));
+        $publicEventForm->assertOk();
+        $publicEventForm->assertSee('Universitas Bina Sarana Informatika (UBSI)');
+        $publicEventForm->assertDontSee('Universitas Bina Sarana Informatika (UBSI) Kampus Karawang');
+    }
 }

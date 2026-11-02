@@ -29,6 +29,7 @@ class NewStudentController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('nim', 'like', "%{$search}%")
+                  ->orWhere('student_class', 'like', "%{$search}%")
                   ->orWhere('phone', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%");
             });
@@ -171,6 +172,7 @@ class NewStudentController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('nim', 'like', "%{$search}%")
+                  ->orWhere('student_class', 'like', "%{$search}%")
                   ->orWhere('phone', 'like', "%{$search}%");
             });
         }
@@ -186,6 +188,7 @@ class NewStudentController extends Controller
             $headers = [
                 'No',
                 'NIM',
+                'Kelas',
                 'Nama Lengkap',
                 'L/P',
                 'No WhatsApp',
@@ -200,17 +203,18 @@ class NewStudentController extends Controller
                 'Status',
             ];
             $sheet->fromArray([$headers], null, 'A1');
-            $sheet->getStyle('A1:N1')->getFont()->setBold(true);
-            $sheet->getStyle('A1:N1')->getFill()
+            $sheet->getStyle('A1:O1')->getFont()->setBold(true);
+            $sheet->getStyle('A1:O1')->getFill()
                 ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
                 ->getStartColor()->setARGB('FF1E293B');
-            $sheet->getStyle('A1:N1')->getFont()->getColor()->setARGB('FFFFFFFF');
+            $sheet->getStyle('A1:O1')->getFont()->getColor()->setARGB('FFFFFFFF');
 
             $rowIdx = 2;
             foreach ($students as $idx => $s) {
                 $sheet->fromArray([[
                     $idx + 1,
                     $s->nim ?: '-',
+                    $s->student_class ?: '-',
                     $s->name,
                     $s->gender ?: '-',
                     $s->phone ?: '-',
@@ -227,7 +231,7 @@ class NewStudentController extends Controller
                 $rowIdx++;
             }
 
-            foreach (range('A', 'N') as $col) {
+            foreach (range('A', 'O') as $col) {
                 $sheet->getColumnDimension($col)->setAutoSize(true);
             }
 

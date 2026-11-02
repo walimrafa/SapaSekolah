@@ -202,6 +202,13 @@
                                 @else
                                     <span class="text-slate-400 italic font-sans text-[11px]">Belum diisi</span>
                                 @endif
+                                @if($s->student_class)
+                                    <div class="mt-1">
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold bg-slate-100 text-slate-700 border border-slate-200" title="Kelas Mahasiswa">
+                                            Kls: {{ $s->student_class }}
+                                        </span>
+                                    </div>
+                                @endif
                             </td>
                             <td class="py-3.5 px-4">
                                 <div class="font-bold text-slate-900 text-xs">{{ $s->name }}</div>
@@ -367,8 +374,10 @@
                             <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
                                 <span class="text-[10px] text-slate-400 uppercase font-bold block">Nama Lengkap</span>
                                 <span class="font-bold text-slate-900 text-sm block" x-text="selectedStudent.name"></span>
-                                <div class="flex items-center gap-2 text-[11px] text-slate-600 pt-1">
+                                <div class="flex items-center gap-2 text-[11px] text-slate-600 pt-1 flex-wrap">
                                     <span>NIM: <strong class="font-mono text-indigo-700" x-text="selectedStudent.nim || '-'"></strong></span>
+                                    <span>•</span>
+                                    <span>Kelas: <strong class="font-mono text-slate-900" x-text="selectedStudent.student_class || '-'"></strong></span>
                                     <span>•</span>
                                     <span x-text="selectedStudent.gender === 'L' ? 'Laki-laki' : (selectedStudent.gender === 'P' ? 'Perempuan' : '-')"></span>
                                 </div>

@@ -32,6 +32,7 @@ class Prospect extends Model
 
     protected $fillable = [
         'nim',
+        'student_class',
         'school_id',
         'campus_id',
         'academic_period_id',

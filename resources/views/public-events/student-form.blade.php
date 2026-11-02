@@ -46,8 +46,8 @@
             </div>
 
             <div class="hidden sm:block text-right text-xs text-slate-400">
-                <span class="font-bold text-amber-300 block">{{ $appSettings['campus_name'] ?? 'Universitas BSI' }}</span>
-                <span>Booth & Kegiatan Sekolah</span>
+                <span class="font-bold text-amber-300 block">Universitas Bina Sarana Informatika (UBSI)</span>
+                <span>Booth &amp; Kegiatan Sekolah</span>
             </div>
         </header>
 

@@ -30,7 +30,7 @@ class AppSettingService
             'header_title' => 'SAPA Sekolah Marketing Command Center',
             'footer_text' => 'SAPA Sekolah © ' . date('Y') . ' • Perguruan Tinggi Marketing Mapping System',
             'footer_subtext' => 'UBSI Kampus Karawang • Jawa Barat',
-            'campus_name' => 'Universitas Bina Sarana Informatika (UBSI) Kampus Karawang',
+            'campus_name' => 'Universitas Bina Sarana Informatika (UBSI)',
             'campus_address' => SchoolScoringService::UBSI_ADDRESS,
             'campus_latitude' => SchoolScoringService::UBSI_LATITUDE,
             'campus_longitude' => SchoolScoringService::UBSI_LONGITUDE,

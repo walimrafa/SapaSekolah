@@ -32,7 +32,8 @@ class ReportExportService
         $tab = $request->get('tab', 'overview');
         $spreadsheet = new Spreadsheet();
         
-        $campusName = AppSettingService::get('campus_name', 'Universitas Bina Sarana Informatika (UBSI) Kampus Karawang');
+        $activeCampus = AppContextService::getActiveCampus();
+        $campusName = $activeCampus ? $activeCampus->name : AppSettingService::get('campus_name', 'Universitas Bina Sarana Informatika (UBSI)');
         $exportDate = Carbon::now()->translatedFormat('d F Y, H:i') . ' WIB';
 
         switch ($tab) {

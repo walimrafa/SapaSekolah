@@ -5,6 +5,7 @@
         validateModalOpen: false,
         validatingProspect: null,
         prospectNim: '',
+        prospectStudentClass: '',
         prospectProgram: '',
         prospectStudyTime: '',
         prospectScholarshipType: '',
@@ -13,6 +14,7 @@
         openValidateModal(p) {
             this.validatingProspect = p;
             this.prospectNim = p.nim || '';
+            this.prospectStudentClass = p.student_class || '';
             this.prospectProgram = p.interest_program || '';
             this.prospectStudyTime = p.study_time || 'reguler_pagi';
             this.prospectScholarshipType = p.scholarship_type || 'Beasiswa KIP-Kuliah';
@@ -484,14 +486,24 @@
                                 </div>
                             </div>
 
-                            <!-- NIM Input -->
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">
-                                    Nomor Induk Mahasiswa (NIM) Resmi <span class="text-red-500">*</span>
-                                </label>
-                                <input type="text" name="nim" x-model="prospectNim" required placeholder="Contoh: 12240123"
-                                    class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono font-bold bg-slate-50/50">
-                                <span class="text-[10px] text-slate-400 block mt-1">NIM resmi yang diterbitkan untuk mahasiswa baru ini.</span>
+                            <!-- NIM & Kelas Input -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">
+                                        Nomor Induk Mahasiswa (NIM) <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="text" name="nim" x-model="prospectNim" required placeholder="Contoh: 12240123"
+                                        class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono font-bold bg-slate-50/50">
+                                    <span class="text-[10px] text-slate-400 block mt-1">NIM resmi mahasiswa baru.</span>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">
+                                        Kelas Mahasiswa <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="text" name="student_class" x-model="prospectStudentClass" required placeholder="Contoh: 12.1A.01 / Reguler A"
+                                        class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono font-bold bg-slate-50/50">
+                                    <span class="text-[10px] text-slate-400 block mt-1">Kode kelas mahasiswa resmi.</span>
+                                </div>
                             </div>
 
                             <!-- Program Studi & Waktu Kuliah Confirm -->
@@ -511,7 +523,7 @@
 
                                 <div>
                                     <label class="block text-xs font-bold text-slate-700 mb-1">
-                                        Waktu Kuliah / Kelas <span class="text-red-500">*</span>
+                                        Waktu Kuliah (Shift) <span class="text-red-500">*</span>
                                     </label>
                                     <select name="study_time" x-model="prospectStudyTime" required
                                         class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50/50">
@@ -656,14 +668,19 @@
                             </select>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-2">
+                        <div class="grid grid-cols-3 gap-2">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Kelas Asal</label>
+                                <input type="text" name="student_class" placeholder="Contoh: XII IPA 1"
+                                    class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            </div>
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1">Tahun Lulus <span class="text-red-500">*</span></label>
                                 <input type="number" name="graduation_year" value="{{ date('Y') }}" required
                                     class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500">
                             </div>
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Minat Program Studi</label>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Minat Prodi</label>
                                 <select name="interest_program" class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white">
                                     <option value="">Pilih Prodi</option>
                                     @foreach($studyPrograms as $sp)

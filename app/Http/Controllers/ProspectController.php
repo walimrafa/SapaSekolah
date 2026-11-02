@@ -113,6 +113,7 @@ class ProspectController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'gender' => ['nullable', 'in:L,P'],
+            'student_class' => ['nullable', 'string', 'max:50'],
             'phone' => ['required', 'string', 'max:20'],
             'email' => ['nullable', 'email', 'max:100'],
             'school_id' => ['required', 'exists:schools,id'],
@@ -257,6 +258,7 @@ class ProspectController extends Controller
     {
         $validated = $request->validate([
             'nim' => ['required', 'string', 'max:30', 'unique:prospects,nim,' . $prospect->id],
+            'student_class' => ['required', 'string', 'max:50'],
             'interest_program' => ['nullable', 'string', 'max:100'],
             'study_time' => ['nullable', 'string', 'max:50'],
             'scholarship_type' => ['nullable', 'string', 'max:100'],
@@ -264,17 +266,19 @@ class ProspectController extends Controller
         ], [
             'nim.required' => 'Nomor Induk Mahasiswa (NIM) wajib diisi untuk validasi.',
             'nim.unique' => 'NIM ini sudah terdaftar untuk mahasiswa lain.',
+            'student_class.required' => 'Kelas / Kode Kelas mahasiswa baru wajib diisi.',
         ]);
 
         $prospect->update([
             'nim' => $validated['nim'],
+            'student_class' => $validated['student_class'],
             'interest_program' => $validated['interest_program'] ?? $prospect->interest_program,
             'study_time' => $validated['study_time'] ?? $prospect->study_time,
             'scholarship_type' => $validated['scholarship_type'] ?? $prospect->scholarship_type,
             'status' => Prospect::STATUS_MAHASISWA,
             'validated_at' => now(),
             'validated_by' => auth()->id(),
-            'notes' => $validated['notes'] ? ($prospect->notes ? $prospect->notes . "\n" . $validated['notes'] : $validated['notes']) : $prospect->notes,
+            'notes' => !empty($validated['notes']) ? ($prospect->notes ? $prospect->notes . "\n" . $validated['notes'] : $validated['notes']) : $prospect->notes,
         ]);
 
         try {
