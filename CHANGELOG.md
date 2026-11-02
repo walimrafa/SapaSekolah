@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## [2.1.0] - 2026-11-02
+> Catatan perbaikan lengkap format Sebelum vs Sesudah tersedia di [RELEASE_NOTES.md](RELEASE_NOTES.md).
 
 ### 1. Ringkasan Perubahan
 Optimalisasi arsitektur, penguatan keamanan (OWASP), implementasi sistem notifikasi real-time terintegrasi database, perbaikan isu attachment/dokumen lapangan, penyelarasan format pencarian sekolah Select2 di portal publik, dynamic campus branding (menghilangkan hardcoded Karawang saat kampus Cikampek aktif), serta penyederhanaan seluruh teks copy aplikasi (SaaS minimalis modern).
