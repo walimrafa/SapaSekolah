@@ -14,19 +14,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Pastikan role dan kampus dasar tersedia
-        if (!Role::where('name', 'Admin')->exists()) {
-            Role::firstOrCreate(['name' => 'Admin'], ['description' => 'Administrator']);
-            Role::firstOrCreate(['name' => 'Pimpinan'], ['description' => 'Pimpinan Kampus']);
-            Role::firstOrCreate(['name' => 'Koordinator Marketing'], ['description' => 'Koordinator Marketing']);
-            Role::firstOrCreate(['name' => 'Marketing'], ['description' => 'Staff Marketing']);
-            Role::firstOrCreate(['name' => 'Customer Service'], ['description' => 'Staff CS']);
-        }
+        // Pastikan seluruh role dan kampus dasar tersedia
+        Role::firstOrCreate(['name' => 'Admin'], ['description' => 'Administrator']);
+        Role::firstOrCreate(['name' => 'Pimpinan'], ['description' => 'Pimpinan Kampus']);
+        Role::firstOrCreate(['name' => 'Koordinator Marketing'], ['description' => 'Koordinator Marketing']);
+        Role::firstOrCreate(['name' => 'Marketing'], ['description' => 'Staff Marketing']);
+        Role::firstOrCreate(['name' => 'Customer Service'], ['description' => 'Staff CS']);
 
-        if (!Campus::where('code', 'KRW')->exists()) {
-            Campus::firstOrCreate(['code' => 'KRW'], ['name' => 'UBSI Kampus Karawang', 'is_default' => true, 'is_active' => true]);
-            Campus::firstOrCreate(['code' => 'CKP'], ['name' => 'UBSI Kampus Cikampek', 'is_default' => false, 'is_active' => true]);
-        }
+        Campus::firstOrCreate(['code' => 'KRW'], ['name' => 'UBSI Kampus Karawang', 'is_default' => true, 'is_active' => true]);
+        Campus::firstOrCreate(['code' => 'CKP'], ['name' => 'UBSI Kampus Cikampek', 'is_default' => false, 'is_active' => true]);
 
         $roleAdmin = Role::where('name', 'Admin')->first();
         $rolePimpinan = Role::where('name', 'Pimpinan')->first();

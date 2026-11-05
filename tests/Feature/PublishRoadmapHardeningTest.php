@@ -572,7 +572,7 @@ class PublishRoadmapHardeningTest extends TestCase
         $followUp = \App\Models\FollowUp::create([
             'user_id' => $admin->id,
             'school_id' => $school->id,
-            'academic_period_id' => \App\Models\AcademicPeriod::first()?->id,
+            'academic_period_id' => AcademicPeriod::first()?->id,
             'campus_id' => $defaultCampus?->id,
             'followup_date' => '2026-10-30',
             'status' => 'sosialisasi_fix',
