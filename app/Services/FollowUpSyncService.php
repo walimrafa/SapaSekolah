@@ -50,11 +50,11 @@ class FollowUpSyncService
             }
         }
 
-        $campusId = $visit->campus_id 
-            ?: ($visit->school?->campus_id 
-                ?: (\App\Services\AppContextService::getActiveCampus()?->id ?: 1));
+        // Campus ID must strictly follow school's campus
+        $campusId = $visit->school?->campus_id 
+            ?: ($visit->campus_id ?: 1);
         $periodId = $visit->academic_period_id 
-            ?: (\App\Services\AppContextService::getActivePeriod()?->id ?: 1);
+            ?: (\App\Models\AcademicPeriod::getCurrent()?->id ?: 1);
 
         $data = [
             'school_id' => $visit->school_id,
@@ -89,9 +89,8 @@ class FollowUpSyncService
             if ($visit->google_drive_file_url) {
                 $data['google_drive_file_url'] = $visit->google_drive_file_url;
             }
-            if (empty($followUp->campus_id)) {
-                $data['campus_id'] = $campusId;
-            }
+            // Ensure campus_id is always synced with school's campus
+            $data['campus_id'] = $campusId;
             if (empty($followUp->academic_period_id)) {
                 $data['academic_period_id'] = $periodId;
             }

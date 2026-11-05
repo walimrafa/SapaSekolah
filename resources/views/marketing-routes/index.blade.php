@@ -416,15 +416,34 @@
 
                     <!-- Sequence Preview -->
                     <div x-show="routePreview && routePreview.sequence && routePreview.sequence.length > 0" class="space-y-2 pt-2 border-t border-slate-100">
-                        <p class="text-[11px] font-bold text-slate-700">Urutan <span x-text="routePreview.sequence.length"></span> Sekolah Rute Mobil:</p>
-                        <div class="max-h-36 overflow-y-auto space-y-1.5 pr-1">
+                        <div class="flex items-center justify-between">
+                            <p class="text-[11px] font-bold text-slate-700">Urutan <span x-text="routePreview.sequence.length"></span> Titik Sekolah Rute Mobil:</p>
+                            <span class="text-[10px] text-slate-400">Klik 'Navigasi' pada tiap sekolah untuk rute langsung</span>
+                        </div>
+                        <div class="max-h-48 overflow-y-auto space-y-1.5 pr-1">
                             <template x-for="(s, idx) in routePreview.sequence" :key="s.id">
-                                <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between text-xs">
-                                    <div class="flex items-center space-x-2">
-                                        <span class="w-5 h-5 rounded-full bg-brand-navy text-white font-extrabold text-[10px] flex items-center justify-center" x-text="idx + 1"></span>
-                                        <span class="font-bold text-slate-800 truncate max-w-[170px]" x-text="s.name"></span>
+                                <div class="p-2 rounded-xl bg-slate-50 border border-slate-200 hover:border-amber-300 transition flex items-center justify-between text-xs">
+                                    <div class="flex items-center space-x-2.5 truncate pr-2">
+                                        <span class="w-5 h-5 rounded-full bg-brand-navy text-white font-extrabold text-[10px] shrink-0 flex items-center justify-center" x-text="idx + 1"></span>
+                                        <div class="truncate">
+                                            <span class="font-bold text-slate-800 truncate block" x-text="s.name"></span>
+                                            <div class="text-[10px] text-slate-400 flex items-center gap-1">
+                                                <span x-text="s.district ? 'Kec. ' + s.district.name : ''"></span>
+                                                <span class="text-slate-300" x-show="s.district">•</span>
+                                                <span class="font-mono" x-text="'NPSN: ' + (s.npsn || '-')"></span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <span class="text-[10px] font-semibold text-brand-600" x-text="s.leg_distance + ' km'"></span>
+                                    <div class="shrink-0 flex items-center gap-1.5">
+                                        <span class="text-[10px] font-semibold text-brand-600 bg-brand-50 px-1.5 py-0.5 rounded" x-text="s.leg_distance + ' km'"></span>
+                                        <a :href="'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(s.name + ', ' + (s.district ? s.district.name + ', ' : '') + 'Karawang') + '&travelmode=driving'" 
+                                           target="_blank" 
+                                           class="px-2 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-bold inline-flex items-center gap-1 shadow-2xs transition"
+                                           :title="'Buka navigasi Google Maps langsung ke ' + s.name">
+                                            <i data-lucide="navigation" class="w-3 h-3"></i>
+                                            <span>Navigasi</span>
+                                        </a>
+                                    </div>
                                 </div>
                             </template>
                         </div>
@@ -463,13 +482,45 @@
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @forelse($routes as $r)
-                        <tr class="hover:bg-slate-50 transition">
-                            <td class="py-3.5 px-4 font-bold text-slate-900">
-                                {{ $r->name }}
+                        <tr class="hover:bg-slate-50 transition align-top">
+                            <td class="py-3.5 px-4">
+                                <div class="font-extrabold text-slate-900 text-sm flex items-center gap-1.5">
+                                    <i data-lucide="route" class="w-4 h-4 text-brand-600"></i>
+                                    <span>{{ $r->name }}</span>
+                                </div>
+
+                                <!-- Daftar Titik Sekolah Tujuan -->
+                                <div class="mt-2.5 pt-2 border-t border-slate-100">
+                                    <div class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mb-1.5 flex items-center gap-1">
+                                        <i data-lucide="map-pin" class="w-3 h-3 text-red-500"></i>
+                                        <span>Titik Sekolah Tujuan ({{ $r->routeSchools->count() }} Sekolah):</span>
+                                    </div>
+                                    <div class="flex flex-wrap gap-1.5 max-w-2xl">
+                                        @foreach($r->routeSchools as $idx => $rs)
+                                            @php
+                                                $schName = $rs->school?->name ?? 'Sekolah';
+                                                $schDist = $rs->school?->district?->name ?? 'Karawang';
+                                                $singleNavUrl = "https://www.google.com/maps/dir/?api=1&destination=" . urlencode("{$schName}, {$schDist}, Karawang") . "&travelmode=driving";
+                                            @endphp
+                                            <a href="{{ $singleNavUrl }}" target="_blank" 
+                                               class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white hover:bg-amber-50 border border-slate-200 hover:border-amber-400 text-slate-800 text-[11px] font-medium transition shadow-2xs group"
+                                               title="Buka Navigasi Google Maps langsung ke {{ $schName }}">
+                                                <span class="w-4 h-4 rounded-full bg-brand-navy group-hover:bg-amber-600 text-white text-[9px] font-black inline-flex items-center justify-center transition">
+                                                    {{ $idx + 1 }}
+                                                </span>
+                                                <span class="font-bold text-slate-800 group-hover:text-amber-900 truncate max-w-[170px]">{{ $schName }}</span>
+                                                @if($rs->school?->district)
+                                                    <span class="text-[9px] text-slate-400">({{ $rs->school->district->name }})</span>
+                                                @endif
+                                                <i data-lucide="navigation" class="w-2.5 h-2.5 text-amber-500 group-hover:text-amber-700 shrink-0"></i>
+                                            </a>
+                                        @endforeach
+                                    </div>
+                                </div>
                             </td>
                             <td class="py-3.5 px-4 text-slate-600">
                                 {{ \Carbon\Carbon::parse($r->date)->format('d M Y') }}
-                                <span class="text-[10px] text-slate-400 block">PIC: {{ $r->user ? $r->user->name : '-' }}</span>
+                                <span class="text-[10px] text-slate-400 block mt-0.5">PIC: {{ $r->user ? $r->user->name : '-' }}</span>
                             </td>
                             <td class="py-3.5 px-4 text-center font-extrabold text-brand-600">
                                 {{ $r->routeSchools->count() }} Sekolah
@@ -482,14 +533,20 @@
                             </td>
                             <td class="py-3.5 px-4 text-center">
                                 @php
-                                    $seqStr = '';
+                                    $campus = \App\Services\AppContextService::getActiveCampus();
+                                    $campusName = $campus ? $campus->name : 'Universitas Bina Sarana Informatika UBSI Karawang';
+                                    $ubsiOriginStr = urlencode($campusName . ', Karawang');
+
+                                    $schoolPoints = [];
                                     foreach($r->routeSchools as $rs) {
-                                        if ($rs->school && $rs->school->latitude) {
-                                            $seqStr .= '|' . $rs->school->latitude . ',' . $rs->school->longitude;
+                                        if ($rs->school) {
+                                            $sName = $rs->school->name;
+                                            $sDist = $rs->school->district?->name ?? '';
+                                            $schoolPoints[] = urlencode(trim("{$sName}, {$sDist}, Karawang", ', '));
                                         }
                                     }
-                                    $ubsiStr = \App\Services\SchoolScoringService::UBSI_LATITUDE . ',' . \App\Services\SchoolScoringService::UBSI_LONGITUDE;
-                                    $navUrl = "https://www.google.com/maps/dir/?api=1&origin={$ubsiStr}&destination={$ubsiStr}&waypoints=" . ltrim($seqStr, '|') . "&travelmode=driving";
+                                    $waypointsStr = implode('|', $schoolPoints);
+                                    $navUrl = "https://www.google.com/maps/dir/?api=1&origin={$ubsiOriginStr}&destination={$ubsiOriginStr}&waypoints={$waypointsStr}&travelmode=driving";
                                 @endphp
                                 <div class="inline-flex items-center gap-1.5 justify-center">
                                     <button type="button" @click="viewSavedRoute({{ json_encode([
@@ -509,14 +566,14 @@
                                             'regency' => $rs->school?->regency ? ['name' => $rs->school->regency->name] : null,
                                             'leg_distance' => $rs->leg_distance ?? 0,
                                         ])->values()
-                                    ]) }})" class="px-2.5 py-1 bg-brand-navy hover:bg-slate-900 text-white font-bold rounded-lg text-[10px] transition inline-flex items-center gap-1 shadow-2xs cursor-pointer" title="Tampilkan rute dan koordinat sekolah pada peta di atas">
+                                    ]) }})" class="px-2.5 py-1.5 bg-brand-navy hover:bg-slate-900 text-white font-bold rounded-lg text-[10px] transition inline-flex items-center gap-1 shadow-2xs cursor-pointer" title="Tampilkan rute dan koordinat sekolah pada peta di atas">
                                         <i data-lucide="map" class="w-3 h-3 text-amber-400"></i>
                                         <span>Lihat di Peta</span>
                                     </button>
 
-                                    <a href="{{ $navUrl }}" target="_blank" class="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg text-[10px] transition inline-flex items-center gap-1 shadow-2xs" title="Buka navigasi Google Maps">
+                                    <a href="{{ $navUrl }}" target="_blank" class="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg text-[10px] transition inline-flex items-center gap-1 shadow-2xs" title="Buka navigasi Google Maps untuk semua titik rute">
                                         <i data-lucide="navigation-2" class="w-3 h-3"></i>
-                                        <span>Google Maps</span>
+                                        <span>Semua Titik (G-Maps)</span>
                                     </a>
                                 </div>
                             </td>

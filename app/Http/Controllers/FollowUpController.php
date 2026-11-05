@@ -43,12 +43,8 @@ class FollowUpController extends Controller
         ])->whereNull('socialization_completed_at');
 
         if ($activeCampus) {
-            $query->where(function ($q) use ($activeCampus) {
-                $q->where('campus_id', $activeCampus->id)
-                  ->orWhere(function ($sub) use ($activeCampus) {
-                      $sub->whereNull('campus_id')
-                          ->whereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id));
-                  });
+            $query->whereHas('school', function ($sq) use ($activeCampus) {
+                $sq->where('campus_id', $activeCampus->id);
             });
         }
 
@@ -254,12 +250,8 @@ class FollowUpController extends Controller
             ->whereNotNull('socialization_completed_at');
 
         if ($activeCampus) {
-            $query->where(function ($q) use ($activeCampus) {
-                $q->where('campus_id', $activeCampus->id)
-                  ->orWhere(function ($sub) use ($activeCampus) {
-                      $sub->whereNull('campus_id')
-                          ->whereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id));
-                  });
+            $query->whereHas('school', function ($sq) use ($activeCampus) {
+                $sq->where('campus_id', $activeCampus->id);
             });
         }
 
@@ -437,7 +429,7 @@ class FollowUpController extends Controller
             $activity = $existingSchoolActivity->activity;
         } else {
             $activity = MarketingActivity::where('name', $activityName)
-                ->whereDate('start_date', $completedDate)
+                ->where('start_date', $completedDate)
                 ->first();
         }
 
@@ -535,12 +527,8 @@ class FollowUpController extends Controller
         ]);
 
         if ($activeCampus) {
-            $query->where(function ($q) use ($activeCampus) {
-                $q->where('campus_id', $activeCampus->id)
-                  ->orWhere(function ($sub) use ($activeCampus) {
-                      $sub->whereNull('campus_id')
-                          ->whereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id));
-                  });
+            $query->whereHas('school', function ($sq) use ($activeCampus) {
+                $sq->where('campus_id', $activeCampus->id);
             });
         }
 

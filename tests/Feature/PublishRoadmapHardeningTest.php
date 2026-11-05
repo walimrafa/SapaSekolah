@@ -74,26 +74,29 @@ class PublishRoadmapHardeningTest extends TestCase
 
         $this->assertTrue(AppContextService::isPortalActive('student_questionnaire'));
 
-        // Per-campus toggle: Nonaktifkan Karawang (1), Cikampek (2) tetap aktif
+        $campus1 = Campus::firstOrCreate(['code' => 'KRW'], ['name' => 'UBSI Kampus Karawang', 'is_default' => true, 'is_active' => true]);
+        $campus2 = Campus::firstOrCreate(['code' => 'CKP'], ['name' => 'UBSI Kampus Cikampek', 'is_default' => false, 'is_active' => true]);
+
+        // Per-campus toggle: Nonaktifkan Karawang, Cikampek tetap aktif
         $this->actingAs($admin)
             ->post(route('portal-status.toggle'), [
                 'portal_key' => 'student_questionnaire',
-                'campus_id' => 1,
+                'campus_id' => $campus1->id,
                 'is_active' => 0,
             ])
             ->assertRedirect();
 
-        $this->assertFalse(AppContextService::isPortalActive('student_questionnaire', 1));
-        $this->assertTrue(AppContextService::isPortalActive('student_questionnaire', 2));
+        $this->assertFalse(AppContextService::isPortalActive('student_questionnaire', $campus1->id));
+        $this->assertTrue(AppContextService::isPortalActive('student_questionnaire', $campus2->id));
 
-        // Restore Karawang (1)
+        // Restore Karawang
         $this->actingAs($admin)
             ->post(route('portal-status.toggle'), [
                 'portal_key' => 'student_questionnaire',
-                'campus_id' => 1,
+                'campus_id' => $campus1->id,
                 'is_active' => 1,
             ]);
-        $this->assertTrue(AppContextService::isPortalActive('student_questionnaire', 1));
+        $this->assertTrue(AppContextService::isPortalActive('student_questionnaire', $campus1->id));
 
         // Regular marketing user is denied (403)
         $this->actingAs($marketing)
@@ -692,10 +695,11 @@ class PublishRoadmapHardeningTest extends TestCase
 
     public function test_public_proposal_status_tracking_page_for_schools(): void
     {
+        $campus = Campus::firstOrCreate(['code' => 'KRW'], ['name' => 'UBSI Kampus Karawang', 'is_default' => true, 'is_active' => true]);
         $refNo = 'EVT-TRACK-' . time();
         $proposal = \App\Models\SchoolEventProposal::create([
             'reference_no' => $refNo,
-            'campus_id' => 1,
+            'campus_id' => $campus->id,
             'school_name' => 'SMK Bina Informatika',
             'pic_name' => 'Ibu Siti',
             'pic_phone' => '085711223344',

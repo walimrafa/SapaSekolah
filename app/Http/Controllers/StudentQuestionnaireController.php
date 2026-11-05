@@ -190,12 +190,8 @@ class StudentQuestionnaireController extends Controller
         $query = StudentQuestionnaire::with('school.district');
 
         if ($activeCampus) {
-            $query->where(function ($q) use ($activeCampus) {
-                $q->where('campus_id', $activeCampus->id)
-                  ->orWhere(function ($sub) use ($activeCampus) {
-                      $sub->whereNull('campus_id')
-                          ->whereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id));
-                  });
+            $query->whereHas('school', function ($sq) use ($activeCampus) {
+                $sq->where('campus_id', $activeCampus->id);
             });
         }
 
@@ -232,12 +228,8 @@ class StudentQuestionnaireController extends Controller
 
         $statsBaseQuery = StudentQuestionnaire::query()->whereNotNull('answers');
         if ($activeCampus) {
-            $statsBaseQuery->where(function ($q) use ($activeCampus) {
-                $q->where('campus_id', $activeCampus->id)
-                  ->orWhere(function ($sub) use ($activeCampus) {
-                      $sub->whereNull('campus_id')
-                          ->whereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id));
-                  });
+            $statsBaseQuery->whereHas('school', function ($sq) use ($activeCampus) {
+                $sq->where('campus_id', $activeCampus->id);
             });
         }
         if ($activePeriod) {
@@ -274,12 +266,8 @@ class StudentQuestionnaireController extends Controller
         $excelQuery = StudentQuestionnaire::with('school')->latest();
 
         if ($activeCampus) {
-            $excelQuery->where(function ($q) use ($activeCampus) {
-                $q->where('campus_id', $activeCampus->id)
-                  ->orWhere(function ($sub) use ($activeCampus) {
-                      $sub->whereNull('campus_id')
-                          ->whereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id));
-                  });
+            $excelQuery->whereHas('school', function ($sq) use ($activeCampus) {
+                $sq->where('campus_id', $activeCampus->id);
             });
         }
 

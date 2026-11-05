@@ -174,8 +174,8 @@ class RouteClusteringService
         $meetingMinutes = count($routeSequence) * 25;
         $totalMinutes = $drivingMinutes + $meetingMinutes;
 
-        // Build Google Maps Driving Directions Link
-        $gmapsUrl = $this->buildGoogleMapsDrivingUrl($routeSequence);
+        // Build Google Maps Driving Directions Link with Named School Destinations
+        $gmapsUrl = $this->buildGoogleMapsDrivingUrl($routeSequence, $endSchoolId);
 
         return [
             'start_location' => $startLocationName,
@@ -191,26 +191,48 @@ class RouteClusteringService
     }
 
     /**
-     * Build Google Maps Driving Directions URL for car navigation.
+     * Build Google Maps Driving Directions URL for car navigation,
+     * formatting destination and waypoints using school names so Google Maps
+     * displays the exact school names on pins and turn-by-turn lists.
      */
-    public function buildGoogleMapsDrivingUrl(array $sequence): string
+    public function buildGoogleMapsDrivingUrl(array $sequence, string $endSchoolId = 'ubsi'): string
     {
-        $ubsi = SchoolScoringService::UBSI_LATITUDE . ',' . SchoolScoringService::UBSI_LONGITUDE;
+        $campus = \App\Services\AppContextService::getActiveCampus();
+        $campusName = $campus ? $campus->name : 'Universitas Bina Sarana Informatika UBSI Karawang';
+        $ubsiOrigin = urlencode($campusName . ', Karawang');
         
         if (empty($sequence)) {
-            return "https://www.google.com/maps/dir/?api=1&origin={$ubsi}&destination={$ubsi}&travelmode=driving";
+            return "https://www.google.com/maps/dir/?api=1&origin={$ubsiOrigin}&destination={$ubsiOrigin}&travelmode=driving";
         }
 
-        $waypoints = [];
+        $formattedPoints = [];
         foreach ($sequence as $s) {
-            $waypoints[] = $s['latitude'] . ',' . $s['longitude'];
+            $name = $s['name'] ?? 'Sekolah';
+            $district = !empty($s['district']['name']) ? $s['district']['name'] : '';
+            $regency = !empty($s['regency']['name']) ? $s['regency']['name'] : 'Karawang';
+            $placeQuery = trim("{$name}, {$district}, {$regency}", ', ');
+            $formattedPoints[] = urlencode($placeQuery);
         }
 
-        $origin = $ubsi;
-        $destination = $ubsi; // Loop back to UBSI Karawang
-        $waypointsStr = implode('|', $waypoints);
+        $origin = $ubsiOrigin;
 
-        return "https://www.google.com/maps/dir/?api=1&origin={$origin}&destination={$destination}&waypoints={$waypointsStr}&travelmode=driving";
+        if ($endSchoolId === 'no_return') {
+            // End at the last school: destination is specifically the last school name
+            $destination = array_pop($formattedPoints);
+            $waypointsStr = implode('|', $formattedPoints);
+        } else {
+            // Return trip to UBSI campus: destination is UBSI
+            $destination = $ubsiOrigin;
+            $waypointsStr = implode('|', $formattedPoints);
+        }
+
+        $url = "https://www.google.com/maps/dir/?api=1&origin={$origin}&destination={$destination}";
+        if (!empty($waypointsStr)) {
+            $url .= "&waypoints={$waypointsStr}";
+        }
+        $url .= "&travelmode=driving";
+
+        return $url;
     }
 
     /**

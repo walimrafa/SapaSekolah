@@ -5,6 +5,20 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string|null $activity_type
+ * @property \Carbon\Carbon|string|null $start_date
+ * @property \Carbon\Carbon|string|null $end_date
+ * @property string|null $description
+ * @property string|null $document_path
+ * @property string|null $document_name
+ * @property string|null $google_drive_folder_url
+ * @property string|null $google_drive_file_url
+ * @method static \Illuminate\Database\Eloquent\Builder|MarketingActivity where($column, $operator = null, $value = null, $boolean = 'and')
+ * @method static \Illuminate\Database\Eloquent\Builder|MarketingActivity whereDate($column, $operator = null, $value = null, $boolean = 'and')
+ */
 class MarketingActivity extends Model
 {
     public $timestamps = false;
