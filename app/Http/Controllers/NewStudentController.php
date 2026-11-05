@@ -21,8 +21,28 @@ class NewStudentController extends Controller
      */
     public function index(Request $request): View
     {
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $activePeriod = \App\Services\AppContextService::getActivePeriod();
+
         $query = Prospect::with(['school.district.regency', 'marketingUser', 'validatedBy'])
             ->where('status', Prospect::STATUS_MAHASISWA);
+
+        if ($activeCampus) {
+            $query->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)
+                  ->orWhere(function ($sub) use ($activeCampus) {
+                      $sub->whereNull('campus_id')
+                          ->whereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id));
+                  });
+            });
+        }
+
+        if ($activePeriod) {
+            $query->where(function ($q) use ($activePeriod) {
+                $q->where('academic_period_id', $activePeriod->id)
+                  ->orWhereNull('academic_period_id');
+            });
+        }
 
         if ($request->filled('search')) {
             $search = trim($request->search);
@@ -70,26 +90,67 @@ class NewStudentController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        // Summary Stats
-        $totalStudents = Prospect::where('status', Prospect::STATUS_MAHASISWA)->count();
-        $totalSchools = School::whereHas('prospects', fn($q) => $q->where('status', Prospect::STATUS_MAHASISWA))->count();
-        $genderL = Prospect::where('status', Prospect::STATUS_MAHASISWA)->where('gender', 'L')->count();
-        $genderP = Prospect::where('status', Prospect::STATUS_MAHASISWA)->where('gender', 'P')->count();
-        $totalBeasiswa = Prospect::where('status', Prospect::STATUS_MAHASISWA)->scholarship()->count();
-        $totalNonBeasiswa = Prospect::where('status', Prospect::STATUS_MAHASISWA)->nonScholarship()->count();
+        // Summary Stats (Filtered by Active Campus & Period)
+        $baseStudentQuery = Prospect::where('status', Prospect::STATUS_MAHASISWA);
+        if ($activeCampus) {
+            $baseStudentQuery->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)
+                  ->orWhere(function ($sub) use ($activeCampus) {
+                      $sub->whereNull('campus_id')
+                          ->whereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id));
+                  });
+            });
+        }
+        if ($activePeriod) {
+            $baseStudentQuery->where(function ($q) use ($activePeriod) {
+                $q->where('academic_period_id', $activePeriod->id)
+                  ->orWhereNull('academic_period_id');
+            });
+        }
+
+        $totalStudents = (clone $baseStudentQuery)->count();
+        $totalSchools = School::when($activeCampus, fn($q) => $q->where('campus_id', $activeCampus->id))
+            ->whereHas('prospects', function ($q) use ($activeCampus, $activePeriod) {
+                $q->where('status', Prospect::STATUS_MAHASISWA);
+                if ($activeCampus) $q->where('campus_id', $activeCampus->id);
+                if ($activePeriod) $q->where('academic_period_id', $activePeriod->id);
+            })->count();
+        $genderL = (clone $baseStudentQuery)->where('gender', 'L')->count();
+        $genderP = (clone $baseStudentQuery)->where('gender', 'P')->count();
+        $totalBeasiswa = (clone $baseStudentQuery)->scholarship()->count();
+        $totalNonBeasiswa = (clone $baseStudentQuery)->nonScholarship()->count();
 
         // Reference Lists
-        $schools = School::with('district:id,name')->orderBy('name')->get();
+        $schools = School::when($activeCampus, fn($q) => $q->where('campus_id', $activeCampus->id))
+            ->with('district:id,name')
+            ->orderBy('name')
+            ->get();
         $studyPrograms = StudyProgram::where('status', 1)->get();
         $availableStudyTimes = StudyProgram::getStudyTimeOptions();
-        $graduationYears = Prospect::where('status', Prospect::STATUS_MAHASISWA)
+        $graduationYears = (clone $baseStudentQuery)
             ->whereNotNull('graduation_year')
             ->distinct()
             ->orderBy('graduation_year', 'desc')
             ->pluck('graduation_year');
 
         // Ready for validation count (Tahap 5) for badge notification
-        $readyForValidationCount = Prospect::where('status', Prospect::STATUS_BERKAS_LENGKAP)->count();
+        $readyQuery = Prospect::where('status', Prospect::STATUS_BERKAS_LENGKAP);
+        if ($activeCampus) {
+            $readyQuery->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)
+                  ->orWhere(function ($sub) use ($activeCampus) {
+                      $sub->whereNull('campus_id')
+                          ->whereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id));
+                  });
+            });
+        }
+        if ($activePeriod) {
+            $readyQuery->where(function ($q) use ($activePeriod) {
+                $q->where('academic_period_id', $activePeriod->id)
+                  ->orWhereNull('academic_period_id');
+            });
+        }
+        $readyForValidationCount = $readyQuery->count();
 
         return view('new-students.index', compact(
             'students',
@@ -146,8 +207,28 @@ class NewStudentController extends Controller
      */
     public function export(Request $request): StreamedResponse
     {
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $activePeriod = \App\Services\AppContextService::getActivePeriod();
+
         $query = Prospect::with(['school.district.regency', 'marketingUser', 'validatedBy'])
             ->where('status', Prospect::STATUS_MAHASISWA);
+
+        if ($activeCampus) {
+            $query->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)
+                  ->orWhere(function ($sub) use ($activeCampus) {
+                      $sub->whereNull('campus_id')
+                          ->whereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id));
+                  });
+            });
+        }
+
+        if ($activePeriod) {
+            $query->where(function ($q) use ($activePeriod) {
+                $q->where('academic_period_id', $activePeriod->id)
+                  ->orWhereNull('academic_period_id');
+            });
+        }
 
         if ($request->filled('school_id')) {
             $query->where('school_id', $request->school_id);

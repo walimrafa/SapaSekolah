@@ -22,15 +22,18 @@ class EventStudentLeadController extends Controller
             ]);
         }
 
-        $activeCampus = \App\Services\AppContextService::getActiveCampus();
-        $schoolsQuery = School::query()
-            ->select('id', 'name', 'district_id')
-            ->with('district:id,name');
+        $campuses = \App\Models\Campus::where('is_active', true)->orderBy('is_default', 'desc')->get();
+        $requestedCampusId = $request->query('campus_id');
+        $activeCampus = $requestedCampusId 
+            ? \App\Models\Campus::find($requestedCampusId) 
+            : \App\Services\AppContextService::getActiveCampus();
 
-        if ($activeCampus) {
-            $schoolsQuery->where(function ($q) use ($activeCampus) {
-                $q->where('campus_id', $activeCampus->id)->orWhereNull('campus_id');
-            });
+        $schoolsQuery = School::query()
+            ->select('id', 'name', 'district_id', 'campus_id')
+            ->with(['district:id,name', 'campus']);
+
+        if ($requestedCampusId && $activeCampus) {
+            $schoolsQuery->where('campus_id', $activeCampus->id);
         }
 
         $schools = $schoolsQuery->orderBy('name')->get();
@@ -46,9 +49,12 @@ class EventStudentLeadController extends Controller
 
         $selectedEventId = $request->query('event_id');
         $selectedEvent = $selectedEventId ? SchoolEventProposal::find($selectedEventId) : null;
+        if ($selectedEvent && $selectedEvent->campus_id && !$requestedCampusId) {
+            $activeCampus = $selectedEvent->campus;
+        }
         $selectedSchoolId = $request->query('school_id') ?? ($selectedEvent ? $selectedEvent->school_id : null);
 
-        return view('public-events.student-form', compact('schools', 'events', 'selectedEvent', 'selectedEventId', 'selectedSchoolId'));
+        return view('public-events.student-form', compact('schools', 'events', 'selectedEvent', 'selectedEventId', 'selectedSchoolId', 'campuses', 'activeCampus'));
     }
 
     /**
@@ -121,7 +127,7 @@ class EventStudentLeadController extends Controller
         $activeCampus = \App\Services\AppContextService::getActiveCampus();
         $activePeriod = \App\Services\AppContextService::getActivePeriod();
 
-        $targetCampusId = $event?->campus_id ?: ($school?->campus_id ?: ($activeCampus?->id ?? 1));
+        $targetCampusId = $event?->campus_id ?: ($school?->campus_id ?: ($request->input('campus_id') ?: ($activeCampus?->id ?? 1)));
 
         $gender = $request->filled('gender')
             ? (strtoupper(substr($request->gender, 0, 1)) === 'P' ? 'P' : 'L')

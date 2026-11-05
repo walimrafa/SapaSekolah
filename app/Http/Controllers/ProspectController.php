@@ -67,8 +67,10 @@ class ProspectController extends Controller
         if ($activeCampus) {
             $query->where(function ($q) use ($activeCampus) {
                 $q->where('campus_id', $activeCampus->id)
-                  ->orWhereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id))
-                  ->orWhereNull('campus_id');
+                  ->orWhere(function ($sub) use ($activeCampus) {
+                      $sub->whereNull('campus_id')
+                          ->whereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id));
+                  });
             });
         }
         $activePeriod = \App\Services\AppContextService::getActivePeriod();
@@ -81,19 +83,43 @@ class ProspectController extends Controller
 
         $prospects = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
 
-        $schools = School::with('district:id,name')->orderBy('name')->get();
-        $marketingUsers = User::active()->get();
+        $schools = School::when($activeCampus, fn($q) => $q->where('campus_id', $activeCampus->id))
+            ->with('district:id,name')
+            ->orderBy('name')
+            ->get();
+
+        $marketingUsers = User::active()
+            ->when($activeCampus, fn($q) => $q->where(fn($sub) => $sub->where('campus_id', $activeCampus->id)->orWhereNull('campus_id')))
+            ->get();
+
         $studyPrograms = StudyProgram::where('status', 1)->get();
 
-        // 5 Tahap Pipeline Status Counts
+        // 5 Tahap Pipeline Status Counts (Scoped by Active Campus & Period)
+        $baseStatusQuery = Prospect::query();
+        if ($activeCampus) {
+            $baseStatusQuery->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)
+                  ->orWhere(function ($sub) use ($activeCampus) {
+                      $sub->whereNull('campus_id')
+                          ->whereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id));
+                  });
+            });
+        }
+        if ($activePeriod) {
+            $baseStatusQuery->where(function ($q) use ($activePeriod) {
+                $q->where('academic_period_id', $activePeriod->id)
+                  ->orWhereNull('academic_period_id');
+            });
+        }
+
         $statusCounts = [
-            'daftar_akun' => Prospect::where('status', Prospect::STATUS_DAFTAR_AKUN)->count(),
-            'bayar_registrasi' => Prospect::where('status', Prospect::STATUS_BAYAR_REGISTRASI)->count(),
-            'ujian_saringan' => Prospect::where('status', Prospect::STATUS_UJIAN_SARINGAN)->count(),
-            'bayar_daftar_ulang' => Prospect::where('status', Prospect::STATUS_BAYAR_DAFTAR_ULANG)->count(),
-            'berkas_lengkap' => Prospect::where('status', Prospect::STATUS_BERKAS_LENGKAP)->count(),
-            'mahasiswa' => Prospect::where('status', Prospect::STATUS_MAHASISWA)->count(),
-            'tidak_lanjut' => Prospect::where('status', Prospect::STATUS_TIDAK_LANJUT)->count(),
+            'daftar_akun' => (clone $baseStatusQuery)->where('status', Prospect::STATUS_DAFTAR_AKUN)->count(),
+            'bayar_registrasi' => (clone $baseStatusQuery)->where('status', Prospect::STATUS_BAYAR_REGISTRASI)->count(),
+            'ujian_saringan' => (clone $baseStatusQuery)->where('status', Prospect::STATUS_UJIAN_SARINGAN)->count(),
+            'bayar_daftar_ulang' => (clone $baseStatusQuery)->where('status', Prospect::STATUS_BAYAR_DAFTAR_ULANG)->count(),
+            'berkas_lengkap' => (clone $baseStatusQuery)->where('status', Prospect::STATUS_BERKAS_LENGKAP)->count(),
+            'mahasiswa' => (clone $baseStatusQuery)->where('status', Prospect::STATUS_MAHASISWA)->count(),
+            'tidak_lanjut' => (clone $baseStatusQuery)->where('status', Prospect::STATUS_TIDAK_LANJUT)->count(),
         ];
 
         return view('prospects.index', compact(
@@ -127,9 +153,10 @@ class ProspectController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
+        $school = School::find($validated['school_id']);
         $activeCampus = \App\Services\AppContextService::getActiveCampus();
         $activePeriod = \App\Services\AppContextService::getActivePeriod();
-        $validated['campus_id'] = $activeCampus?->id;
+        $validated['campus_id'] = $school?->campus_id ?: ($activeCampus?->id ?? 1);
         $validated['academic_period_id'] = $activePeriod?->id;
 
         $prospect = Prospect::create($validated);

@@ -54,12 +54,15 @@ class StudentQuestionnaireController extends Controller
             ]);
         }
 
-        $activeCampus = \App\Services\AppContextService::getActiveCampus();
-        $schoolsQuery = School::with('district');
-        if ($activeCampus) {
-            $schoolsQuery->where(function ($q) use ($activeCampus) {
-                $q->where('campus_id', $activeCampus->id)->orWhereNull('campus_id');
-            });
+        $campuses = \App\Models\Campus::where('is_active', true)->orderBy('is_default', 'desc')->get();
+        $requestedCampusId = $request->query('campus_id');
+        $activeCampus = $requestedCampusId 
+            ? \App\Models\Campus::find($requestedCampusId) 
+            : \App\Services\AppContextService::getActiveCampus();
+
+        $schoolsQuery = School::with(['district', 'campus']);
+        if ($requestedCampusId && $activeCampus) {
+            $schoolsQuery->where('campus_id', $activeCampus->id);
         }
         $schools = $schoolsQuery->orderBy('name')->get();
 
@@ -69,6 +72,8 @@ class StudentQuestionnaireController extends Controller
 
         return view('student-questionnaires.create', [
             'questionSections' => self::QUESTION_SECTIONS,
+            'campuses' => $campuses,
+            'activeCampus' => $activeCampus,
             'schools' => $schools,
             'selectedSchoolId' => $selectedSchoolId,
             'selectedEventId' => $selectedEventId,
@@ -133,13 +138,15 @@ class StudentQuestionnaireController extends Controller
         $activeCampus = \App\Services\AppContextService::getActiveCampus();
         $activePeriod = \App\Services\AppContextService::getActivePeriod();
 
+        $targetCampusId = $school?->campus_id ?: ($request->input('campus_id') ?: ($activeCampus?->id ?? 1));
+
         $gender = !empty($validated['gender'])
             ? (strtoupper(substr($validated['gender'], 0, 1)) === 'P' ? 'P' : 'L')
             : null;
 
         $questionnaire = StudentQuestionnaire::create([
             'school_id' => $schoolId,
-            'campus_id' => $school?->campus_id ?: $activeCampus?->id,
+            'campus_id' => $targetCampusId,
             'academic_period_id' => $activePeriod?->id,
             'school_event_proposal_id' => $eventProposalId,
             'source' => $eventProposalId ? 'support_event' : 'kuisioner',
@@ -169,13 +176,34 @@ class StudentQuestionnaireController extends Controller
 
         \App\Services\NotificationService::notifyQuestionnaireSubmitted($questionnaire);
 
-        return redirect()->route('student-questionnaire.create')
+        $redirectParams = $request->filled('campus_id') ? ['campus_id' => $request->campus_id] : [];
+        return redirect()->route('student-questionnaire.create', $redirectParams)
             ->with('success_message', 'Terima kasih! Jawaban kuisioner Anda berhasil dikirim.');
     }
 
     public function index(Request $request): View
     {
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $activePeriod = \App\Services\AppContextService::getActivePeriod();
+
         $query = StudentQuestionnaire::with('school.district');
+
+        if ($activeCampus) {
+            $query->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)
+                  ->orWhere(function ($sub) use ($activeCampus) {
+                      $sub->whereNull('campus_id')
+                          ->whereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id));
+                  });
+            });
+        }
+
+        if ($activePeriod) {
+            $query->where(function ($q) use ($activePeriod) {
+                $q->where('academic_period_id', $activePeriod->id)
+                  ->orWhereNull('academic_period_id');
+            });
+        }
 
         if ($request->filled('search')) {
             $search = $request->string('search')->toString();
@@ -195,9 +223,29 @@ class StudentQuestionnaireController extends Controller
             $query->where('school_id', $request->input('school_id'));
         }
 
-        $schools = School::with('district:id,name')->orderBy('name')->get();
+        $schools = School::when($activeCampus, fn($q) => $q->where('campus_id', $activeCampus->id))
+            ->with('district:id,name')
+            ->orderBy('name')
+            ->get();
         $studyPrograms = \App\Models\StudyProgram::where('status', 1)->orderBy('name')->get();
-        $statistics = $this->buildStatistics();
+
+        $statsBaseQuery = StudentQuestionnaire::query()->whereNotNull('answers');
+        if ($activeCampus) {
+            $statsBaseQuery->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)
+                  ->orWhere(function ($sub) use ($activeCampus) {
+                      $sub->whereNull('campus_id')
+                          ->whereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id));
+                  });
+            });
+        }
+        if ($activePeriod) {
+            $statsBaseQuery->where(function ($q) use ($activePeriod) {
+                $q->where('academic_period_id', $activePeriod->id)
+                  ->orWhereNull('academic_period_id');
+            });
+        }
+        $statistics = $this->buildStatistics($statsBaseQuery->get(['student_class', 'student_major', 'scholarship_interest', 'answers']));
 
         return view('student-questionnaires.index', [
             'questionnaires' => $query->latest()->paginate(15)->withQueryString(),
@@ -218,8 +266,30 @@ class StudentQuestionnaireController extends Controller
 
     public function downloadExcel(): StreamedResponse
     {
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $activePeriod = \App\Services\AppContextService::getActivePeriod();
+
         $questions = self::allQuestions();
-        $responses = StudentQuestionnaire::with('school')->latest()->get();
+        $excelQuery = StudentQuestionnaire::with('school')->latest();
+
+        if ($activeCampus) {
+            $excelQuery->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)
+                  ->orWhere(function ($sub) use ($activeCampus) {
+                      $sub->whereNull('campus_id')
+                          ->whereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id));
+                  });
+            });
+        }
+
+        if ($activePeriod) {
+            $excelQuery->where(function ($q) use ($activePeriod) {
+                $q->where('academic_period_id', $activePeriod->id)
+                  ->orWhereNull('academic_period_id');
+            });
+        }
+
+        $responses = $excelQuery->get();
 
         return response()->streamDownload(function () use ($questions, $responses) {
             $spreadsheet = new Spreadsheet();

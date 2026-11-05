@@ -32,12 +32,35 @@ class FollowUpController extends Controller
 
         $viewMode = $request->get('view', 'kanban'); // 'kanban' or 'list'
 
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $activePeriod = \App\Services\AppContextService::getActivePeriod();
+
         $query = FollowUp::with([
             'school.district', 
             'school.primaryContact', 
             'user', 
             'visit'
         ])->whereNull('socialization_completed_at');
+
+        if ($activeCampus) {
+            $query->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)
+                  ->orWhere(function ($sub) use ($activeCampus) {
+                      $sub->whereNull('campus_id')
+                          ->whereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id));
+                  });
+            });
+        }
+
+        if ($activePeriod) {
+            $query->where(function ($q) use ($activePeriod) {
+                $q->where('academic_period_id', $activePeriod->id)
+                  ->orWhere(function ($sub) use ($activePeriod) {
+                      $sub->whereNull('academic_period_id')
+                          ->whereHas('visit', fn($vq) => $vq->where('academic_period_id', $activePeriod->id));
+                  });
+            });
+        }
 
         if ($request->filled('user_id')) {
             $query->where('user_id', $request->user_id);
@@ -182,8 +205,19 @@ class FollowUpController extends Controller
             'data' => array_values($methodStats),
         ];
 
-        $schools = School::orderBy('name')->get();
-        $marketingUsers = User::active()->get();
+        $schoolsQuery = School::orderBy('name');
+        if ($activeCampus) {
+            $schoolsQuery->where('campus_id', $activeCampus->id);
+        }
+        $schools = $schoolsQuery->get();
+
+        $marketingUsersQuery = User::active();
+        if ($activeCampus) {
+            $marketingUsersQuery->where(function ($uq) use ($activeCampus) {
+                $uq->where('campus_id', $activeCampus->id)->orWhereNull('campus_id');
+            });
+        }
+        $marketingUsers = $marketingUsersQuery->get();
 
         return view('follow-ups.index', compact(
             'viewMode',
@@ -213,8 +247,31 @@ class FollowUpController extends Controller
      */
     public function completedSocializations(Request $request): View
     {
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $activePeriod = \App\Services\AppContextService::getActivePeriod();
+
         $query = FollowUp::with(['school.district', 'user', 'visit'])
             ->whereNotNull('socialization_completed_at');
+
+        if ($activeCampus) {
+            $query->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)
+                  ->orWhere(function ($sub) use ($activeCampus) {
+                      $sub->whereNull('campus_id')
+                          ->whereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id));
+                  });
+            });
+        }
+
+        if ($activePeriod) {
+            $query->where(function ($q) use ($activePeriod) {
+                $q->where('academic_period_id', $activePeriod->id)
+                  ->orWhere(function ($sub) use ($activePeriod) {
+                      $sub->whereNull('academic_period_id')
+                          ->whereHas('visit', fn($vq) => $vq->where('academic_period_id', $activePeriod->id));
+                  });
+            });
+        }
 
         if ($request->filled('search')) {
             $search = trim($request->search);
@@ -467,12 +524,35 @@ class FollowUpController extends Controller
      */
     public function export(Request $request, FollowUpExportService $exportService): StreamedResponse
     {
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $activePeriod = \App\Services\AppContextService::getActivePeriod();
+
         $query = FollowUp::with([
             'school.district', 
             'school.primaryContact', 
             'user', 
             'visit'
         ]);
+
+        if ($activeCampus) {
+            $query->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)
+                  ->orWhere(function ($sub) use ($activeCampus) {
+                      $sub->whereNull('campus_id')
+                          ->whereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id));
+                  });
+            });
+        }
+
+        if ($activePeriod) {
+            $query->where(function ($q) use ($activePeriod) {
+                $q->where('academic_period_id', $activePeriod->id)
+                  ->orWhere(function ($sub) use ($activePeriod) {
+                      $sub->whereNull('academic_period_id')
+                          ->whereHas('visit', fn($vq) => $vq->where('academic_period_id', $activePeriod->id));
+                  });
+            });
+        }
 
         $filterInfo = [
             'status_label' => 'Semua Data Follow Up',
@@ -557,6 +637,12 @@ class FollowUpController extends Controller
 
         $validated['description'] = $validated['notes'];
         $validated['is_schedule_fixed'] = ($validated['status'] === 'completed');
+
+        $school = School::find($validated['school_id']);
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $activePeriod = \App\Services\AppContextService::getActivePeriod();
+        $validated['campus_id'] = $school?->campus_id ?: ($activeCampus?->id ?? 1);
+        $validated['academic_period_id'] = $activePeriod?->id;
 
         FollowUp::create($validated);
 

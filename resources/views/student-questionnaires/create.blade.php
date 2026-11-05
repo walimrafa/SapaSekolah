@@ -79,8 +79,31 @@
             </div>
         @endif
 
+        @if(isset($campuses) && $campuses->count() > 1 && empty($selectedEvent))
+            <div class="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-soft flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
+                        <i data-lucide="graduation-cap" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs font-bold text-slate-800 block">Pilih Kampus UBSI Tujuan:</span>
+                        <span class="text-[11px] text-slate-500">Daftar sekolah disesuaikan dengan kampus pilihan Anda</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    @foreach($campuses as $c)
+                        <a href="{{ route('student-questionnaire.create', array_filter(['campus_id' => $c->id, 'school_id' => $selectedSchoolId, 'event_id' => $selectedEventId])) }}" 
+                           class="flex-1 sm:flex-none text-center px-4 py-2 rounded-xl text-xs font-bold transition {{ ($activeCampus?->id == $c->id) ? 'bg-brand-600 text-white shadow-md' : 'bg-slate-100 hover:bg-slate-200 text-slate-700' }}">
+                            {{ $c->name }}
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
         <form method="POST" action="{{ route('student-questionnaire.store') }}" class="space-y-6">
             @csrf
+            <input type="hidden" name="campus_id" value="{{ $activeCampus?->id }}">
             @if(!empty($selectedEventId))
                 <input type="hidden" name="school_event_proposal_id" value="{{ $selectedEventId }}">
             @endif

@@ -23,14 +23,21 @@ class SchoolEventProposalController extends Controller
             ]);
         }
 
-        $activeCampus = \App\Services\AppContextService::getActiveCampus();
-        $campuses = \App\Models\Campus::orderBy('id')->get();
+        $campuses = \App\Models\Campus::where('is_active', true)->orderBy('is_default', 'desc')->get();
+        $requestedCampusId = request()->query('campus_id');
+        $activeCampus = $requestedCampusId 
+            ? \App\Models\Campus::find($requestedCampusId) 
+            : \App\Services\AppContextService::getActiveCampus();
         
-        $schools = School::query()
+        $schoolsQuery = School::query()
             ->select('id', 'name', 'district_id', 'campus_id')
-            ->with('district:id,name')
-            ->orderBy('name')
-            ->get();
+            ->with(['district:id,name', 'campus']);
+
+        if ($requestedCampusId && $activeCampus) {
+            $schoolsQuery->where('campus_id', $activeCampus->id);
+        }
+
+        $schools = $schoolsQuery->orderBy('name')->get();
 
         return view('public-events.create', compact('schools', 'campuses', 'activeCampus'));
     }

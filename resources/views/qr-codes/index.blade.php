@@ -5,6 +5,12 @@
             <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Master Pusat Unduh QR Code</h1>
             <p class="text-xs text-slate-500 mt-0.5">Kelola &amp; unduh QR Code resmi untuk akses login, kuisioner siswa, dan portal input kunjungan lapangan</p>
         </div>
+        @if(!empty($activeCampus))
+            <div class="inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-brand-50 border border-brand-200 text-brand-900 text-xs font-bold shadow-sm">
+                <i data-lucide="graduation-cap" class="w-4 h-4 text-brand-600"></i>
+                <span>Kampus Aktif: <span class="text-brand-700 underline">{{ $activeCampus->name }}</span></span>
+            </div>
+        @endif
     </div>
 
     <!-- Grid 2 QR Code Cards -->

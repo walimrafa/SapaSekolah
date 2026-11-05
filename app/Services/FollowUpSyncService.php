@@ -50,9 +50,17 @@ class FollowUpSyncService
             }
         }
 
+        $campusId = $visit->campus_id 
+            ?: ($visit->school?->campus_id 
+                ?: (\App\Services\AppContextService::getActiveCampus()?->id ?: 1));
+        $periodId = $visit->academic_period_id 
+            ?: (\App\Services\AppContextService::getActivePeriod()?->id ?: 1);
+
         $data = [
             'school_id' => $visit->school_id,
             'visit_id' => $visit->id,
+            'campus_id' => $campusId,
+            'academic_period_id' => $periodId,
             'user_id' => $visit->user_id ?: (auth()->id() ?: 1),
             'followup_date' => $followupDate,
             'method' => 'WhatsApp',
@@ -80,6 +88,12 @@ class FollowUpSyncService
             }
             if ($visit->google_drive_file_url) {
                 $data['google_drive_file_url'] = $visit->google_drive_file_url;
+            }
+            if (empty($followUp->campus_id)) {
+                $data['campus_id'] = $campusId;
+            }
+            if (empty($followUp->academic_period_id)) {
+                $data['academic_period_id'] = $periodId;
             }
 
             if ($followUp->status === 'pending' || $followUp->status === 'progress') {

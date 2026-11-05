@@ -18,7 +18,7 @@ class PublicVisitController extends Controller
     /**
      * Display public field visit socialization submission form (No Login Required).
      */
-    public function index(): View
+    public function index(Request $request): View
     {
         if (!AppContextService::isPortalActive(AppContextService::PORTAL_PUBLIC_VISIT)) {
             return view('errors.portal-disabled', [
@@ -26,29 +26,43 @@ class PublicVisitController extends Controller
             ]);
         }
 
-        $activeCampus = AppContextService::getActiveCampus();
+        $campuses = \App\Models\Campus::where('is_active', true)->orderBy('is_default', 'desc')->get();
+        $requestedCampusId = $request->query('campus_id');
+        $activeCampus = $requestedCampusId 
+            ? \App\Models\Campus::find($requestedCampusId) 
+            : AppContextService::getActiveCampus();
 
-        $districts = District::has('schools')
-            ->withCount('schools')
-            ->orderBy('name')
-            ->get();
-
-        $schoolsQuery = School::with(['district', 'schoolType'])
+        $schoolsQuery = School::with(['district', 'schoolType', 'campus'])
             ->whereHas('district', function ($q) {
                 $q->whereNotIn('name', District::EXCLUDED_DISTRICTS);
             });
 
         if ($activeCampus) {
-            $schoolsQuery->where(function ($q) use ($activeCampus) {
-                $q->where('campus_id', $activeCampus->id)
-                    ->orWhereNull('campus_id');
-            });
+            $schoolsQuery->where('campus_id', $activeCampus->id);
         }
 
         $schools = $schoolsQuery->orderBy('name')->get();
-        $marketingUsers = User::active()->get();
 
-        return view('public-visit', compact('districts', 'schools', 'marketingUsers'));
+        $districtsQuery = District::whereHas('schools', function ($q) use ($activeCampus) {
+            if ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id);
+            }
+        })->withCount(['schools' => function ($q) use ($activeCampus) {
+            if ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id);
+            }
+        }])->orderBy('name');
+        $districts = $districtsQuery->get();
+
+        $marketingUsersQuery = User::active();
+        if ($activeCampus) {
+            $marketingUsersQuery->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)->orWhereNull('campus_id');
+            });
+        }
+        $marketingUsers = $marketingUsersQuery->get();
+
+        return view('public-visit', compact('districts', 'schools', 'marketingUsers', 'campuses', 'activeCampus'));
     }
 
     /**
@@ -98,7 +112,8 @@ class PublicVisitController extends Controller
         // Set campus & academic period context
         $activeCampus = AppContextService::getActiveCampus();
         $activePeriod = AppContextService::getActivePeriod();
-        $validated['campus_id'] = $school->campus_id ?: ($activeCampus?->id);
+        $targetCampusId = $school->campus_id ?: ($request->input('campus_id') ?: ($activeCampus?->id ?? 1));
+        $validated['campus_id'] = $targetCampusId;
         $validated['academic_period_id'] = $activePeriod?->id;
 
         $photo = $request->file('photo');
@@ -169,7 +184,7 @@ class PublicVisitController extends Controller
             \Illuminate\Support\Facades\Log::warning('Failed auto sync public visit to follow up: ' . $e->getMessage());
         }
 
-        return redirect()->route('public-visit.index')
+        return redirect()->route('public-visit.index', ['campus_id' => $targetCampusId])
             ->with('success_message', "Terima kasih! Data kunjungan ke {$visit->school->name} (PIC: {$visit->recipient_name}) berhasil terkirim, kalender & WA terintegrasi, serta masuk ke Follow Up!");
     }
 }

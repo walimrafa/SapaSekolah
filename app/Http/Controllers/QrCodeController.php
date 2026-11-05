@@ -14,12 +14,14 @@ class QrCodeController extends Controller
     public function index(Request $request): View
     {
         $baseUrl = $request->getSchemeAndHttpHost();
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $campusParams = $activeCampus ? ['campus_id' => $activeCampus->id] : [];
         
         $loginUrl = $baseUrl . route('login', [], false);
-        $publicVisitUrl = $baseUrl . route('public-visit.index', [], false);
-        $studentQuestionnaireUrl = $baseUrl . route('student-questionnaire.create', [], false);
-        $schoolEventUrl = $baseUrl . route('school-events.create', [], false);
-        $eventStudentUrl = $baseUrl . route('event-students.create', [], false);
+        $publicVisitUrl = $baseUrl . route('public-visit.index', $campusParams, false);
+        $studentQuestionnaireUrl = $baseUrl . route('student-questionnaire.create', $campusParams, false);
+        $schoolEventUrl = $baseUrl . route('school-events.create', $campusParams, false);
+        $eventStudentUrl = $baseUrl . route('event-students.create', $campusParams, false);
 
         $loginQrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=15&data=" . urlencode($loginUrl);
         $publicVisitQrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=15&data=" . urlencode($publicVisitUrl);
@@ -37,7 +39,8 @@ class QrCodeController extends Controller
             'publicVisitQrUrl',
             'studentQuestionnaireQrUrl',
             'schoolEventQrUrl',
-            'eventStudentQrUrl'
+            'eventStudentQrUrl',
+            'activeCampus'
         ));
     }
 
@@ -47,25 +50,29 @@ class QrCodeController extends Controller
     public function download(Request $request, string $type)
     {
         $baseUrl = $request->getSchemeAndHttpHost();
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $campusParams = $activeCampus ? ['campus_id' => $activeCampus->id] : [];
+        $campusSlug = $activeCampus ? '_' . \Illuminate\Support\Str::slug($activeCampus->name) : '';
 
         if ($type === 'login') {
             $targetUrl = $baseUrl . route('login', [], false);
             $filename = 'QR_Code_Login_SAPA_Sekolah.png';
         } elseif ($type === 'student-questionnaire') {
-            $targetUrl = $baseUrl . route('student-questionnaire.create', [], false);
-            $filename = 'QR_Code_Kuisioner_Siswa_SAPA_Sekolah.png';
+            $targetUrl = $baseUrl . route('student-questionnaire.create', $campusParams, false);
+            $filename = "QR_Code_Kuisioner_Siswa{$campusSlug}.png";
         } elseif ($type === 'public-visit') {
-            $targetUrl = $baseUrl . route('public-visit.index', [], false);
-            $filename = 'QR_Code_Input_Kunjungan_SAPA_Sekolah.png';
+            $targetUrl = $baseUrl . route('public-visit.index', $campusParams, false);
+            $filename = "QR_Code_Input_Kunjungan{$campusSlug}.png";
         } elseif ($type === 'school-events') {
-            $targetUrl = $baseUrl . route('school-events.create', [], false);
-            $filename = 'QR_Code_Pengajuan_Proposal_Event_Sekolah.png';
+            $targetUrl = $baseUrl . route('school-events.create', $campusParams, false);
+            $filename = "QR_Code_Pengajuan_Proposal_Event{$campusSlug}.png";
         } elseif ($type === 'event-students') {
             $eventId = $request->query('event_id');
-            $targetUrl = $baseUrl . route('event-students.create', array_filter(['event_id' => $eventId]), false);
+            $params = array_filter(['event_id' => $eventId]) + $campusParams;
+            $targetUrl = $baseUrl . route('event-students.create', $params, false);
             $filename = $eventId 
-                ? "QR_Code_Hasil_Support_Event_ID_{$eventId}.png" 
-                : 'QR_Code_Hasil_Support_Event_Siswa.png';
+                ? "QR_Code_Hasil_Support_Event_ID_{$eventId}{$campusSlug}.png" 
+                : "QR_Code_Hasil_Support_Event_Siswa{$campusSlug}.png";
         } else {
             abort(404);
         }

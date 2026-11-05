@@ -26,15 +26,24 @@ class MarketingActivityController extends Controller
             \Illuminate\Support\Facades\Log::warning('Error syncing completed socializations to activities: ' . $e->getMessage());
         }
 
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+
         $query = MarketingActivity::with(['schoolActivities.school.district'])
             ->withCount('schoolActivities');
+
+        if ($activeCampus) {
+            $query->where(function ($q) use ($activeCampus) {
+                $q->whereHas('schoolActivities.school', fn($sq) => $sq->where('campus_id', $activeCampus->id))
+                  ->orDoesntHave('schoolActivities');
+            });
+        }
 
         if ($request->filled('type')) {
             $query->where('activity_type', $request->type);
         }
 
         $activities = $query->orderBy('start_date', 'desc')->paginate(15)->withQueryString();
-        $schools = School::orderBy('name')->get();
+        $schools = School::when($activeCampus, fn($q) => $q->where('campus_id', $activeCampus->id))->orderBy('name')->get();
 
         return view('activities.index', compact('activities', 'schools'));
     }
