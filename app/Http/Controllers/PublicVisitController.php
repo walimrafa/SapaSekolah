@@ -20,17 +20,17 @@ class PublicVisitController extends Controller
      */
     public function index(Request $request): View
     {
-        if (!AppContextService::isPortalActive(AppContextService::PORTAL_PUBLIC_VISIT)) {
-            return view('errors.portal-disabled', [
-                'portalName' => 'Portal Input Kunjungan Lapangan',
-            ]);
-        }
-
         $campuses = \App\Models\Campus::where('is_active', true)->orderBy('is_default', 'desc')->get();
         $requestedCampusId = $request->query('campus_id');
         $activeCampus = $requestedCampusId 
             ? \App\Models\Campus::find($requestedCampusId) 
             : AppContextService::getActiveCampus();
+
+        if (!AppContextService::isPortalActive(AppContextService::PORTAL_PUBLIC_VISIT, $activeCampus?->id)) {
+            return view('errors.portal-disabled', [
+                'portalName' => 'Portal Input Kunjungan Lapangan (' . ($activeCampus?->name ?? 'UBSI') . ')',
+            ]);
+        }
 
         $schoolsQuery = School::with(['district', 'schoolType', 'campus'])
             ->whereHas('district', function ($q) {
@@ -70,8 +70,9 @@ class PublicVisitController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        if (!AppContextService::isPortalActive(AppContextService::PORTAL_PUBLIC_VISIT)) {
-            return back()->with('error', 'Portal Input Kunjungan Lapangan saat ini sedang ditutup atau dinonaktifkan.');
+        $campusId = $request->input('campus_id') ?? $request->query('campus_id');
+        if (!AppContextService::isPortalActive(AppContextService::PORTAL_PUBLIC_VISIT, $campusId)) {
+            return back()->with('error', 'Portal Input Kunjungan Lapangan untuk kampus ini saat ini sedang ditutup atau dinonaktifkan.');
         }
 
         $validated = $request->validate([

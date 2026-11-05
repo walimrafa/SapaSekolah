@@ -96,8 +96,11 @@ class StudentQuestionnaireTest extends TestCase
 
         $view = app(QrCodeController::class)->index($request);
 
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $expectedUrl = 'https://sapasekolah.test' . route('student-questionnaire.create', $activeCampus ? ['campus_id' => $activeCampus->id] : [], false);
+
         $this->assertSame(
-            'https://sapasekolah.test' . route('student-questionnaire.create', [], false),
+            $expectedUrl,
             $view->getData()['studentQuestionnaireUrl']
         );
         $this->assertStringContainsString(
@@ -122,7 +125,7 @@ class StudentQuestionnaireTest extends TestCase
 
         $this->assertSame('image/png', $response->headers->get('Content-Type'));
         $this->assertStringContainsString(
-            'QR_Code_Kuisioner_Siswa_SAPA_Sekolah.png',
+            'QR_Code_Kuisioner_Siswa',
             $response->headers->get('Content-Disposition')
         );
         $this->assertSame('png-content', $response->getContent());

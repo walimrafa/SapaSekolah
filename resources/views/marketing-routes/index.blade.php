@@ -56,6 +56,48 @@
         .school-map-tooltip::before {
             border-top-color: #0f172a !important;
         }
+        .school-map-label-permanent {
+            background: rgba(15, 23, 42, 0.95) !important;
+            color: #ffffff !important;
+            border: 1.5px solid #f59e0b !important;
+            border-radius: 8px !important;
+            font-size: 11px !important;
+            font-weight: 800 !important;
+            padding: 3px 8px !important;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+            white-space: nowrap !important;
+            pointer-events: none !important;
+            z-index: 500 !important;
+        }
+        .school-map-label-permanent::before {
+            border-top-color: #f59e0b !important;
+        }
+        .school-map-label-permanent.ubsi-label {
+            border-color: #ef4444 !important;
+            background: #0f172a !important;
+        }
+        .school-map-label-permanent.ubsi-label::before {
+            border-top-color: #ef4444 !important;
+        }
+        .school-permanent-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .school-permanent-label .seq-badge {
+            background: #f59e0b;
+            color: #0f172a;
+            font-weight: 900;
+            border-radius: 4px;
+            padding: 1px 5px;
+            font-size: 10px;
+            line-height: 14px;
+        }
+        .school-permanent-label .sch-name {
+            color: #ffffff;
+            font-weight: 800;
+            letter-spacing: 0.2px;
+        }
         .ubsi-icon {
             background: #f59e0b;
             color: #0f172a;
@@ -286,7 +328,7 @@
                                     <div class="flex items-center space-x-1.5 truncate pr-1">
                                         <input type="checkbox" name="district_ids[]" :value="d.id"
                                             x-model="selectedDistricts"
-                                            @change="previewCluster()"
+                                            @change="onDistrictChange(d.id)"
                                             class="w-3.5 h-3.5 rounded border-slate-300 text-amber-600 focus:ring-amber-500">
                                         <span class="truncate" x-text="d.name"></span>
                                     </div>
@@ -304,41 +346,69 @@
                     </div>
 
                     <!-- 3. Pilihan Sekolah Target Spesifik (Berdasarkan Kecamatan Terpilih) -->
-                    <div x-show="selectedDistricts.length > 0" class="space-y-2 pt-2 border-t border-slate-100">
+                    <div x-show="selectedDistricts.length > 0" class="space-y-2 pt-3 border-t border-slate-200">
                         <div class="flex items-center justify-between">
-                            <label class="block text-xs font-bold text-slate-700">
-                                🏫 Sekolah Target Rute <span class="text-amber-600 font-normal">— Centang sekolah</span>
-                            </label>
-                            <span class="text-[10px] font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded-full border border-brand-200" 
-                                  x-text="selectedSchoolIds.length > 0 ? (selectedSchoolIds.length + ' dipilih') : 'Semua di Kec. Terpilih (' + filteredSchoolsForPoint.length + ')'"></span>
+                            <div>
+                                <label class="block text-xs font-black text-slate-800 flex items-center gap-1.5">
+                                    <i data-lucide="check-square" class="w-4 h-4 text-brand-600"></i>
+                                    <span>Pilih Sekolah Target Rute Kunjungan</span>
+                                    <span class="text-red-500">*</span>
+                                </label>
+                                <p class="text-[10px] text-slate-500">Centang sekolah yang ingin dikunjungi (bisa pilih manual, tidak harus semua sekolah).</p>
+                            </div>
+                            <span class="text-[10px] font-extrabold px-2.5 py-1 rounded-full border shadow-2xs" 
+                                  :class="selectedSchoolIds.length > 0 ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-rose-50 text-rose-700 border-rose-200'"
+                                  x-text="selectedSchoolIds.length + ' dari ' + filteredSchoolsForPoint.length + ' sekolah dipilih'"></span>
                         </div>
-                        <div class="flex items-center justify-between text-[10px] text-slate-500 mb-1">
-                            <span x-text="filteredSchoolsForPoint.length + ' sekolah berkoordinat di kecamatan terpilih'"></span>
-                            <div class="flex items-center gap-1.5">
-                                <button type="button" @click="selectAllSchoolsInPoint()" class="text-brand-600 font-bold hover:underline cursor-pointer">Pilih Semua</button>
-                                <span class="text-slate-300">|</span>
-                                <button type="button" @click="clearSchoolSelection()" class="text-slate-500 hover:text-slate-700 hover:underline cursor-pointer">Otomatis (Semua)</button>
+
+                        <!-- Action Toolbar & Search -->
+                        <div class="flex items-center justify-between gap-2 text-xs pt-0.5">
+                            <div class="flex items-center gap-2">
+                                <button type="button" @click="selectAllSchoolsInPoint()" class="px-2.5 py-1 bg-brand-50 hover:bg-brand-100 text-brand-700 font-bold rounded-lg border border-brand-200 transition text-[11px] cursor-pointer">
+                                    ✓ Pilih Semua
+                                </button>
+                                <button type="button" @click="clearSchoolSelection()" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg border border-slate-200 transition text-[11px] cursor-pointer">
+                                    ✕ Kosongkan Pilihan
+                                </button>
+                            </div>
+                            <div class="relative flex-1 max-w-[200px]" x-show="filteredSchoolsForPoint.length > 3">
+                                <input type="text" x-model="schoolSearchInDistricts" placeholder="Cari nama sekolah..." class="w-full pl-7 pr-2 py-1 text-[11px] rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-brand-500">
+                                <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2 top-1.5 pointer-events-none"></i>
                             </div>
                         </div>
 
-                        <!-- School Search within selected districts -->
-                        <div class="relative mb-1.5" x-show="filteredSchoolsForPoint.length > 5">
-                            <input type="text" x-model="schoolSearchInDistricts" placeholder="Cari nama sekolah target..." class="w-full pl-7 pr-3 py-1 text-[11px] rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-brand-500">
-                            <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2 top-1.5 pointer-events-none"></i>
-                        </div>
-
-                        <div class="max-h-40 overflow-y-auto space-y-1 p-2 bg-slate-50/70 rounded-xl border border-slate-200 text-xs">
+                        <!-- Scrollable School Checklist -->
+                        <div class="max-h-52 overflow-y-auto space-y-1.5 p-2 bg-slate-50/80 rounded-xl border border-slate-200 text-xs">
                             <template x-for="s in displayedSchoolsInDistricts" :key="'sch-chk-' + s.id">
-                                <label class="flex items-center justify-between p-1.5 rounded-lg border transition cursor-pointer select-none"
-                                       :class="selectedSchoolIds.includes(String(s.id)) ? 'bg-amber-50 border-amber-300 text-amber-950 font-bold shadow-2xs' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'">
-                                    <div class="flex items-center space-x-2 truncate pr-1">
-                                        <input type="checkbox" :value="String(s.id)" x-model="selectedSchoolIds" @change="previewCluster()" class="w-3.5 h-3.5 rounded border-slate-300 text-amber-600 focus:ring-amber-500">
-                                        <span class="truncate" x-text="s.name"></span>
+                                <label class="flex items-center justify-between p-2 rounded-xl border transition cursor-pointer select-none"
+                                       :class="selectedSchoolIds.includes(String(s.id)) ? 'bg-amber-50/90 border-amber-300 text-amber-950 font-bold shadow-2xs' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100/80'">
+                                    <div class="flex items-center space-x-2.5 truncate pr-2">
+                                        <input type="checkbox" :value="String(s.id)" x-model="selectedSchoolIds" @change="previewCluster()" class="w-4 h-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500">
+                                        <div class="truncate">
+                                            <div class="truncate text-xs font-bold leading-tight" x-text="s.name"></div>
+                                            <div class="text-[10px] text-slate-400 font-normal flex items-center gap-1.5 mt-0.5">
+                                                <span x-text="s.district ? 'Kec. ' + s.district.name : ''"></span>
+                                                <span class="text-slate-300">•</span>
+                                                <span class="font-mono" x-text="'NPSN: ' + (s.npsn || '-')"></span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <span class="text-[9px] font-mono text-slate-400 shrink-0" x-text="s.district ? s.district.name : ''"></span>
+                                    <div class="shrink-0 flex items-center gap-1">
+                                        <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-semibold" x-text="(s.school_type ? s.school_type.name : 'SLTA')"></span>
+                                    </div>
                                 </label>
                             </template>
+                            <div x-show="displayedSchoolsInDistricts.length === 0" class="py-4 text-center text-xs text-slate-400">
+                                Tidak ada sekolah yang cocok dengan pencarian.
+                            </div>
                         </div>
+
+                        <!-- Notice if zero selected -->
+                        <div x-show="selectedSchoolIds.length === 0" class="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[11px] flex items-center gap-2">
+                            <i data-lucide="alert-circle" class="w-4 h-4 shrink-0 text-amber-600"></i>
+                            <span>Silakan centang satu atau beberapa sekolah di atas untuk dimasukkan ke dalam rute marketing Anda.</span>
+                        </div>
+
                         <template x-for="id in selectedSchoolIds" :key="'hidden-sch-' + id">
                             <input type="hidden" name="school_ids[]" :value="id">
                         </template>
@@ -551,6 +621,21 @@
                     this.previewCluster();
                 },
 
+                onDistrictChange(districtId) {
+                    let distSchools = this.allSchools.filter(s => String(s.district_id) === String(districtId));
+                    let distSchoolIds = distSchools.map(s => String(s.id));
+
+                    if (this.selectedDistricts.includes(String(districtId))) {
+                        // District dicentang: masukkan seluruh sekolahnya sebagai default pilihan
+                        this.selectedSchoolIds = Array.from(new Set([...this.selectedSchoolIds, ...distSchoolIds]));
+                    } else {
+                        // District batal dicentang: hilangkan sekolahnya dari pilihan
+                        let removeSet = new Set(distSchoolIds);
+                        this.selectedSchoolIds = this.selectedSchoolIds.filter(id => !removeSet.has(id));
+                    }
+                    this.previewCluster();
+                },
+
                 onRegencyChange() {
                     this.selectedDistricts = [];
                     this.selectedSchoolIds = [];
@@ -614,7 +699,7 @@
                 selectAllDistricts() {
                     let ids = this.availableDistricts.map(d => String(d.id));
                     this.selectedDistricts = Array.from(new Set([...this.selectedDistricts, ...ids]));
-                    this.selectedSchoolIds = [];
+                    this.selectedSchoolIds = this.filteredSchoolsForPoint.map(s => String(s.id));
                     this.previewCluster();
                 },
 
@@ -748,7 +833,18 @@
                             <span class="text-amber-600 font-bold mt-1 inline-block">Titik Start & End Rute Mobil</span>
                         </div>
                     `);
-                    ubsiMarker.bindTooltip("🚩 Kampus UBSI (Start & End)", { direction: 'top', className: 'school-map-tooltip' });
+                    ubsiMarker.bindTooltip(`
+                        <div class="school-permanent-label">
+                            <span class="seq-badge" style="background:#ef4444;color:#fff;">★</span>
+                            <span class="sch-name">Kampus UBSI (Start & End)</span>
+                        </div>
+                    `, {
+                        permanent: true,
+                        direction: 'top',
+                        offset: [0, -14],
+                        className: 'school-map-label-permanent ubsi-label',
+                        interactive: false
+                    });
                     this.markers.push(ubsiMarker);
 
                     // Case 1: Route Preview (either calculated or saved)
@@ -775,16 +871,19 @@
 
                             let m = L.marker(point, { icon: seqIcon }).addTo(this.map);
 
-                            // Prominent Tooltip with school name and coordinates
+                            // Permanent School Name Label on Map Marker
                             m.bindTooltip(`
-                                <div style="font-weight:bold;font-size:11px;color:#f8fafc;">
-                                    #${idx + 1} ${s.name}
+                                <div class="school-permanent-label">
+                                    <span class="seq-badge">#${idx + 1}</span>
+                                    <span class="sch-name">${s.name}</span>
                                 </div>
-                                <div style="font-size:10px;color:#94a3b8;font-family:monospace;margin-top:2px;">
-                                    📍 Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}
-                                </div>
-                                ${districtName ? `<div style="font-size:9px;color:#fbbf24;margin-top:1px;">Kec. ${districtName}</div>` : ''}
-                            `, { direction: 'top', offset: [0, -10], className: 'school-map-tooltip' });
+                            `, {
+                                permanent: true,
+                                direction: 'top',
+                                offset: [0, -14],
+                                className: 'school-map-label-permanent',
+                                interactive: false
+                            });
 
                             // Detailed Popup
                             m.bindPopup(`
@@ -865,15 +964,19 @@
                             let districtName = s.district ? (s.district.name || '') : '';
                             let m = L.marker(point, { icon: icon }).addTo(this.map);
 
+                            // Permanent school name tooltip
                             m.bindTooltip(`
-                                <div style="font-weight:bold;font-size:11px;color:#f8fafc;">
-                                    🏫 ${s.name}
+                                <div class="school-permanent-label">
+                                    <span class="seq-badge">${isChecked ? '✓' : '🏫'}</span>
+                                    <span class="sch-name">${s.name}</span>
                                 </div>
-                                <div style="font-size:10px;color:#94a3b8;font-family:monospace;margin-top:2px;">
-                                    📍 Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}
-                                </div>
-                                ${districtName ? `<div style="font-size:9px;color:#fbbf24;margin-top:1px;">Kec. ${districtName}</div>` : ''}
-                            `, { direction: 'top', offset: [0, -10], className: 'school-map-tooltip' });
+                            `, {
+                                permanent: true,
+                                direction: 'top',
+                                offset: [0, -14],
+                                className: 'school-map-label-permanent',
+                                interactive: false
+                            });
 
                             m.bindPopup(`
                                 <div class="p-2.5 max-w-[260px] text-xs">

@@ -122,6 +122,11 @@ class MasterDataController extends Controller
         $academicPeriods = AcademicPeriod::withCount(['prospects', 'schoolVisits'])->orderByDesc('id')->get();
         $publicPortals = AppContextService::getPublicPortalsStatus();
 
+        $portalsByCampus = [];
+        foreach ($campuses as $c) {
+            $portalsByCampus[$c->id] = AppContextService::getPublicPortalsStatus($c->id);
+        }
+
         return view('master-data.index', compact(
             'tab',
             'provinces',
@@ -139,7 +144,8 @@ class MasterDataController extends Controller
             'districtSearch',
             'campuses',
             'academicPeriods',
-            'publicPortals'
+            'publicPortals',
+            'portalsByCampus'
         ));
     }
 

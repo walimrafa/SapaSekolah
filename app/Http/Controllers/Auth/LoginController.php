@@ -29,7 +29,16 @@ class LoginController extends Controller
      */
     public function login(LoginRequest $request): RedirectResponse
     {
-        $credentials = $request->only('email', 'password');
+        $inputEmail = strtolower(trim($request->input('email')));
+        $emailAliases = [
+            'admin@sapasekolah.com' => 'walim.wam@bsi.ac.id',
+            'pimpinan@sapasekolah.com' => 'mohammad.myz@bsi.ac.id',
+            'koordinator@sapasekolah.com' => 'walimsaja@gmail.com',
+            'marketing@sapasekolah.com' => 'karawangmarkom@gmail.com',
+            'cs2@sapasekolah.com' => 'deviwinda@gmail.com',
+        ];
+        $email = $emailAliases[$inputEmail] ?? $inputEmail;
+        $credentials = ['email' => $email, 'password' => $request->input('password')];
         $remember = $request->boolean('remember');
 
         if (Auth::attempt($credentials, $remember)) {

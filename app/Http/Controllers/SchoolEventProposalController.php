@@ -17,17 +17,17 @@ class SchoolEventProposalController extends Controller
      */
     public function publicCreate(): View
     {
-        if (!\App\Services\AppContextService::isPortalActive(\App\Services\AppContextService::PORTAL_SCHOOL_EVENT_PROPOSAL)) {
-            return view('errors.portal-disabled', [
-                'portalName' => 'Portal Pengajuan Event & Sponsorship Sekolah',
-            ]);
-        }
-
         $campuses = \App\Models\Campus::where('is_active', true)->orderBy('is_default', 'desc')->get();
         $requestedCampusId = request()->query('campus_id');
         $activeCampus = $requestedCampusId 
             ? \App\Models\Campus::find($requestedCampusId) 
             : \App\Services\AppContextService::getActiveCampus();
+
+        if (!\App\Services\AppContextService::isPortalActive(\App\Services\AppContextService::PORTAL_SCHOOL_EVENT_PROPOSAL, $activeCampus?->id)) {
+            return view('errors.portal-disabled', [
+                'portalName' => 'Portal Pengajuan Event & Sponsorship Sekolah (' . ($activeCampus?->name ?? 'UBSI') . ')',
+            ]);
+        }
         
         $schoolsQuery = School::query()
             ->select('id', 'name', 'district_id', 'campus_id')
@@ -74,8 +74,9 @@ class SchoolEventProposalController extends Controller
      */
     public function publicStore(Request $request): RedirectResponse
     {
-        if (!\App\Services\AppContextService::isPortalActive(\App\Services\AppContextService::PORTAL_SCHOOL_EVENT_PROPOSAL)) {
-            return back()->with('error', 'Portal Pengajuan Event saat ini sedang ditutup atau dinonaktifkan.');
+        $campusId = $request->input('campus_id') ?? $request->query('campus_id');
+        if (!\App\Services\AppContextService::isPortalActive(\App\Services\AppContextService::PORTAL_SCHOOL_EVENT_PROPOSAL, $campusId)) {
+            return back()->with('error', 'Portal Pengajuan Event untuk kampus ini saat ini sedang ditutup atau dinonaktifkan.');
         }
 
         $request->validate([

@@ -401,73 +401,107 @@
 
     <!-- Tab: Kontrol Portal Publik (Tanpa Login) -->
     @if($tab === 'portals')
-        <div class="space-y-6">
+        <div class="space-y-6" x-data="{ activePortalCampus: '{{ $campuses->first()?->id ?? 1 }}' }">
             <div class="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-200/80 rounded-2xl p-5 flex items-start space-x-4">
                 <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm">
                     <i data-lucide="shield-alert" class="w-5 h-5"></i>
                 </div>
                 <div>
-                    <h3 class="text-sm font-bold text-slate-900">Kontrol Keamanan Akses Formulir Publik (Tanpa Login)</h3>
+                    <h3 class="text-sm font-bold text-slate-900">Kontrol Keamanan Akses Formulir Publik per Kampus (Tanpa Login)</h3>
                     <p class="text-xs text-slate-600 mt-1 leading-relaxed">
-                        Halaman publik dapat diakses langsung oleh masyarakat/siswa sekolah luar tanpa login.
-                        Hak akses kontrol aktif/tidak aktif ini diberikan secara khusus kepada <strong>Admin, Pimpinan, dan Koordinator Marketing</strong>
-                        untuk mencegah terjadinya pengisian otomatis liar (spam) dan menutup akses saat masa kunjungan atau periode event telah berakhir.
+                        Formulir publik dikontrol secara independen <strong>masing-masing kampus</strong> (UBSI Karawang vs UBSI Cikampek).
+                        Jika satu kampus menutup pendaftaran atau kuisioner, kampus lain tetap dapat membuka akses secara mandiri.
+                        Hak akses kontrol aktif/tidak aktif ini diberikan secara khusus kepada <strong>Admin, Pimpinan Kampus, dan Koordinator Marketing</strong>.
                     </p>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                @foreach($publicPortals as $key => $portal)
-                    <div class="bg-white rounded-2xl border {{ $portal['is_active'] ? 'border-emerald-200 shadow-soft' : 'border-slate-200 bg-slate-50/50' }} p-5 flex flex-col justify-between transition-all">
-                        <div>
-                            <div class="flex items-center justify-between mb-3">
-                                <span class="text-[10px] font-mono px-2 py-0.5 rounded {{ $portal['is_active'] ? 'bg-emerald-50 text-emerald-700 font-bold' : 'bg-slate-100 text-slate-500' }}">
-                                    KEY: {{ $key }}
-                                </span>
-                                @if($portal['is_active'])
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800">
-                                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping mr-1.5"></span>
-                                        PORTAL AKTIF
-                                    </span>
-                                @else
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-800">
-                                        <span class="w-2 h-2 rounded-full bg-rose-500 mr-1.5"></span>
-                                        PORTAL DITUTUP
-                                    </span>
-                                @endif
-                            </div>
-
-                            <h4 class="text-sm font-extrabold text-slate-900">{{ $portal['name'] }}</h4>
-                            <p class="text-xs text-slate-500 mt-1 mb-3">{{ $portal['description'] }}</p>
-
-                            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between text-xs mb-4">
-                                <span class="text-slate-400 font-mono text-[11px] truncate mr-2">{{ $portal['url'] }}</span>
-                                <a href="{{ $portal['url'] }}" target="_blank" class="text-brand-600 hover:text-brand-800 shrink-0 font-bold inline-flex items-center gap-1">
-                                    <span>Buka</span>
-                                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
-                                </a>
-                            </div>
-                        </div>
-
-                        <form method="POST" action="{{ route('portal-status.toggle') }}" class="pt-3 border-t border-slate-100">
-                            @csrf
-                            <input type="hidden" name="portal_key" value="{{ $key }}">
-                            <input type="hidden" name="is_active" value="{{ $portal['is_active'] ? 0 : 1 }}">
-                            @if($portal['is_active'])
-                                <button type="submit" class="w-full py-2.5 px-4 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 transition flex items-center justify-center space-x-2">
-                                    <i data-lucide="power" class="w-4 h-4 text-rose-600"></i>
-                                    <span>Tutup / Nonaktifkan Akses Publik</span>
-                                </button>
-                            @else
-                                <button type="submit" class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center space-x-2">
-                                    <i data-lucide="check-circle" class="w-4 h-4"></i>
-                                    <span>Buka / Aktifkan Kembali Akses Publik</span>
-                                </button>
-                            @endif
-                        </form>
-                    </div>
+            <!-- Campus Switcher Tabs -->
+            <div class="flex items-center gap-2 border-b border-slate-200 pb-3">
+                <span class="text-xs font-bold text-slate-500 mr-2 flex items-center gap-1.5">
+                    <i data-lucide="building" class="w-4 h-4 text-brand-600"></i>
+                    <span>Pilih Kampus:</span>
+                </span>
+                @foreach($campuses as $campus)
+                    <button type="button" 
+                        @click="activePortalCampus = '{{ $campus->id }}'"
+                        :class="activePortalCampus == '{{ $campus->id }}' ? 'bg-brand-navy text-white shadow-sm' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'"
+                        class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer">
+                        <span class="w-2 h-2 rounded-full" :class="activePortalCampus == '{{ $campus->id }}' ? 'bg-emerald-400' : 'bg-slate-300'"></span>
+                        <span>{{ $campus->name }}</span>
+                    </button>
                 @endforeach
             </div>
+
+            @foreach($campuses as $campus)
+                @php
+                    $campusPortals = $portalsByCampus[$campus->id] ?? $publicPortals;
+                @endphp
+                <div x-show="activePortalCampus == '{{ $campus->id }}'" class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 border border-amber-200 text-amber-900">
+                                Kontrol Portal: {{ $campus->name }}
+                            </span>
+                            <span class="text-xs text-slate-400 font-medium">Link &amp; QR Code publik otomatis membawa parameter ?campus_id={{ $campus->id }}</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        @foreach($campusPortals as $key => $portal)
+                            <div class="bg-white rounded-2xl border {{ $portal['is_active'] ? 'border-emerald-200 shadow-soft' : 'border-slate-200 bg-slate-50/50' }} p-5 flex flex-col justify-between transition-all">
+                                <div>
+                                    <div class="flex items-center justify-between mb-3">
+                                        <span class="text-[10px] font-mono px-2 py-0.5 rounded {{ $portal['is_active'] ? 'bg-emerald-50 text-emerald-700 font-bold' : 'bg-slate-100 text-slate-500' }}">
+                                            KEY: {{ $key }} • {{ $campus->code }}
+                                        </span>
+                                        @if($portal['is_active'])
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800">
+                                                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping mr-1.5"></span>
+                                                PORTAL AKTIF
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-800">
+                                                <span class="w-2 h-2 rounded-full bg-rose-500 mr-1.5"></span>
+                                                PORTAL DITUTUP
+                                            </span>
+                                        @endif
+                                    </div>
+
+                                    <h4 class="text-sm font-extrabold text-slate-900">{{ $portal['name'] }}</h4>
+                                    <p class="text-xs text-slate-500 mt-1 mb-3">{{ $portal['description'] }}</p>
+
+                                    <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between text-xs mb-4">
+                                        <span class="text-slate-500 font-mono text-[11px] truncate mr-2">{{ $portal['url'] }}</span>
+                                        <a href="{{ $portal['url'] }}" target="_blank" class="text-brand-600 hover:text-brand-800 shrink-0 font-bold inline-flex items-center gap-1">
+                                            <span>Tes Buka</span>
+                                            <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <form method="POST" action="{{ route('portal-status.toggle') }}" class="pt-3 border-t border-slate-100">
+                                    @csrf
+                                    <input type="hidden" name="portal_key" value="{{ $key }}">
+                                    <input type="hidden" name="campus_id" value="{{ $campus->id }}">
+                                    <input type="hidden" name="is_active" value="{{ $portal['is_active'] ? 0 : 1 }}">
+                                    @if($portal['is_active'])
+                                        <button type="submit" class="w-full py-2.5 px-4 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 transition flex items-center justify-center space-x-2 cursor-pointer">
+                                            <i data-lucide="power" class="w-4 h-4 text-rose-600"></i>
+                                            <span>Tutup Akses Publik ({{ $campus->name }})</span>
+                                        </button>
+                                    @else
+                                        <button type="submit" class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center space-x-2 cursor-pointer">
+                                            <i data-lucide="check-circle" class="w-4 h-4"></i>
+                                            <span>Buka Akses Publik ({{ $campus->name }})</span>
+                                        </button>
+                                    @endif
+                                </form>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endforeach
         </div>
     @endif
 

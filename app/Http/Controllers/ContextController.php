@@ -92,28 +92,39 @@ class ContextController extends Controller
         $validated = $request->validate([
             'portal_key' => 'required|string|in:public_visit,student_questionnaire,school_event_proposal,event_student_lead',
             'is_active' => 'required|boolean',
+            'campus_id' => 'nullable|exists:campuses,id',
         ]);
 
         $portalKey = $validated['portal_key'];
         $isActive = (bool) $validated['is_active'];
+        $campusId = !empty($validated['campus_id']) ? (int) $validated['campus_id'] : null;
 
-        AppContextService::setPortalStatus($portalKey, $isActive, $user);
+        // Jika user adalah pimpinan kampus, kunci hanya pada kampusnya sendiri
+        if ($user->isPimpinan() && $user->campus_id) {
+            $campusId = $user->campus_id;
+        }
 
-        $portalName = AppContextService::getPublicPortalsStatus()[$portalKey]['name'] ?? $portalKey;
+        AppContextService::setPortalStatus($portalKey, $isActive, $user, $campusId);
+
+        $portalMeta = AppContextService::getPublicPortalsStatus($campusId)[$portalKey] ?? null;
+        $portalName = $portalMeta['name'] ?? $portalKey;
+        $campus = $campusId ? \App\Models\Campus::find($campusId) : null;
+        $campusSuffix = $campus ? " [{$campus->name}]" : '';
         $statusLabel = $isActive ? 'DIAKTIFKAN' : 'DINONAKTIFKAN';
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
                 'success' => true,
-                'message' => "{$portalName} berhasil {$statusLabel}!",
+                'message' => "{$portalName}{$campusSuffix} berhasil {$statusLabel}!",
                 'portal_key' => $portalKey,
+                'campus_id' => $campusId,
                 'is_active' => $isActive,
             ]);
         }
 
         return back()->with('toast', [
             'type' => $isActive ? 'success' : 'warning',
-            'message' => "{$portalName} berhasil {$statusLabel}!",
+            'message' => "{$portalName}{$campusSuffix} berhasil {$statusLabel}!",
         ]);
     }
 

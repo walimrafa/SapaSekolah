@@ -48,17 +48,17 @@ class StudentQuestionnaireController extends Controller
 
     public function create(Request $request): View
     {
-        if (!\App\Services\AppContextService::isPortalActive(\App\Services\AppContextService::PORTAL_STUDENT_QUESTIONNAIRE)) {
-            return view('errors.portal-disabled', [
-                'portalName' => 'Portal Kuisioner Siswa & Beasiswa',
-            ]);
-        }
-
         $campuses = \App\Models\Campus::where('is_active', true)->orderBy('is_default', 'desc')->get();
         $requestedCampusId = $request->query('campus_id');
         $activeCampus = $requestedCampusId 
             ? \App\Models\Campus::find($requestedCampusId) 
             : \App\Services\AppContextService::getActiveCampus();
+
+        if (!\App\Services\AppContextService::isPortalActive(\App\Services\AppContextService::PORTAL_STUDENT_QUESTIONNAIRE, $activeCampus?->id)) {
+            return view('errors.portal-disabled', [
+                'portalName' => 'Portal Kuisioner Siswa & Beasiswa (' . ($activeCampus?->name ?? 'UBSI') . ')',
+            ]);
+        }
 
         $schoolsQuery = School::with(['district', 'campus']);
         if ($requestedCampusId && $activeCampus) {
@@ -83,8 +83,9 @@ class StudentQuestionnaireController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        if (!\App\Services\AppContextService::isPortalActive(\App\Services\AppContextService::PORTAL_STUDENT_QUESTIONNAIRE)) {
-            return back()->with('error', 'Portal Kuisioner Siswa saat ini sedang dinonaktifkan.');
+        $campusId = $request->input('campus_id') ?? $request->query('campus_id');
+        if (!\App\Services\AppContextService::isPortalActive(\App\Services\AppContextService::PORTAL_STUDENT_QUESTIONNAIRE, $campusId)) {
+            return back()->with('error', 'Portal Kuisioner Siswa untuk kampus ini saat ini sedang dinonaktifkan.');
         }
 
         $answerRules = [];

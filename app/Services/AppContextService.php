@@ -153,65 +153,108 @@ class AppContextService
     // ========================================================
 
     /**
-     * Ambil status seluruh portal publik.
+     * Ambil status seluruh portal publik (bisa spesifik per kampus atau global).
      */
-    public static function getPublicPortalsStatus(): array
+    public static function getPublicPortalsStatus(?int $campusId = null): array
     {
         $settings = AppSettingService::all();
+        $queryParam = $campusId ? ['campus_id' => $campusId] : [];
+
+        $getKey = function (string $key) use ($settings, $campusId): bool {
+            if ($campusId !== null && isset($settings["portal_{$key}_campus_{$campusId}_active"])) {
+                return (bool) $settings["portal_{$key}_campus_{$campusId}_active"];
+            }
+            return (bool) ($settings["portal_{$key}_active"] ?? true);
+        };
 
         return [
             self::PORTAL_PUBLIC_VISIT => [
                 'name' => 'Portal Input Kunjungan Lapangan',
-                'url' => route('public-visit.index'),
-                'is_active' => (bool) ($settings['portal_public_visit_active'] ?? true),
+                'url' => route('public-visit.index', $queryParam),
+                'is_active' => $getKey(self::PORTAL_PUBLIC_VISIT),
                 'description' => 'Formulir input hasil kunjungan sosialisasi untuk tim lapangan tanpa login.',
             ],
             self::PORTAL_STUDENT_QUESTIONNAIRE => [
                 'name' => 'Portal Kuisioner Siswa & Beasiswa',
-                'url' => route('student-questionnaire.create'),
-                'is_active' => (bool) ($settings['portal_student_questionnaire_active'] ?? true),
+                'url' => route('student-questionnaire.create', $queryParam),
+                'is_active' => $getKey(self::PORTAL_STUDENT_QUESTIONNAIRE),
                 'description' => 'Survei online minat kuliah & pengajuan beasiswa siswa SLTA via QR Code.',
             ],
             self::PORTAL_SCHOOL_EVENT_PROPOSAL => [
                 'name' => 'Portal Pengajuan Event & Sponsorship Sekolah',
-                'url' => route('school-events.create'),
-                'is_active' => (bool) ($settings['portal_school_event_proposal_active'] ?? true),
+                'url' => route('school-events.create', $queryParam),
+                'is_active' => $getKey(self::PORTAL_SCHOOL_EVENT_PROPOSAL),
                 'description' => 'Formulir pengajuan proposal sponsorship dan dukungan kegiatan dari OSIS/Sekolah.',
             ],
             self::PORTAL_EVENT_STUDENT_LEAD => [
                 'name' => 'Portal Pendaftaran Siswa Event',
-                'url' => route('event-students.create'),
-                'is_active' => (bool) ($settings['portal_event_student_lead_active'] ?? true),
+                'url' => route('event-students.create', $queryParam),
+                'is_active' => $getKey(self::PORTAL_EVENT_STUDENT_LEAD),
                 'description' => 'Formulir pendataan peserta event sekolah yang langsung tersinkron ke Follow-Up CRM.',
             ],
         ];
     }
 
     /**
-     * Cek apakah portal publik tertentu sedang aktif.
+     * Cek apakah portal publik tertentu sedang aktif (per kampus atau global).
      */
-    public static function isPortalActive(string $portalKey): bool
+    public static function isPortalActive(string $portalKey, ?int $campusId = null): bool
     {
-        $portals = self::getPublicPortalsStatus();
-        return $portals[$portalKey]['is_active'] ?? true;
+        $settings = AppSettingService::all();
+
+        // 1. Jika global portal dinonaktifkan, seluruh kampus otomatis tertutup
+        $globalActive = (bool) ($settings["portal_{$portalKey}_active"] ?? true);
+        if (!$globalActive) {
+            return false;
+        }
+
+        // 2. Cek spesifik per kampus jika ada
+        if ($campusId === null) {
+            if (request()->has('campus_id') && is_numeric(request('campus_id'))) {
+                $campusId = (int) request('campus_id');
+            } elseif (self::getActiveCampus()) {
+                $campusId = self::getActiveCampus()->id;
+            }
+        }
+
+        if ($campusId !== null && isset($settings["portal_{$portalKey}_campus_{$campusId}_active"])) {
+            return (bool) $settings["portal_{$portalKey}_campus_{$campusId}_active"];
+        }
+
+        return true;
     }
 
     /**
-     * Ubah status portal publik (hanya Admin, Pimpinan, dan Koordinator Marketing).
+     * Ubah status portal publik per kampus atau global (hanya Admin, Pimpinan, dan Koordinator Marketing).
      */
-    public static function setPortalStatus(string $portalKey, bool $active, ?User $byUser = null): void
+    public static function setPortalStatus(string $portalKey, bool $active, ?User $byUser = null, ?int $campusId = null): void
     {
-        $keyName = "portal_{$portalKey}_active";
-        AppSettingService::set($keyName, $active);
+        if ($campusId !== null) {
+            $keyName = "portal_{$portalKey}_campus_{$campusId}_active";
+            $campus = Campus::find($campusId);
+            $campusName = $campus ? $campus->name : "Kampus #{$campusId}";
+            $label = ucfirst(str_replace('_', ' ', $portalKey)) . " [{$campusName}]";
+            AppSettingService::set($keyName, $active);
+        } else {
+            $keyName = "portal_{$portalKey}_active";
+            $label = ucfirst(str_replace('_', ' ', $portalKey));
+            
+            $toUpdate = [$keyName => $active];
+            // Sinkronkan ke seluruh kampus
+            foreach (Campus::all() as $c) {
+                $toUpdate["portal_{$portalKey}_campus_{$c->id}_active"] = $active;
+            }
+            AppSettingService::setMany($toUpdate);
+        }
 
         // Catat ke Activity Log
         ActivityLogService::log(
             'TOGGLE_PUBLIC_PORTAL',
             'system',
+            $byUser?->id,
+            "Mengubah status {$label} menjadi: " . ($active ? 'AKTIF' : 'NONAKTIF'),
             null,
-            "Mengubah status " . ucfirst(str_replace('_', ' ', $portalKey)) . " menjadi: " . ($active ? 'AKTIF' : 'NONAKTIF'),
-            null,
-            ['portal' => $portalKey, 'status' => $active]
+            ['portal' => $portalKey, 'campus_id' => $campusId, 'status' => $active]
         );
     }
 }

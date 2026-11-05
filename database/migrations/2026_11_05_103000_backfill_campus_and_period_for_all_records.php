@@ -121,3 +121,4 @@ return new class extends Migration
         // No destructive reverse needed
     }
 };
+

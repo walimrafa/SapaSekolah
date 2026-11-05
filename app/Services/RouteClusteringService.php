@@ -41,17 +41,17 @@ class RouteClusteringService
 
         if (!empty($schoolIds)) {
             $query->whereIn('id', $schoolIds);
-        }
+        } else {
+            if (!empty($regencyId)) {
+                $query->where(function ($rq) use ($regencyId) {
+                    $rq->where('regency_id', $regencyId)
+                       ->orWhereHas('district', fn($dq) => $dq->where('regency_id', $regencyId));
+                });
+            }
 
-        if (!empty($regencyId)) {
-            $query->where(function ($rq) use ($regencyId) {
-                $rq->where('regency_id', $regencyId)
-                   ->orWhereHas('district', fn($dq) => $dq->where('regency_id', $regencyId));
-            });
-        }
-
-        if (!empty($districtIds)) {
-            $query->whereIn('district_id', $districtIds);
+            if (!empty($districtIds)) {
+                $query->whereIn('district_id', $districtIds);
+            }
         }
 
         $availableSchools = $query->orderBy('potential_score', 'desc')->get()->toArray();

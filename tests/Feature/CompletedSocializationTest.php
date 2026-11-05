@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\AcademicPeriod;
+use App\Models\Campus;
 use App\Models\FollowUp;
 use App\Models\Role;
 use App\Models\School;
@@ -16,12 +18,20 @@ class CompletedSocializationTest extends TestCase
     public function test_fixed_socialization_can_be_confirmed_and_moves_to_completed_list(): void
     {
         $marketingRole = Role::firstOrCreate(['name' => 'Marketing'], ['description' => 'Marketing']);
-        $user = User::factory()->create(['role_id' => $marketingRole->id]);
+        $defaultCampus = Campus::first();
+        $defaultPeriod = AcademicPeriod::getCurrent() ?: AcademicPeriod::first();
+        $user = User::factory()->create([
+            'role_id' => $marketingRole->id,
+            'campus_id' => $defaultCampus?->id,
+        ]);
         $school = School::create([
+            'campus_id' => $defaultCampus?->id,
             'npsn' => 'TEST' . strtoupper(bin2hex(random_bytes(4))),
             'name' => 'Sekolah Sosialisasi Test',
         ]);
         $followUp = FollowUp::create([
+            'campus_id' => $defaultCampus?->id,
+            'academic_period_id' => $defaultPeriod?->id,
             'school_id' => $school->id,
             'user_id' => $user->id,
             'followup_date' => today(),
@@ -72,12 +82,20 @@ class CompletedSocializationTest extends TestCase
     public function test_unfixed_schedule_cannot_be_confirmed_as_completed(): void
     {
         $marketingRole = Role::firstOrCreate(['name' => 'Marketing'], ['description' => 'Marketing']);
-        $user = User::factory()->create(['role_id' => $marketingRole->id]);
+        $defaultCampus = Campus::first();
+        $defaultPeriod = AcademicPeriod::getCurrent() ?: AcademicPeriod::first();
+        $user = User::factory()->create([
+            'role_id' => $marketingRole->id,
+            'campus_id' => $defaultCampus?->id,
+        ]);
         $school = School::create([
+            'campus_id' => $defaultCampus?->id,
             'npsn' => 'TEST' . strtoupper(bin2hex(random_bytes(4))),
             'name' => 'Sekolah Jadwal Belum FIX',
         ]);
         $followUp = FollowUp::create([
+            'campus_id' => $defaultCampus?->id,
+            'academic_period_id' => $defaultPeriod?->id,
             'school_id' => $school->id,
             'user_id' => $user->id,
             'followup_date' => today(),

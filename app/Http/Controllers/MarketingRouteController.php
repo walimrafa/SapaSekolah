@@ -116,6 +116,9 @@ class MarketingRouteController extends Controller
         }
         $schoolIds = $request->get('school_ids', []);
         $limit = $request->get('limit', 10);
+        if (!empty($schoolIds)) {
+            $limit = count($schoolIds);
+        }
         $startSchoolId = $request->get('start_school_id');
         $endSchoolId = $request->get('end_school_id');
 
@@ -150,7 +153,9 @@ class MarketingRouteController extends Controller
         $schoolIds = $validated['school_ids'] ?? [];
         $startSchoolId = $validated['start_school_id'] ?? null;
         $endSchoolId = $validated['end_school_id'] ?? null;
-        $cluster = $this->clusteringService->generateDailyCluster($schoolIds, $districtIds, 10, [], $startSchoolId, $endSchoolId, $regencyId);
+
+        $clusterLimit = !empty($schoolIds) ? count($schoolIds) : 10;
+        $cluster = $this->clusteringService->generateDailyCluster($schoolIds, $districtIds, $clusterLimit, [], $startSchoolId, $endSchoolId, $regencyId);
 
         if (empty($cluster['sequence'])) {
             return redirect()->route('marketing-routes.index')

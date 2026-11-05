@@ -74,6 +74,27 @@ class PublishRoadmapHardeningTest extends TestCase
 
         $this->assertTrue(AppContextService::isPortalActive('student_questionnaire'));
 
+        // Per-campus toggle: Nonaktifkan Karawang (1), Cikampek (2) tetap aktif
+        $this->actingAs($admin)
+            ->post(route('portal-status.toggle'), [
+                'portal_key' => 'student_questionnaire',
+                'campus_id' => 1,
+                'is_active' => 0,
+            ])
+            ->assertRedirect();
+
+        $this->assertFalse(AppContextService::isPortalActive('student_questionnaire', 1));
+        $this->assertTrue(AppContextService::isPortalActive('student_questionnaire', 2));
+
+        // Restore Karawang (1)
+        $this->actingAs($admin)
+            ->post(route('portal-status.toggle'), [
+                'portal_key' => 'student_questionnaire',
+                'campus_id' => 1,
+                'is_active' => 1,
+            ]);
+        $this->assertTrue(AppContextService::isPortalActive('student_questionnaire', 1));
+
         // Regular marketing user is denied (403)
         $this->actingAs($marketing)
             ->post(route('portal-status.toggle'), [
@@ -821,7 +842,15 @@ class PublishRoadmapHardeningTest extends TestCase
 
         $defaultCampus = Campus::first();
         $defaultPeriod = AcademicPeriod::getCurrent() ?: AcademicPeriod::first();
-        $school = School::first();
+        $school = School::first() ?? School::create([
+            'npsn' => '99999999',
+            'name' => 'SMA Test Validasi Kelas',
+            'campus_id' => $defaultCampus?->id,
+            'district_id' => 1,
+            'school_type_id' => 1,
+            'status' => 'negeri',
+            'status_school' => 'aktif',
+        ]);
 
         // 1. Prospect in Tahap 5 (berkas_lengkap)
         $prospect = Prospect::create([
