@@ -123,7 +123,8 @@ class PublicVisitController extends Controller
             $gdriveResult = \App\Services\GoogleDriveService::uploadDocumentation(
                 $photo,
                 $school->name,
-                $validated['visit_date']
+                $validated['visit_date'],
+                $targetCampusId
             );
             $validated['photo'] = $gdriveResult['stored_path'];
             $validated['google_drive_folder_url'] = $gdriveResult['drive_folder_url'];
@@ -131,7 +132,8 @@ class PublicVisitController extends Controller
         } else {
             $validated['google_drive_folder_url'] = \App\Services\GoogleDriveService::buildFolderUrlForSchool(
                 $school->name,
-                $validated['visit_date']
+                $validated['visit_date'],
+                $targetCampusId
             );
         }
 

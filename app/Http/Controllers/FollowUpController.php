@@ -367,8 +367,8 @@ class FollowUpController extends Controller
         $completedDate = $followUp->socialization_completed_at ?: $followUp->fixed_date;
         $date = $completedDate ? Carbon::parse($completedDate)->format('Y-m-d') : now()->format('Y-m-d');
 
-        // Upload to Google Drive & save locally
-        $gdriveResult = \App\Services\GoogleDriveService::uploadDocumentation($file, $schoolName, $date);
+        // Upload to Google Drive & save locally (terpisah sesuai folder kampus Karawang / Cikampek)
+        $gdriveResult = \App\Services\GoogleDriveService::uploadDocumentation($file, $schoolName, $date, $school?->campus_id ?: $followUp->campus_id);
 
         // Delete old documentation file if existed
         if ($followUp->documentation_file) {
@@ -440,7 +440,7 @@ class FollowUpController extends Controller
         $docName = $docPath ? basename($docPath) : null;
         $driveFolderUrl = $followUp->google_drive_folder_url 
             ?: ($followUp->visit?->google_drive_folder_url 
-                ?: \App\Services\GoogleDriveService::buildFolderUrlForSchool($schoolName, $completedDate));
+                ?: \App\Services\GoogleDriveService::buildFolderUrlForSchool($schoolName, $completedDate, $school?->campus_id ?: $followUp->campus_id));
         $driveFileUrl = $followUp->google_drive_file_url 
             ?: ($followUp->visit?->google_drive_file_url ?: null);
 

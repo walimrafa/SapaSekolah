@@ -25,13 +25,13 @@
                 </div>
 
                 <div class="flex flex-wrap items-center gap-3 shrink-0">
-                    <!-- Tombol Buka Root Google Drive Dokumentasi -->
-                    <a href="https://drive.google.com/drive/folders/1DQkSEomL8cacePKG8Ex72JldQABKndiD?usp=sharing"
+                    <!-- Tombol Buka Root Google Drive Sesuai Kampus Aktif -->
+                    <a href="{{ \App\Services\GoogleDriveService::getFolderUrlForCampus() }}"
                         target="_blank"
                         class="inline-flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-white text-slate-800 hover:bg-slate-50 border border-slate-200 shadow-sm transition"
-                        title="Buka Folder Induk Dokumentasi di Google Drive">
+                        title="Buka Folder Google Drive Dokumentasi ({{ \App\Services\GoogleDriveService::getFolderLabelForCampus() }})">
                         <i data-lucide="folder" class="w-4 h-4 text-amber-500"></i>
-                        <span>Google Drive Cloud</span>
+                        <span>{{ \App\Services\GoogleDriveService::getFolderLabelForCampus() }}</span>
                         <i data-lucide="external-link" class="w-3 h-3 text-slate-400"></i>
                     </a>
 

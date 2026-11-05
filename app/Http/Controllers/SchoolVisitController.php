@@ -169,7 +169,8 @@ class SchoolVisitController extends Controller
             $gdriveResult = GoogleDriveService::uploadDocumentation(
                 $photo,
                 $school->name,
-                $validated['visit_date']
+                $validated['visit_date'],
+                $school->campus_id
             );
             $validated['photo'] = $gdriveResult['stored_path'];
             $validated['google_drive_folder_url'] = $gdriveResult['drive_folder_url'];
@@ -177,7 +178,8 @@ class SchoolVisitController extends Controller
         } else {
             $validated['google_drive_folder_url'] = GoogleDriveService::buildFolderUrlForSchool(
                 $school->name,
-                $validated['visit_date']
+                $validated['visit_date'],
+                $school->campus_id
             );
         }
 
@@ -321,7 +323,8 @@ class SchoolVisitController extends Controller
             $gdriveResult = GoogleDriveService::uploadDocumentation(
                 $photo,
                 $schoolName,
-                $validated['visit_date']
+                $validated['visit_date'],
+                $school?->campus_id ?: $visit->campus_id
             );
             if ($visit->photo) {
                 Storage::disk('public')->delete($visit->photo);

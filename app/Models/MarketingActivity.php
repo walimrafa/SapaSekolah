@@ -54,7 +54,8 @@ class MarketingActivity extends Model
 
         return \App\Services\GoogleDriveService::buildFolderUrlForSchool(
             $schoolName,
-            $this->start_date ? \Carbon\Carbon::parse($this->start_date)->format('Y-m-d') : null
+            $this->start_date ? \Carbon\Carbon::parse($this->start_date)->format('Y-m-d') : null,
+            $school?->campus_id
         );
     }
 

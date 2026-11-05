@@ -483,7 +483,8 @@ class SchoolEventProposalController extends Controller
             $schoolTarget = $proposal->school?->name ?? $proposal->school_name ?? 'Sekolah';
             foreach ($request->file('photos') as $photoFile) {
                 $originalName = $photoFile->getClientOriginalName();
-                $gdriveResult = \App\Services\GoogleDriveService::uploadDocumentation($photoFile, $schoolTarget, $eventDateStr);
+                $proposalCampusId = $proposal->school?->campus_id ?: $proposal->campus_id;
+                $gdriveResult = \App\Services\GoogleDriveService::uploadDocumentation($photoFile, $schoolTarget, $eventDateStr, $proposalCampusId);
                 $photos[] = [
                     'path' => $gdriveResult['stored_path'],
                     'name' => $originalName,
@@ -499,7 +500,8 @@ class SchoolEventProposalController extends Controller
         if (empty($proposal->google_drive_folder_url)) {
             $eventDateStr = $proposal->event_date ? \Carbon\Carbon::parse($proposal->event_date)->format('Y-m-d') : now()->format('Y-m-d');
             $schoolTarget = $proposal->school?->name ?? $proposal->school_name ?? 'Sekolah';
-            $proposal->google_drive_folder_url = \App\Services\GoogleDriveService::buildFolderUrlForSchool($schoolTarget, $eventDateStr);
+            $proposalCampusId = $proposal->school?->campus_id ?: $proposal->campus_id;
+            $proposal->google_drive_folder_url = \App\Services\GoogleDriveService::buildFolderUrlForSchool($schoolTarget, $eventDateStr, $proposalCampusId);
         }
 
         $proposal->documentation_photos = $photos;

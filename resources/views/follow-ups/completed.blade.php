@@ -27,12 +27,13 @@
             </div>
             
             <div class="flex items-center gap-2">
-                <!-- Buka Root Google Drive Dokumentasi (Item 8) -->
-                <a href="https://drive.google.com/drive/folders/1DQkSEomL8cacePKG8Ex72JldQABKndiD?usp=sharing"
+                <!-- Buka Root Google Drive Sesuai Kampus Aktif -->
+                <a href="{{ \App\Services\GoogleDriveService::getFolderUrlForCampus() }}"
                     target="_blank"
-                    class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs font-bold text-amber-900 shadow-sm transition hover:bg-amber-100">
+                    class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs font-bold text-amber-900 shadow-sm transition hover:bg-amber-100"
+                    title="Buka Folder Google Drive Dokumentasi ({{ \App\Services\GoogleDriveService::getFolderLabelForCampus() }})">
                     <i data-lucide="folder" class="h-4 w-4 text-amber-600"></i>
-                    <span>Google Drive Dokumentasi</span>
+                    <span>{{ \App\Services\GoogleDriveService::getFolderLabelForCampus() }}</span>
                     <i data-lucide="external-link" class="h-3 w-3 text-amber-700"></i>
                 </a>
 

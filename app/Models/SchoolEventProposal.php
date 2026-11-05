@@ -128,7 +128,11 @@ class SchoolEventProposal extends Model
         $schoolName = $this->school?->name ?? $this->school_name ?? 'Sekolah';
         $date = $this->event_date ? \Carbon\Carbon::parse($this->event_date)->format('Y-m-d') : null;
 
-        return \App\Services\GoogleDriveService::buildFolderUrlForSchool($schoolName, $date);
+        return \App\Services\GoogleDriveService::buildFolderUrlForSchool(
+            $schoolName,
+            $date,
+            $this->school?->campus_id ?: $this->campus_id
+        );
     }
 
     public function getDocumentationItemsAttribute(): array

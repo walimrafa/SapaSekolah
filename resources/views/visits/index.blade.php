@@ -14,13 +14,13 @@
                 <span>Unduh Excel &amp; Link Drive</span>
             </a>
 
-            <!-- Tombol Buka Root Google Drive -->
-            <a href="https://drive.google.com/drive/folders/1DQkSEomL8cacePKG8Ex72JldQABKndiD?usp=sharing"
+            <!-- Tombol Buka Root Google Drive Sesuai Kampus Aktif -->
+            <a href="{{ \App\Services\GoogleDriveService::getFolderUrlForCampus() }}"
                 target="_blank"
                 class="px-3.5 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold rounded-xl text-xs shadow-soft flex items-center space-x-1.5 transition"
-                title="Buka Folder Induk Dokumentasi di Google Drive">
+                title="Buka Folder Google Drive Dokumentasi ({{ \App\Services\GoogleDriveService::getFolderLabelForCampus() }})">
                 <i data-lucide="folder" class="w-4 h-4 text-amber-500"></i>
-                <span>Google Drive Cloud</span>
+                <span>{{ \App\Services\GoogleDriveService::getFolderLabelForCampus() }}</span>
                 <i data-lucide="external-link" class="w-3 h-3 text-slate-400"></i>
             </a>
 

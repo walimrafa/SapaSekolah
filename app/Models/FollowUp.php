@@ -98,7 +98,8 @@ class FollowUp extends Model
 
         return \App\Services\GoogleDriveService::buildFolderUrlForSchool(
             $this->school?->name ?? 'Sekolah',
-            $date
+            $date,
+            $this->school?->campus_id ?: $this->campus_id
         );
     }
 

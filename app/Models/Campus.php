@@ -19,6 +19,8 @@ class Campus extends Model
         'longitude',
         'phone',
         'image_url',
+        'google_drive_folder_id',
+        'google_drive_folder_url',
         'email',
         'website',
         'is_active',

@@ -90,7 +90,8 @@ class SchoolVisit extends Model
 
         return \App\Services\GoogleDriveService::buildFolderUrlForSchool(
             $this->school?->name ?? 'Sekolah',
-            $this->visit_date ? Carbon::parse($this->visit_date)->format('Y-m-d') : null
+            $this->visit_date ? Carbon::parse($this->visit_date)->format('Y-m-d') : null,
+            $this->school?->campus_id ?: $this->campus_id
         );
     }
 

@@ -18,6 +18,27 @@ class SchoolDestinationAndIsolationTest extends TestCase
 {
     use DatabaseTransactions;
 
+    public function test_google_drive_folder_separation_for_cikampek_and_karawang()
+    {
+        $cikampekFolderUrl = 'https://drive.google.com/drive/folders/1VpGirvZZ1s2mR3ooMc_s5ZmAquitC0tA?usp=sharing';
+        $karawangFolderUrl = 'https://drive.google.com/drive/folders/1DQkSEomL8cacePKG8Ex72JldQABKndiD?usp=sharing';
+
+        $cikampekCampus = Campus::firstOrCreate(['code' => 'CKP'], ['name' => 'UBSI Kampus Cikampek', 'is_default' => false, 'is_active' => true]);
+        $karawangCampus = Campus::firstOrCreate(['code' => 'KRW'], ['name' => 'UBSI Kampus Karawang', 'is_default' => true, 'is_active' => true]);
+
+        // Cek pemisahan URL berdasarkan ID kampus
+        $this->assertEquals($cikampekFolderUrl, \App\Services\GoogleDriveService::getFolderUrlForCampus($cikampekCampus->id));
+        $this->assertEquals($karawangFolderUrl, \App\Services\GoogleDriveService::getFolderUrlForCampus($karawangCampus->id));
+
+        // Cek pemisahan URL berdasarkan Kode kampus
+        $this->assertEquals($cikampekFolderUrl, \App\Services\GoogleDriveService::getFolderUrlForCampus('CKP'));
+        $this->assertEquals($karawangFolderUrl, \App\Services\GoogleDriveService::getFolderUrlForCampus('KRW'));
+
+        // Cek buildFolderUrlForSchool dengan objek kampus
+        $this->assertEquals($cikampekFolderUrl, \App\Services\GoogleDriveService::buildFolderUrlForSchool('SMKN 1 CIKAMPEK', null, $cikampekCampus->id));
+        $this->assertEquals($karawangFolderUrl, \App\Services\GoogleDriveService::buildFolderUrlForSchool('SMAN 1 KARAWANG', null, $karawangCampus->id));
+    }
+
     public function test_google_maps_driving_url_includes_school_names()
     {
         $service = app(RouteClusteringService::class);

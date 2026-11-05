@@ -70,12 +70,15 @@ class MarketingActivityController extends Controller
             ],
         ]);
 
+        $activeCampusId = \App\Services\AppContextService::getActiveCampus()?->id;
+
         if ($request->hasFile('document')) {
             $file = $request->file('document');
             $gdriveResult = \App\Services\GoogleDriveService::uploadDocumentation(
                 $file,
                 $validated['name'],
-                $validated['start_date']
+                $validated['start_date'],
+                $activeCampusId
             );
 
             $validated['document_name'] = $file->getClientOriginalName();
@@ -85,7 +88,8 @@ class MarketingActivityController extends Controller
         } else {
             $validated['google_drive_folder_url'] = \App\Services\GoogleDriveService::buildFolderUrlForSchool(
                 $validated['name'],
-                $validated['start_date']
+                $validated['start_date'],
+                $activeCampusId
             );
         }
 
