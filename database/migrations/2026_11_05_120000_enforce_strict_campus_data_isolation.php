@@ -172,3 +172,4 @@ return new class extends Migration
         // Data alignment migration; no destructive rollback needed.
     }
 };
+
