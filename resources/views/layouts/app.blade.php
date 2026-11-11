@@ -14,13 +14,14 @@
     <title>{{ $title ?? 'Dashboard' }} - {{ $appSettings['app_name'] }} {{ $appSettings['app_subtitle'] }}</title>
 
     <!-- Favicon / Logo Title SAPA Sekolah -->
-    <link rel="icon" type="image/png" href="{{ !empty($appSettings['app_logo_url']) ? asset($appSettings['app_logo_url']) : asset('favicon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">
     <link rel="shortcut icon" href="{{ !empty($appSettings['app_logo_url']) ? asset($appSettings['app_logo_url']) : asset('favicon.ico') }}">
-    <link rel="apple-touch-icon" href="{{ !empty($appSettings['app_logo_url']) ? asset($appSettings['app_logo_url']) : asset('favicon.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
 
     <!-- PWA Progressive Web App Meta Tags -->
     <link rel="manifest" href="{{ asset('manifest.json') }}">
-    <meta name="theme-color" content="#0f172a">
+    <meta name="theme-color" content="#0B023E">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -232,6 +233,9 @@
 
     <!-- PWA Mobile Bottom Navigation (Akses Cepat Lapangan) -->
     <x-pwa-bottom-nav />
+
+    <!-- PWA Install Prompt Banner -->
+    <x-pwa-install-banner />
 
     <!-- Toast Component -->
     <x-toast />

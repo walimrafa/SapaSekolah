@@ -10,13 +10,14 @@
     <title>{{ $title ?? 'Login' }} - {{ $appSettings['app_name'] ?? 'SAPA Sekolah' }}</title>
 
     <!-- Favicon / Logo Title SAPA Sekolah -->
-    <link rel="icon" type="image/png" href="{{ !empty($appSettings['app_logo_url']) ? asset($appSettings['app_logo_url']) : asset('favicon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">
     <link rel="shortcut icon" href="{{ !empty($appSettings['app_logo_url']) ? asset($appSettings['app_logo_url']) : asset('favicon.ico') }}">
-    <link rel="apple-touch-icon" href="{{ !empty($appSettings['app_logo_url']) ? asset($appSettings['app_logo_url']) : asset('favicon.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
 
     <!-- PWA Progressive Web App Meta Tags -->
     <link rel="manifest" href="{{ asset('manifest.json') }}">
-    <meta name="theme-color" content="#0f172a">
+    <meta name="theme-color" content="#0B023E">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -32,6 +33,20 @@
 <body class="font-sans antialiased text-slate-900 bg-slate-100 min-h-screen">
     {{ $slot }}
 
+    <!-- PWA Install Prompt Banner -->
+    <x-pwa-install-banner />
+
     <x-toast />
+
+    <!-- Service Worker Registration for PWA -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('SAPA Sekolah PWA Service Worker Registered', reg.scope))
+                    .catch(err => console.log('SW registration skipped', err));
+            });
+        }
+    </script>
 </body>
 </html>

@@ -1,22 +1,37 @@
-const CACHE_NAME = 'sapasekolah-pwa-v1';
+/**
+ * SAPA Sekolah - Progressive Web App Service Worker
+ * Cache Strategy: Stale-While-Revalidate for Assets, Network-First for Navigation
+ * Version: v2.0
+ */
+
+const CACHE_NAME = 'sapasekolah-pwa-v2';
+
 const PRECACHE_ASSETS = [
   '/',
+  '/offline.html',
   '/manifest.json',
-  '/logo-sapa-sekolah.png',
+  '/pwa-icon-192.png',
+  '/pwa-icon-512.png',
+  '/pwa-maskable-512.png',
+  '/apple-touch-icon.png',
+  '/favicon-32x32.png',
+  '/favicon-16x16.png',
   '/favicon.png',
   '/favicon.ico'
 ];
 
-// Install Event - Precache critical shell assets
+// Install Event: Precaching essential shell & offline fallback
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(PRECACHE_ASSETS);
+      return cache.addAll(PRECACHE_ASSETS).catch((err) => {
+        console.warn('Precache partial fallback:', err);
+      });
     }).then(() => self.skipWaiting())
   );
 });
 
-// Activate Event - Clean old caches
+// Activate Event: Clear outdated caches and claim clients immediately
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
@@ -31,86 +46,84 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch Event - Network First with Cache Fallback for smooth UX
+// Fetch Event
 self.addEventListener('fetch', (event) => {
-  // Only handle GET requests
+  // Only process GET requests
   if (event.request.method !== 'GET') return;
 
   const url = new URL(event.request.url);
 
-  // Bypass non-http or non-origin requests
+  // Skip non-http/https protocols (e.g. chrome-extension://)
   if (!url.protocol.startsWith('http')) return;
 
-  // Static Assets (Images, Icons, Fonts, CSS, JS): Stale-While-Revalidate
-  if (
-    url.pathname.match(/\.(png|jpg|jpeg|svg|gif|webp|woff|woff2|ttf|eot|css|js)$/i) ||
+  // 1. Static Assets (Images, Fonts, CSS, JS, Vite build assets)
+  // Strategy: Stale-While-Revalidate
+  const isStaticAsset = 
+    url.pathname.match(/\.(png|jpg|jpeg|svg|gif|webp|ico|woff|woff2|ttf|eot|css|js)$/i) ||
     url.pathname.startsWith('/build/') ||
-    url.pathname.startsWith('/vendor/')
-  ) {
-    event.respondWith(
-      caches.open(CACHE_NAME).then((cache) => {
-        return cache.match(event.request).then((cachedResponse) => {
-          const fetchPromise = fetch(event.request).then((networkResponse) => {
-            if (networkResponse && networkResponse.status === 200) {
-              cache.put(event.request, networkResponse.clone());
-            }
-            return networkResponse;
-          }).catch(() => cachedResponse);
+    url.pathname.startsWith('/vendor/') ||
+    url.pathname.startsWith('/storage/');
 
-          return cachedResponse || fetchPromise;
-        });
+  if (isStaticAsset) {
+    event.respondWith(
+      caches.open(CACHE_NAME).then(async (cache) => {
+        const cachedResponse = await cache.match(event.request);
+        const fetchPromise = fetch(event.request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            cache.put(event.request, networkResponse.clone());
+          }
+          return networkResponse;
+        }).catch(() => cachedResponse);
+
+        return cachedResponse || fetchPromise;
       })
     );
     return;
   }
 
-  // HTML Page Navigation: Network First with Cache Fallback
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Cache successful responses for offline view
-        if (response.status === 200 && response.type === 'basic') {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-        }
-        return response;
-      })
-      .catch(async () => {
-        const cached = await caches.match(event.request);
-        if (cached) return cached;
-
-        // Return basic offline fallback if completely unreachable
-        return new Response(
-          `<!DOCTYPE html>
-          <html lang="id">
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Mode Offline - SAPA Sekolah</title>
-            <style>
-              body { font-family: system-ui, -apple-system, sans-serif; background: #020617; color: #f8fafc; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; text-align: center; }
-              .card { background: #0f172a; border: 1px solid #1e293b; border-radius: 24px; padding: 32px 24px; max-width: 380px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); }
-              .icon { width: 54px; height: 54px; background: rgba(239, 68, 68, 0.15); color: #f87171; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 16px; font-weight: bold; }
-              h1 { font-size: 18px; margin: 0 0 8px 0; font-weight: 800; }
-              p { font-size: 13px; color: #94a3b8; line-height: 1.5; margin: 0 0 20px 0; }
-              button { background: #ef4444; color: #ffffff; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 700; font-size: 13px; cursor: pointer; width: 100%; transition: opacity 0.2s; }
-              button:hover { opacity: 0.9; }
-            </style>
-          </head>
-          <body>
-            <div class="card">
-              <div class="icon">⚡</div>
-              <h1>Koneksi Lapangan Terputus</h1>
-              <p>Perangkat Anda sedang offline atau sinyal di lokasi lemah. Data yang sudah dibuka sebelumnya tetap tersimpan.</p>
-              <button onclick="window.location.reload()">Coba Muat Ulang</button>
-            </div>
-          </body>
-          </html>`,
-          {
-            headers: { 'Content-Type': 'text/html; charset=utf-8' },
+  // 2. HTML Page Navigation Requests (e.g. Dashboard, Operasional, Laporan, Peta)
+  // Strategy: Network-First with Cache Fallback and Offline Page Fallback
+  if (event.request.mode === 'navigate' || event.request.headers.get('accept')?.includes('text/html')) {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          // If response is successful, update cache
+          if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseClone);
+            });
           }
-        );
-      })
+          return networkResponse;
+        })
+        .catch(async () => {
+          // Check if page was cached before
+          const cachedResponse = await caches.match(event.request);
+          if (cachedResponse) return cachedResponse;
+
+          // Return dedicated branded offline fallback
+          const offlinePage = await caches.match('/offline.html');
+          if (offlinePage) return offlinePage;
+
+          // Fallback response if cache is missing
+          return new Response(
+            '<h1>Mode Offline SAPA Sekolah</h1><p>Koneksi internet terputus. Silakan muat ulang saat terhubung kembali.</p>',
+            { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+          );
+        })
+    );
+    return;
+  }
+
+  // 3. Default API / Data Requests: Network First
+  event.respondWith(
+    fetch(event.request).catch(async () => {
+      const cached = await caches.match(event.request);
+      if (cached) return cached;
+      return new Response(JSON.stringify({ error: 'Koneksi offline' }), {
+        status: 503,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    })
   );
 });
-

@@ -1,63 +1,90 @@
 {
+  "$schema": "https://json.schemastore.org/web-manifest-combined.json",
+  "id": "/",
   "name": "SAPA Sekolah - Marketing Command Center",
   "short_name": "SAPA Sekolah",
-  "description": "Platform GIS Cerdas & Aplikasi Operasional Marketing Lapangan Universitas Bina Sarana Informatika",
+  "description": "Platform Cerdas & Aplikasi Operasional Marketing Lapangan Universitas Bina Sarana Informatika",
   "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#020617",
-  "theme_color": "#0f172a",
-  "categories": ["education", "business", "productivity"],
+  "display_override": ["standalone", "minimal-ui", "window-controls-overlay"],
+  "orientation": "portrait-primary",
+  "background_color": "#0B023E",
+  "theme_color": "#0B023E",
+  "lang": "id-ID",
+  "dir": "ltr",
+  "categories": ["business", "education", "productivity"],
+  "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/logo-sapa-sekolah.png",
+      "src": "/favicon-16x16.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/pwa-icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/logo-sapa-sekolah.png",
+      "src": "/pwa-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/favicon.png",
-      "sizes": "96x96",
+      "src": "/pwa-maskable-512.png",
+      "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
     }
   ],
   "shortcuts": [
     {
-      "name": "Jadwal Hari Ini",
+      "name": "Jadwal & Agenda Lapangan",
       "short_name": "Jadwal",
-      "description": "Rencana & Jadwal Kunjungan Lapangan",
+      "description": "Buka Rencana Agenda Kunjungan Sekolah",
       "url": "/visit-plans",
-      "icons": [{ "src": "/logo-sapa-sekolah.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/pwa-icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Catat Kunjungan Baru",
       "short_name": "+ Kunjungan",
       "description": "Input Laporan Kunjungan Sekolah Langsung di Lapangan",
       "url": "/visits/create",
-      "icons": [{ "src": "/logo-sapa-sekolah.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/pwa-icon-192.png", "sizes": "192x192" }]
     },
     {
-      "name": "Peta GIS Sekolah",
+      "name": "Peta GIS Sekolah SLTA",
       "short_name": "Peta GIS",
-      "description": "Navigasi Rute Sekolah Terdekat",
+      "description": "Navigasi Peta Interaktif & Rute Sekolah",
       "url": "/map",
-      "icons": [{ "src": "/logo-sapa-sekolah.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/pwa-icon-192.png", "sizes": "192x192" }]
     },
     {
-      "name": "Kuisioner Siswa",
-      "short_name": "Kuisioner",
-      "description": "Input & Kelola Kuisioner Siswa Lapangan",
-      "url": "/hasil-kuisioner",
-      "icons": [{ "src": "/logo-sapa-sekolah.png", "sizes": "192x192" }]
+      "name": "Data Siswa Hasil Support Event",
+      "short_name": "Siswa Event",
+      "description": "Akses Data Leads Siswa Hasil Kegiatan Event",
+      "url": "/event-students",
+      "icons": [{ "src": "/pwa-icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Laporan & Dokumentasi Kegiatan",
+      "short_name": "Laporan",
+      "description": "Pantau Laporan dan Dokumentasi Pelaksanaan Event",
+      "url": "/event-reports",
+      "icons": [{ "src": "/pwa-icon-192.png", "sizes": "192x192" }]
     }
   ]
 }
-
