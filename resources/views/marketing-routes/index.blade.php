@@ -194,6 +194,26 @@
 
                 <form method="POST" action="{{ route('marketing-routes.store-cluster') }}" class="space-y-4">
                     @csrf
+
+                    @if($activeVisitPlans->isNotEmpty())
+                        <!-- Quick Generate from Active Visit Plans -->
+                        <div class="p-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/80 rounded-2xl shadow-xs space-y-2">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-6 h-6 rounded-lg bg-amber-500 text-white flex items-center justify-center font-bold text-xs shadow-xs">⚡</span>
+                                    <div>
+                                        <h4 class="text-xs font-bold text-amber-950">Rute dari Rencana Kunjungan</h4>
+                                        <p class="text-[10px] text-amber-800">{{ $activeVisitPlans->count() }} rencana kunjungan aktif siap dibuatkan rute otomatis</p>
+                                    </div>
+                                </div>
+                                <button type="button" @click="loadFromVisitPlans()" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer shrink-0">
+                                    <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                                    <span>Buat Rute Otomatis</span>
+                                </button>
+                            </div>
+                        </div>
+                    @endif
+
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Nama Rute Klaster <span class="text-red-500">*</span></label>
                         <input type="text" name="name" required class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300" placeholder="Rute Mobil Outing Hari #1">
@@ -631,10 +651,43 @@
                     'schools_count' => (int) $r->schools_count,
                 ])->values()) !!},
                 allSchools: {!! json_encode($schools) !!},
+                activeVisitPlans: {!! json_encode($activeVisitPlans->map(fn($vp) => [
+                    'id' => $vp->id,
+                    'school_id' => (string) $vp->school_id,
+                    'school_name' => $vp->school->name ?? '',
+                    'district_id' => (string) ($vp->school->district_id ?? ''),
+                    'regency_id' => (string) ($vp->school->regency_id ?? ''),
+                    'planned_date' => $vp->planned_date?->format('Y-m-d'),
+                    'user_id' => (string) $vp->user_id,
+                ])->values()) !!},
                 routePreview: null,
                 markers: [],
                 polyline: null,
                 roadPolylines: [],
+
+                loadFromVisitPlans() {
+                    if (!this.activeVisitPlans || this.activeVisitPlans.length === 0) {
+                        alert('Tidak ada rencana kunjungan aktif dengan koordinat GPS.');
+                        return;
+                    }
+                    const schoolIds = [...new Set(this.activeVisitPlans.map(vp => String(vp.school_id)))];
+                    const districtIds = [...new Set(this.activeVisitPlans.map(vp => String(vp.district_id)).filter(Boolean))];
+
+                    this.selectedRegency = 'ALL';
+                    this.selectedDistricts = districtIds;
+                    this.selectedSchoolIds = schoolIds;
+
+                    if (this.activeVisitPlans[0] && this.activeVisitPlans[0].planned_date) {
+                        const dateInput = document.querySelector('input[name="date"]');
+                        if (dateInput) dateInput.value = this.activeVisitPlans[0].planned_date;
+                    }
+                    if (this.activeVisitPlans[0] && this.activeVisitPlans[0].user_id) {
+                        const userSelect = document.querySelector('select[name="user_id"]');
+                        if (userSelect) userSelect.value = this.activeVisitPlans[0].user_id;
+                    }
+
+                    this.previewCluster();
+                },
 
                 get availableDistricts() {
                     if (!this.selectedRegency || this.selectedRegency === 'ALL') {

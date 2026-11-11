@@ -11,18 +11,32 @@ class StudyProgramController extends Controller
 {
     public function index(): View
     {
-        $programs = StudyProgram::orderBy('name')->get();
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $campuses = \App\Models\Campus::all();
+
+        $query = StudyProgram::with('campus')->orderBy('name');
+        if ($activeCampus) {
+            $query->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)
+                  ->orWhereNull('campus_id');
+            });
+        }
+
+        $programs = $query->get();
         $availableStudyTimes = StudyProgram::getStudyTimeOptions();
 
-        return view('study-programs.index', compact('programs', 'availableStudyTimes'));
+        return view('study-programs.index', compact('programs', 'availableStudyTimes', 'campuses', 'activeCampus'));
     }
 
     public function store(Request $request): RedirectResponse
     {
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'code' => ['required', 'string', 'max:20'],
             'faculty' => ['nullable', 'string', 'max:100'],
+            'campus_id' => ['nullable', 'exists:campuses,id'],
             'study_times' => ['nullable', 'array'],
             'study_times.*' => ['string', 'in:reguler_pagi,reguler_malam,karyawan'],
             'status' => ['required', 'boolean'],
@@ -33,6 +47,7 @@ class StudyProgramController extends Controller
 
         $code = strtoupper(trim($request->input('code')));
         $submittedTimes = $request->input('study_times', []);
+        $campusId = $validated['campus_id'] ?? ($activeCampus?->id);
 
         $existing = StudyProgram::where('code', $code)
             ->orWhereRaw('LOWER(name) = ?', [strtolower(trim($validated['name']))])
@@ -44,6 +59,7 @@ class StudyProgramController extends Controller
             $existing->update([
                 'study_times' => $mergedTimes,
                 'faculty' => $validated['faculty'] ?? $existing->faculty,
+                'campus_id' => $campusId ?: $existing->campus_id,
                 'status' => $validated['status'],
             ]);
 
@@ -52,6 +68,7 @@ class StudyProgramController extends Controller
         }
 
         $validated['code'] = $code;
+        $validated['campus_id'] = $campusId;
         $validated['study_times'] = $submittedTimes;
 
         StudyProgram::create($validated);
@@ -66,6 +83,7 @@ class StudyProgramController extends Controller
             'name' => ['required', 'string', 'max:100'],
             'code' => ['required', 'string', 'max:20', 'unique:study_programs,code,' . $studyProgram->id],
             'faculty' => ['nullable', 'string', 'max:100'],
+            'campus_id' => ['nullable', 'exists:campuses,id'],
             'study_times' => ['nullable', 'array'],
             'study_times.*' => ['string', 'in:reguler_pagi,reguler_malam,karyawan'],
             'status' => ['required', 'boolean'],

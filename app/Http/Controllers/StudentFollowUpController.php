@@ -155,32 +155,47 @@ class StudentFollowUpController extends Controller
             }
         }
 
-        // Summary metrics & criteria statistics
-        $allTotal = StudentQuestionnaire::count();
-        $scholarshipYesCount = StudentQuestionnaire::where('scholarship_interest', 'ya')->count();
-        $scholarshipNoCount = StudentQuestionnaire::where('scholarship_interest', 'tidak')->count();
+        // Base Query for Summary Metrics strictly scoped by Active Campus, Period & Officer Role
+        $baseMetricQuery = StudentQuestionnaire::query();
+        if (!$canPlot) {
+            $baseMetricQuery->where('assigned_to', $user?->id);
+        }
+        if ($activeCampus) {
+            $baseMetricQuery->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)
+                    ->orWhereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id));
+            });
+        }
+        if ($activePeriod) {
+            $baseMetricQuery->where('academic_period_id', $activePeriod->id);
+        }
 
-        $daftarAplikasiCount = StudentQuestionnaire::whereIn('followup_status', [StudentQuestionnaire::STATUS_DAFTAR_APLIKASI, 'closing'])->count();
+        // Summary metrics & criteria statistics
+        $allTotal = (clone $baseMetricQuery)->count();
+        $scholarshipYesCount = (clone $baseMetricQuery)->where('scholarship_interest', 'ya')->count();
+        $scholarshipNoCount = (clone $baseMetricQuery)->where('scholarship_interest', 'tidak')->count();
+
+        $daftarAplikasiCount = (clone $baseMetricQuery)->whereIn('followup_status', [StudentQuestionnaire::STATUS_DAFTAR_APLIKASI, 'closing'])->count();
 
         $statusCounts = [
-            'belum_dihubungi' => StudentQuestionnaire::where('followup_status', StudentQuestionnaire::STATUS_BELUM_DIHUBUNGI)->count(),
-            'no_respon' => StudentQuestionnaire::where('followup_status', StudentQuestionnaire::STATUS_NO_RESPON)->count(),
-            'respon' => StudentQuestionnaire::where('followup_status', StudentQuestionnaire::STATUS_RESPON)->count(),
-            'berminat' => StudentQuestionnaire::where('followup_status', StudentQuestionnaire::STATUS_BERMINAT)->count(),
+            'belum_dihubungi' => (clone $baseMetricQuery)->where('followup_status', StudentQuestionnaire::STATUS_BELUM_DIHUBUNGI)->count(),
+            'no_respon' => (clone $baseMetricQuery)->where('followup_status', StudentQuestionnaire::STATUS_NO_RESPON)->count(),
+            'respon' => (clone $baseMetricQuery)->where('followup_status', StudentQuestionnaire::STATUS_RESPON)->count(),
+            'berminat' => (clone $baseMetricQuery)->where('followup_status', StudentQuestionnaire::STATUS_BERMINAT)->count(),
             'daftar_aplikasi' => $daftarAplikasiCount,
             'closing' => $daftarAplikasiCount, // fallback
         ];
 
-        $scholarshipDaftarAplikasiCount = StudentQuestionnaire::where('scholarship_interest', 'ya')
+        $scholarshipDaftarAplikasiCount = (clone $baseMetricQuery)->where('scholarship_interest', 'ya')
             ->whereIn('followup_status', [StudentQuestionnaire::STATUS_DAFTAR_APLIKASI, 'closing'])
             ->count();
 
         // Specific scholarship breakdown per criteria
         $scholarshipStatusCounts = [
-            'belum_dihubungi' => StudentQuestionnaire::where('scholarship_interest', 'ya')->where('followup_status', StudentQuestionnaire::STATUS_BELUM_DIHUBUNGI)->count(),
-            'no_respon' => StudentQuestionnaire::where('scholarship_interest', 'ya')->where('followup_status', StudentQuestionnaire::STATUS_NO_RESPON)->count(),
-            'respon' => StudentQuestionnaire::where('scholarship_interest', 'ya')->where('followup_status', StudentQuestionnaire::STATUS_RESPON)->count(),
-            'berminat' => StudentQuestionnaire::where('scholarship_interest', 'ya')->where('followup_status', StudentQuestionnaire::STATUS_BERMINAT)->count(),
+            'belum_dihubungi' => (clone $baseMetricQuery)->where('scholarship_interest', 'ya')->where('followup_status', StudentQuestionnaire::STATUS_BELUM_DIHUBUNGI)->count(),
+            'no_respon' => (clone $baseMetricQuery)->where('scholarship_interest', 'ya')->where('followup_status', StudentQuestionnaire::STATUS_NO_RESPON)->count(),
+            'respon' => (clone $baseMetricQuery)->where('scholarship_interest', 'ya')->where('followup_status', StudentQuestionnaire::STATUS_RESPON)->count(),
+            'berminat' => (clone $baseMetricQuery)->where('scholarship_interest', 'ya')->where('followup_status', StudentQuestionnaire::STATUS_BERMINAT)->count(),
             'daftar_aplikasi' => $scholarshipDaftarAplikasiCount,
             'closing' => $scholarshipDaftarAplikasiCount,
         ];
@@ -190,22 +205,29 @@ class StudentFollowUpController extends Controller
         $interestedRate = $totalContacted > 0 ? round((($statusCounts['berminat'] + $daftarAplikasiCount) / $totalContacted) * 100, 1) : 0;
 
         // Metrik Ploting Pembagian Data untuk Pimpinan & Koordinator
-        $totalUnassigned = StudentQuestionnaire::whereNull('assigned_to')->count();
-        $totalAssigned = StudentQuestionnaire::whereNotNull('assigned_to')->count();
-        $unassignedKuisioner = StudentQuestionnaire::whereNull('assigned_to')->where('source', 'kuisioner')->count();
-        $unassignedSupportEvent = StudentQuestionnaire::whereNull('assigned_to')
+        $totalUnassigned = (clone $baseMetricQuery)->whereNull('assigned_to')->count();
+        $totalAssigned = (clone $baseMetricQuery)->whereNotNull('assigned_to')->count();
+        $unassignedKuisioner = (clone $baseMetricQuery)->whereNull('assigned_to')->where('source', 'kuisioner')->count();
+        $unassignedSupportEvent = (clone $baseMetricQuery)->whereNull('assigned_to')
             ->where(function ($q) {
                 $q->where('source', 'support_event')
                     ->orWhereNotNull('school_event_proposal_id')
                     ->orWhere('college_interest_notes', 'like', '%Support Event%');
             })->count();
 
-        $assignableOfficers = User::query()
+        $assignableOfficersQuery = User::query()
             ->whereHas('role', function ($q) {
                 $q->whereIn('name', ['Marketing', 'Customer Service', 'Koordinator Marketing']);
             })
-            ->active()
-            ->orderBy('name')
+            ->active();
+
+        if ($activeCampus) {
+            $assignableOfficersQuery->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)->orWhereNull('campus_id');
+            });
+        }
+
+        $assignableOfficers = $assignableOfficersQuery->orderBy('name')
             ->withCount([
                 'assignedStudentQuestionnaires as total_assigned_count',
                 'assignedStudentQuestionnaires as pending_count' => function ($q) {
@@ -214,10 +236,18 @@ class StudentFollowUpController extends Controller
             ])
             ->get(['id', 'name', 'email', 'role_id']);
 
-        $classes = StudentQuestionnaire::query()->distinct()->whereNotNull('student_class')->orderBy('student_class')->pluck('student_class');
-        $majors = StudentQuestionnaire::query()->distinct()->whereNotNull('student_major')->orderBy('student_major')->pluck('student_major');
-        $studyPrograms = StudyProgram::where('status', 1)->orderBy('name')->get();
-        $schools = School::with('district:id,name')->orderBy('name')->get();
+        $classes = (clone $baseMetricQuery)->distinct()->whereNotNull('student_class')->orderBy('student_class')->pluck('student_class');
+        $majors = (clone $baseMetricQuery)->distinct()->whereNotNull('student_major')->orderBy('student_major')->pluck('student_major');
+        
+        $studyPrograms = StudyProgram::where('status', 1)
+            ->when($activeCampus, fn($q) => $q->where(fn($sub) => $sub->where('campus_id', $activeCampus->id)->orWhereNull('campus_id')))
+            ->orderBy('name')
+            ->get();
+            
+        $schools = School::when($activeCampus, fn($q) => $q->where('campus_id', $activeCampus->id))
+            ->with('district:id,name')
+            ->orderBy('name')
+            ->get();
 
         $students = $query->latest('id')->paginate(15)->withQueryString();
 

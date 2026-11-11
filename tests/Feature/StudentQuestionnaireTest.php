@@ -171,10 +171,14 @@ class StudentQuestionnaireTest extends TestCase
                 $statistics['questions']
             ))
         );
-        $this->assertStringContainsString('questionnaireScholarshipChart', $rendered);
-        $this->assertStringContainsString('questionnaireSectionChart', $rendered);
-        $this->assertStringContainsString('questionnaireMajorChart', $rendered);
-        $this->assertStringContainsString('questionnaireClassChart', $rendered);
-        $this->assertStringContainsString('questionnaireScoreChart', $rendered);
+        $this->assertStringContainsString('category=diagram', $rendered);
+        $this->assertStringContainsString('Buka Laporan Diagram', $rendered);
+
+        $reportResponse = $this->get(route('reports.index', ['category' => 'diagram']));
+        $reportResponse->assertOk();
+        $reportResponse->assertSee('chartQuestionnaireScholarship');
+        $reportResponse->assertSee('chartQuestionnaireSections');
+        $reportResponse->assertSee('chartQuestionnaireMajors');
+        $reportResponse->assertSee('chartQuestionnaireClasses');
     }
 }

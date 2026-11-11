@@ -25,6 +25,16 @@ class VisitPlan extends Model
     ];
 
     /**
+     * Auto-expire past unexecuted plans so they cleanly leave active plans.
+     */
+    public static function expirePastUnexecutedPlans(): int
+    {
+        return static::where('status', 'planned')
+            ->whereDate('planned_date', '<', today())
+            ->update(['status' => 'cancelled']);
+    }
+
+    /**
      * VisitPlan belongsTo School.
      */
     public function school(): BelongsTo

@@ -16,9 +16,18 @@ class StudyProgram extends Model
         'name',
         'code',
         'faculty',
+        'campus_id',
         'study_times',
         'status',
     ];
+
+    /**
+     * StudyProgram belongsTo Campus.
+     */
+    public function campus(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Campus::class);
+    }
 
     protected $casts = [
         'status' => 'boolean',

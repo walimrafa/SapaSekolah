@@ -18,6 +18,36 @@
         || auth()->user()->isCustomerService();
     $hasPendingPeriodNotice = \App\Services\PeriodClosingService::pendingForUser(auth()->user());
     $isMasterActive = request()->routeIs('master-data.*', 'users.*', 'settings.*', 'whatsapp-notifications.*', 'period-closing.*', 'activity-logs.*') || (!auth()->user()->isCustomerService() && request()->routeIs('qr-codes.*'));
+
+    // Realtime scoped counts for Prospects and New Students (isolated per active campus and period)
+    $sidebarCampus = \App\Services\AppContextService::getActiveCampus();
+    $sidebarPeriod = \App\Services\AppContextService::getActivePeriod();
+
+    $prospectsCount = \App\Models\Prospect::where('status', '!=', \App\Models\Prospect::STATUS_MAHASISWA)
+        ->when($sidebarCampus, function ($q) use ($sidebarCampus) {
+            $q->where(function ($sub) use ($sidebarCampus) {
+                $sub->where('campus_id', $sidebarCampus->id)
+                    ->orWhere(function ($ss) use ($sidebarCampus) {
+                        $ss->whereNull('campus_id')
+                           ->whereHas('school', fn($sq) => $sq->where('campus_id', $sidebarCampus->id));
+                    });
+            });
+        })
+        ->when($sidebarPeriod, fn($q) => $q->where(fn($p) => $p->where('academic_period_id', $sidebarPeriod->id)->orWhereNull('academic_period_id')))
+        ->count();
+
+    $newStudentsCount = \App\Models\Prospect::where('status', \App\Models\Prospect::STATUS_MAHASISWA)
+        ->when($sidebarCampus, function ($q) use ($sidebarCampus) {
+            $q->where(function ($sub) use ($sidebarCampus) {
+                $sub->where('campus_id', $sidebarCampus->id)
+                    ->orWhere(function ($ss) use ($sidebarCampus) {
+                        $ss->whereNull('campus_id')
+                           ->whereHas('school', fn($sq) => $sq->where('campus_id', $sidebarCampus->id));
+                    });
+            });
+        })
+        ->when($sidebarPeriod, fn($q) => $q->where(fn($p) => $p->where('academic_period_id', $sidebarPeriod->id)->orWhereNull('academic_period_id')))
+        ->count();
 @endphp
 
     <!-- Sidebar Header -->
@@ -223,7 +253,7 @@
                         <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
                         <span>{{ $lbl('submenu_prospects', 'Prospek') }}</span>
                     </div>
-                    <span class="px-1.5 py-0.2 text-[9px] font-bold bg-slate-800 text-slate-300 rounded">{{ \App\Models\Prospect::where('status', '!=', 'mahasiswa')->count() }}</span>
+                    <span class="px-1.5 py-0.2 text-[9px] font-bold bg-slate-800 text-slate-300 rounded">{{ $prospectsCount }}</span>
                 </a>
 
                 <a href="{{ route('new-students.index') }}"
@@ -232,7 +262,7 @@
                         <i data-lucide="graduation-cap" class="w-3.5 h-3.5 text-amber-400"></i>
                         <span>{{ $lbl('submenu_new_students', 'Mahasiswa Baru') }}</span>
                     </div>
-                    <span class="px-1.5 py-0.2 text-[9px] font-bold bg-amber-400/20 text-amber-300 rounded">{{ \App\Models\Prospect::where('status', 'mahasiswa')->count() }}</span>
+                    <span class="px-1.5 py-0.2 text-[9px] font-bold bg-amber-400/20 text-amber-300 rounded">{{ $newStudentsCount }}</span>
                 </a>
 
                 <a href="{{ route('student-questionnaires.index') }}"

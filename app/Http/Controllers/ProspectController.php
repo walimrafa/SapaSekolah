@@ -92,7 +92,10 @@ class ProspectController extends Controller
             ->when($activeCampus, fn($q) => $q->where(fn($sub) => $sub->where('campus_id', $activeCampus->id)->orWhereNull('campus_id')))
             ->get();
 
-        $studyPrograms = StudyProgram::where('status', 1)->get();
+        $studyPrograms = StudyProgram::where('status', 1)
+            ->when($activeCampus, fn($q) => $q->where(fn($sub) => $sub->where('campus_id', $activeCampus->id)->orWhereNull('campus_id')))
+            ->orderBy('name')
+            ->get();
 
         // 5 Tahap Pipeline Status Counts (Scoped by Active Campus & Period)
         $baseStatusQuery = Prospect::query();

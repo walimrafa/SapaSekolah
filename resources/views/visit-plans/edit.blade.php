@@ -1,4 +1,34 @@
 <x-app-layout title="Edit Agenda Rencana Kunjungan">
+    @push('styles')
+    <style>
+        .ts-wrapper.district-tom-select .ts-control,
+        .ts-wrapper.user-tom-select .ts-control,
+        .ts-wrapper.school-tom-select .ts-control {
+            border-radius: 0.75rem !important;
+            padding: 0.55rem 0.875rem !important;
+            border-color: #cbd5e1 !important;
+            font-size: 0.75rem !important;
+            font-weight: 700 !important;
+            background-color: #ffffff !important;
+        }
+        .ts-dropdown {
+            border-radius: 0.75rem !important;
+            font-size: 0.75rem !important;
+            border-color: #e2e8f0 !important;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
+            z-index: 9999 !important;
+        }
+        .ts-dropdown .option {
+            padding: 0.5rem 0.75rem !important;
+        }
+        .ts-dropdown .active {
+            background-color: #f8fafc !important;
+            color: #0f172a !important;
+            font-weight: 700 !important;
+        }
+    </style>
+    @endpush
+
     <div class="mb-6 flex items-center justify-between">
         <div>
             <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Edit Agenda Rencana Kunjungan</h1>
@@ -15,6 +45,35 @@
         allSchools: {{ json_encode($schools) }},
         selectedDistrictId: '{{ old('district_id', $visitPlan->school->district_id ?? '') }}',
         selectedSchoolId: '{{ old('school_id', $visitPlan->school_id) }}',
+        tsDistrict: null,
+        tsUser: null,
+
+        init() {
+            this.$nextTick(() => {
+                const districtEl = document.getElementById('edit_district_filter');
+                if (districtEl && window.TomSelect) {
+                    this.tsDistrict = new TomSelect(districtEl, {
+                        create: false,
+                        placeholder: '-- Cari & Filter Kecamatan ({{ $schools->count() }} Sekolah Tersedia) --',
+                        allowEmptyOption: true,
+                        maxOptions: 100,
+                        onChange: (val) => {
+                            this.selectedDistrictId = val;
+                        }
+                    });
+                }
+
+                const userEl = document.getElementById('edit_user_id');
+                if (userEl && window.TomSelect) {
+                    this.tsUser = new TomSelect(userEl, {
+                        create: false,
+                        placeholder: '-- Cari & Pilih Staf Marketing PIC --',
+                        maxOptions: 50
+                    });
+                }
+            });
+        },
+
         get filteredSchools() {
             if (!this.selectedDistrictId) return this.allSchools;
             return this.allSchools.filter(s => s.district_id == this.selectedDistrictId);
@@ -34,11 +93,13 @@
                 <div class="space-y-4 text-xs">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="block font-bold text-slate-700 mb-1">Filter Kecamatan Sekolah <span class="text-amber-600 font-normal">(Pilih Kecamatan Terlebih Dahulu)</span></label>
-                            <select x-model="selectedDistrictId" @change="selectedSchoolId = ''" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-bold text-brand-700 bg-amber-50/40 focus:border-brand-500">
+                            <label class="block font-bold text-slate-700 mb-1">Filter Kecamatan Sekolah <span class="text-amber-600 font-normal">(Tom Select)</span></label>
+                            <select id="edit_district_filter" class="district-tom-select w-full px-3 py-2.5 rounded-xl border border-slate-300 font-bold text-brand-700 bg-white focus:border-brand-500">
                                 <option value="">-- Semua Kecamatan (Filter Wilayah) --</option>
                                 @foreach($districts as $d)
-                                    <option value="{{ $d->id }}">Kecamatan {{ $d->name }} ({{ $d->schools_count }} Sekolah)</option>
+                                    <option value="{{ $d->id }}" {{ (old('district_id', $visitPlan->school->district_id ?? '') == $d->id) ? 'selected' : '' }}>
+                                        Kecamatan {{ $d->name }} ({{ $d->schools_count }} Sekolah)
+                                    </option>
                                 @endforeach
                             </select>
                         </div>
@@ -58,11 +119,12 @@
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="block font-bold text-slate-700 mb-1">Staf Marketing PIC <span class="text-red-500">*</span></label>
-                            <select name="user_id" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-semibold">
+                            <label class="block font-bold text-slate-700 mb-1">Staf Marketing PIC <span class="text-red-500">*</span> <span class="text-slate-400 font-normal">(Tom Select)</span></label>
+                            <select id="edit_user_id" name="user_id" required class="user-tom-select w-full px-3 py-2.5 rounded-xl border border-slate-300 font-semibold">
+                                <option value="">-- Pilih Staf Marketing PIC --</option>
                                 @foreach($marketingUsers as $u)
                                     <option value="{{ $u->id }}" {{ old('user_id', $visitPlan->user_id) == $u->id ? 'selected' : '' }}>
-                                        {{ $u->name }}
+                                        {{ $u->name }} ({{ $u->role->name ?? 'Marketing' }})
                                     </option>
                                 @endforeach
                             </select>

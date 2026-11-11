@@ -37,6 +37,10 @@
     <script src="{{ asset('vendor/jquery/jquery.min.js') }}"></script>
     <script src="{{ asset('vendor/select2/select2.min.js') }}"></script>
 
+    <!-- Tom Select Searchable Autocomplete Assets -->
+    <link rel="stylesheet" href="{{ asset('vendor/tom-select/css/tom-select.bootstrap5.min.css') }}">
+    <script src="{{ asset('vendor/tom-select/js/tom-select.complete.min.js') }}"></script>
+
     <!-- Dynamic Theme Styling Variables -->
     <style>
         :root {

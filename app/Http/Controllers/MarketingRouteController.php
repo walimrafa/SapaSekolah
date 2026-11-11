@@ -96,7 +96,15 @@ class MarketingRouteController extends Controller
         $ubsiLat = $activeCampus ? (float)$activeCampus->latitude : SchoolScoringService::UBSI_LATITUDE;
         $ubsiLng = $activeCampus ? (float)$activeCampus->longitude : SchoolScoringService::UBSI_LONGITUDE;
 
-        return view('marketing-routes.index', compact('routes', 'regencies', 'districts', 'schools', 'marketingUsers', 'ubsiLat', 'ubsiLng'));
+        // Active visit plans for building marketing routes automatically
+        $activeVisitPlans = \App\Models\VisitPlan::with(['school.district', 'school.regency', 'user'])
+            ->where('status', 'planned')
+            ->when($activeCampus, fn($q) => $q->where('campus_id', $activeCampus->id))
+            ->whereHas('school', fn($sq) => $sq->whereNotNull('latitude')->whereNotNull('longitude'))
+            ->orderBy('planned_date', 'asc')
+            ->get();
+
+        return view('marketing-routes.index', compact('routes', 'regencies', 'districts', 'schools', 'marketingUsers', 'ubsiLat', 'ubsiLng', 'activeVisitPlans'));
     }
 
     /**

@@ -57,57 +57,28 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-6">
-        <section class="xl:col-span-2 bg-white rounded-2xl border border-slate-200/80 shadow-soft overflow-hidden">
-            <div class="p-4 border-b border-slate-100">
-                <h2 class="text-sm font-bold text-slate-900">Rata-rata Skor per Aspek</h2>
-                <p class="text-xs text-slate-500 mt-1">Skala 1 (sangat tidak setuju) sampai 5 (sangat setuju).</p>
+    <div class="mb-6 flex flex-col sm:flex-row items-center justify-between p-4 bg-gradient-to-r from-emerald-50/90 via-teal-50/70 to-emerald-50/90 border border-emerald-200/80 rounded-2xl shadow-soft gap-3">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-600 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
+                <i data-lucide="pie-chart" class="w-5 h-5"></i>
             </div>
-            <div class="p-4 h-72">
-                <canvas id="questionnaireSectionChart" role="img" aria-label="Diagram rata-rata skor per aspek kuisioner"></canvas>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h4 class="text-xs font-black text-slate-900">Diagram Statistik &amp; Analisis Kuisioner Telah Dipusatkan ke Menu Laporan</h4>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                        {{ number_format($statistics['total']) }} Responden
+                    </span>
+                </div>
+                <p class="text-[11px] text-slate-500 mt-0.5">Grafik rata-rata skor per aspek, minat beasiswa, responden per jurusan, dan distribusi kelas kini tersaji lengkap di Pusat Laporan Diagram.</p>
             </div>
-        </section>
-
-        <div class="space-y-4">
-            <section class="bg-white rounded-2xl border border-slate-200/80 shadow-soft overflow-hidden">
-                <div class="p-4 border-b border-slate-100">
-                    <h2 class="text-sm font-bold text-slate-900">Minat Beasiswa UBSI</h2>
-                </div>
-                <div class="p-4 h-52">
-                    <canvas id="questionnaireScholarshipChart" role="img" aria-label="Diagram minat program beasiswa UBSI"></canvas>
-                </div>
-            </section>
+        </div>
+        <div class="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0">
+            <a href="{{ route('reports.index', ['category' => 'diagram']) }}" class="px-4 py-2 bg-brand-navy hover:bg-slate-900 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-1.5">
+                <i data-lucide="bar-chart-3" class="w-4 h-4 text-amber-400"></i>
+                <span>Buka Laporan Diagram</span>
+            </a>
         </div>
     </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-        <section class="bg-white rounded-2xl border border-slate-200/80 shadow-soft overflow-hidden">
-            <div class="p-4 border-b border-slate-100">
-                <h2 class="text-sm font-bold text-slate-900">Responden per Jurusan</h2>
-            </div>
-            <div class="p-4 h-72">
-                <canvas id="questionnaireMajorChart" role="img" aria-label="Diagram jumlah responden per jurusan"></canvas>
-            </div>
-        </section>
-        <section class="bg-white rounded-2xl border border-slate-200/80 shadow-soft overflow-hidden">
-            <div class="p-4 border-b border-slate-100">
-                <h2 class="text-sm font-bold text-slate-900">Responden per Kelas</h2>
-            </div>
-            <div class="p-4 h-72">
-                <canvas id="questionnaireClassChart" role="img" aria-label="Diagram jumlah responden per kelas"></canvas>
-            </div>
-        </section>
-    </div>
-
-    <section class="bg-white rounded-2xl border border-slate-200/80 shadow-soft overflow-hidden mb-6">
-        <div class="p-4 border-b border-slate-100">
-            <h2 class="text-sm font-bold text-slate-900">Sebaran Seluruh Skor Jawaban</h2>
-            <p class="text-xs text-slate-500 mt-1">Jumlah jawaban pada skala 1 sampai 5 dari seluruh pernyataan kuisioner.</p>
-        </div>
-        <div class="p-4 h-64">
-            <canvas id="questionnaireScoreChart" role="img" aria-label="Diagram sebaran seluruh skor jawaban kuisioner"></canvas>
-        </div>
-    </section>
 
     <section class="bg-white rounded-2xl border border-slate-200/80 shadow-soft overflow-hidden mb-6">
         <div class="p-4 border-b border-slate-100">
@@ -292,103 +263,6 @@
     </div>
     @push('scripts')
         <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                if (!window.Chart) {
-                    return;
-                }
-
-                const chartColors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#2563eb'];
-                const createBarChart = (id, labels, values, color, horizontal = false, max = undefined, integerTicks = true) => {
-                    const canvas = document.getElementById(id);
-                    if (!canvas) return;
-
-                    new window.Chart(canvas, {
-                        type: 'bar',
-                        data: {
-                            labels,
-                            datasets: [{
-                                data: values,
-                                backgroundColor: color,
-                                borderRadius: 6,
-                                maxBarThickness: 36,
-                            }],
-                        },
-                        options: {
-                            indexAxis: horizontal ? 'y' : 'x',
-                            maintainAspectRatio: false,
-                            responsive: true,
-                            plugins: {
-                                legend: { display: false },
-                            },
-                            scales: {
-                                x: {
-                                    beginAtZero: true,
-                                    max: horizontal ? undefined : max,
-                                    ticks: integerTicks ? { precision: 0 } : {},
-                                },
-                                y: {
-                                    beginAtZero: true,
-                                    max: horizontal ? max : undefined,
-                                    ticks: integerTicks ? { precision: 0 } : {},
-                                },
-                            },
-                        },
-                    });
-                };
-
-                createBarChart(
-                    'questionnaireSectionChart',
-                    @json(array_keys($statistics['sections'])),
-                    @json(array_values($statistics['sections'])),
-                    '#2563eb',
-                    false,
-                    5,
-                    false
-                );
-                createBarChart(
-                    'questionnaireMajorChart',
-                    @json(array_keys($statistics['majors'])),
-                    @json(array_values($statistics['majors'])),
-                    '#8b5cf6',
-                    true
-                );
-                createBarChart(
-                    'questionnaireClassChart',
-                    @json(array_keys($statistics['classes'])),
-                    @json(array_values($statistics['classes'])),
-                    '#0d9488',
-                    true
-                );
-                createBarChart(
-                    'questionnaireScoreChart',
-                    ['1 - Sangat tidak setuju', '2 - Tidak setuju', '3 - Netral', '4 - Setuju', '5 - Sangat setuju'],
-                    @json(array_values($statistics['scores'])),
-                    chartColors
-                );
-
-                const scholarshipCanvas = document.getElementById('questionnaireScholarshipChart');
-                if (scholarshipCanvas) {
-                    new window.Chart(scholarshipCanvas, {
-                        type: 'doughnut',
-                        data: {
-                            labels: ['Berminat', 'Tidak berminat'],
-                            datasets: [{
-                                data: [{{ $statistics['scholarship']['ya'] }}, {{ $statistics['scholarship']['tidak'] }}],
-                                backgroundColor: ['#10b981', '#cbd5e1'],
-                                borderWidth: 0,
-                            }],
-                        },
-                        options: {
-                            maintainAspectRatio: false,
-                            responsive: true,
-                            plugins: {
-                                legend: { position: 'bottom' },
-                            },
-                        },
-                    });
-                }
-            });
-
             function openImportModal() {
                 document.getElementById('importModal').classList.remove('hidden');
                 if (window.lucide) { window.lucide.createIcons(); }

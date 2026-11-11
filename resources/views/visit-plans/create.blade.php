@@ -21,6 +21,33 @@
         </div>
     @endif
 
+    <style>
+        .ts-wrapper.district-tom-select .ts-control,
+        .ts-wrapper.user-tom-select .ts-control {
+            border-radius: 0.75rem !important;
+            padding: 0.55rem 0.875rem !important;
+            border-color: #cbd5e1 !important;
+            font-size: 0.75rem !important;
+            font-weight: 700 !important;
+            background-color: #ffffff !important;
+        }
+        .ts-dropdown {
+            border-radius: 0.75rem !important;
+            font-size: 0.75rem !important;
+            border-color: #e2e8f0 !important;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
+            z-index: 9999 !important;
+        }
+        .ts-dropdown .option {
+            padding: 0.5rem 0.75rem !important;
+        }
+        .ts-dropdown .active {
+            background-color: #f8fafc !important;
+            color: #0f172a !important;
+            font-weight: 700 !important;
+        }
+    </style>
+
     <div class="max-w-4xl" x-data="{
         districts: {{ json_encode($districts) }},
         allSchools: {{ json_encode($schools) }},
@@ -30,6 +57,41 @@
         errorMessage: '',
         selectedPriority: '{{ old('priority', 'B') }}',
         priorityAutoFilled: false,
+        tsDistrict: null,
+        tsUser: null,
+
+        init() {
+            this.$nextTick(() => {
+                const districtEl = document.getElementById('district_filter');
+                if (districtEl && window.TomSelect) {
+                    this.tsDistrict = new TomSelect(districtEl, {
+                        create: false,
+                        placeholder: '-- Cari & Pilih Kecamatan ({{ $schools->count() }} Sekolah Tersedia) --',
+                        allowEmptyOption: true,
+                        maxOptions: 100,
+                        onChange: (val) => {
+                            this.selectedDistrictId = val;
+                            this.searchQuery = '';
+                        }
+                    });
+                }
+
+                const userEl = document.getElementById('user_id');
+                if (userEl && window.TomSelect) {
+                    this.tsUser = new TomSelect(userEl, {
+                        create: false,
+                        placeholder: '-- Cari & Pilih Staf Marketing PIC --',
+                        maxOptions: 50
+                    });
+                }
+            });
+
+            this.$watch('selectedDistrictId', (val) => {
+                if (this.tsDistrict && this.tsDistrict.getValue() !== String(val || '')) {
+                    this.tsDistrict.setValue(val || '', true);
+                }
+            });
+        },
 
         get filteredSchools() {
             let list = this.allSchools;
@@ -185,11 +247,11 @@
                             <span>Filter Berdasarkan Kecamatan <span class="text-brand-600 font-semibold">*</span></span>
                             <span class="text-[11px] text-slate-400 font-normal">Sinkronisasi otomatis ke daftar sekolah</span>
                         </label>
-                        <select id="district_filter" x-model="selectedDistrictId" @change="searchQuery = ''"
-                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-bold text-brand-900 bg-amber-50/30 focus:border-brand-500 focus:ring-brand-500">
+                        <select id="district_filter"
+                            class="district-tom-select w-full px-3.5 py-2 rounded-xl border border-slate-300 font-bold text-brand-900 bg-white focus:border-brand-500 focus:ring-brand-500">
                             <option value="">-- Tampilkan Semua Kecamatan ({{ $schools->count() }} Sekolah Tersedia) --</option>
                             @foreach($districts as $d)
-                                <option value="{{ $d->id }}">
+                                <option value="{{ $d->id }}" {{ old('district_id') == $d->id ? 'selected' : '' }}>
                                     Kecamatan {{ $d->name }} ({{ $d->schools_count }} Sekolah)
                                 </option>
                             @endforeach
@@ -329,7 +391,8 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label for="user_id" class="block font-bold text-slate-700 mb-1">Staf Marketing PIC <span class="text-red-500">*</span></label>
-                            <select id="user_id" name="user_id" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-semibold focus:border-brand-500">
+                            <select id="user_id" name="user_id" required class="user-tom-select w-full px-3.5 py-2 rounded-xl border border-slate-300 font-semibold focus:border-brand-500">
+                                <option value="">-- Cari &amp; Pilih Staf Marketing PIC --</option>
                                 @foreach($marketingUsers as $u)
                                     <option value="{{ $u->id }}" {{ old('user_id', auth()->id()) == $u->id ? 'selected' : '' }}>
                                         {{ $u->name }} ({{ $u->role->name ?? 'Marketing' }})

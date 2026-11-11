@@ -118,20 +118,45 @@
                     Executive Analytics
                 </span>
                 <span class="text-xs text-slate-400">•</span>
-                <span class="text-xs font-semibold text-slate-500">UBSI Kampus Karawang</span>
+                <span class="text-xs font-semibold text-slate-500">{{ $campusName }}</span>
             </div>
             <h1 class="text-2xl font-black text-slate-900 tracking-tight mt-1">Laporan &amp; Analytics Marketing</h1>
-            <p class="text-xs text-slate-500 mt-0.5">Laporan komprehensif keseluruhan dan rekapitulasi detail per progres operasional lapangan &amp; pipeline konversi PMB.</p>
+            <p class="text-xs text-slate-500 mt-0.5">Pusat laporan komprehensif terpadu: visualisasi diagram analitik dan tabulasi data rinci per operasional &amp; pipeline PMB.</p>
         </div>
         
-        <div class="flex items-center space-x-2.5">
-            <button onclick="window.print()" class="px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold rounded-xl text-xs shadow-sm flex items-center space-x-2 transition hover-lift">
-                <i data-lucide="printer" class="w-4 h-4 text-slate-500"></i>
-                <span>Cetak / Cetak PDF</span>
-            </button>
-            <a href="{{ $exportUrl }}" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md shadow-emerald-600/20 flex items-center space-x-2 transition hover-lift">
+        <div class="flex flex-wrap items-center gap-2">
+            <!-- 1. Export PowerPoint (.pptx) -->
+            <a href="{{ route('reports.export-pptx') }}" class="px-3.5 py-2.5 bg-gradient-to-r from-brand-navy to-indigo-950 hover:to-slate-900 text-white font-bold rounded-xl text-xs shadow-md shadow-brand-navy/30 flex items-center space-x-2 transition hover-lift">
+                <i data-lucide="presentation" class="w-4 h-4 text-amber-400"></i>
+                <span>Export PPT (.pptx)</span>
+            </a>
+
+            <!-- 2. Export / Cetak PDF -->
+            <a href="{{ route('reports.export-pdf') }}" target="_blank" class="px-3.5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs shadow-md shadow-rose-600/20 flex items-center space-x-2 transition hover-lift">
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+                <span>Export PDF</span>
+            </a>
+
+            <!-- 3. Export Excel (.xlsx) -->
+            <a href="{{ route('reports.export', array_merge(request()->query(), ['tab' => $activeTab])) }}" class="px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md shadow-emerald-600/20 flex items-center space-x-2 transition hover-lift">
                 <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
                 <span>Export Excel (.xlsx)</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- ==================== KATEGORI UTAMA: LAPORAN DIAGRAM VS LAPORAN DATA ==================== -->
+    <div class="no-print mb-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-1.5 bg-slate-200/80 rounded-2xl border border-slate-300/80 shadow-xs">
+            <a href="{{ route('reports.index', ['category' => 'diagram', 'tab' => 'charts']) }}"
+                class="py-3 px-5 rounded-xl text-xs font-black tracking-wide flex items-center justify-center space-x-2.5 transition {{ ($category === 'diagram' || $activeTab === 'charts') ? 'bg-brand-navy text-white shadow-md' : 'text-slate-700 hover:bg-white/80 hover:text-slate-900' }}">
+                <i data-lucide="pie-chart" class="w-4 h-4 {{ ($category === 'diagram' || $activeTab === 'charts') ? 'text-amber-400' : 'text-slate-500' }}"></i>
+                <span>KATEGORI 1: LAPORAN DIAGRAM &amp; ANALISIS VISUAL</span>
+            </a>
+            <a href="{{ route('reports.index', ['category' => 'data', 'tab' => ($activeTab === 'charts' ? 'visits' : $activeTab)]) }}"
+                class="py-3 px-5 rounded-xl text-xs font-black tracking-wide flex items-center justify-center space-x-2.5 transition {{ ($category === 'data' && $activeTab !== 'charts') ? 'bg-brand-navy text-white shadow-md' : 'text-slate-700 hover:bg-white/80 hover:text-slate-900' }}">
+                <i data-lucide="table" class="w-4 h-4 {{ ($category === 'data' && $activeTab !== 'charts') ? 'text-emerald-400' : 'text-slate-500' }}"></i>
+                <span>KATEGORI 2: LAPORAN DATA &amp; TABULASI RINCI</span>
             </a>
         </div>
     </div>
@@ -211,7 +236,195 @@
         </a>
     </div>
 
-    <!-- ==================== TAB NAVIGATION (PILIHAN LAPORAN) ==================== -->
+    @if($category === 'diagram' || $activeTab === 'charts')
+        <!-- ================================================================= -->
+        <!-- KATEGORI 1: LAPORAN DIAGRAM & ANALISIS VISUAL (DIPUSATKAN)       -->
+        <!-- ================================================================= -->
+        <div class="space-y-6 mb-8">
+            <!-- Panel 1: Diagram Analisis Follow Up & Jadwal Sosialisasi FIX -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-soft overflow-hidden">
+                <div class="p-4 sm:px-6 bg-gradient-to-r from-slate-50 via-white to-slate-50 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-600 text-white flex items-center justify-center font-bold shadow-xs">
+                            <i data-lucide="calendar-days" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h2 class="text-sm font-extrabold text-slate-900">Analisis Jadwal Sosialisasi FIX &amp; Progres Follow Up</h2>
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                    {{ $funnelData['fixed_schedules'] }} Sekolah Terkunci FIX
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-0.5">Visualisasi timeline penguncian jadwal, estimasi audiens siswa kelas 12, sebaran kecamatan, dan performa tim marketing.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-4 sm:p-6 space-y-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                        <!-- Chart 1: Timeline Sosialisasi FIX & Audiens (7 Cols) -->
+                        <div class="lg:col-span-7 bg-slate-50/70 p-4 rounded-2xl border border-slate-200/80 flex flex-col justify-between">
+                            <div class="flex items-center justify-between mb-3">
+                                <div>
+                                    <h3 class="text-xs font-extrabold text-slate-900 flex items-center gap-1.5">
+                                        <i data-lucide="calendar-check-2" class="w-4 h-4 text-emerald-600"></i>
+                                        <span>Timeline Sosialisasi FIX vs Pipeline &amp; Estimasi Audiens Siswa</span>
+                                    </h3>
+                                    <p class="text-[10px] text-slate-500">Jumlah sekolah terjadwal FIX per bulan dan estimasi target audiens siswa kelas 12</p>
+                                </div>
+                            </div>
+                            <div class="h-64 relative w-full">
+                                <canvas id="chartTimeline"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Chart 2: Status Konversi Follow Up (5 Cols) -->
+                        <div class="lg:col-span-5 bg-slate-50/70 p-4 rounded-2xl border border-slate-200/80 flex flex-col justify-between">
+                            <div class="flex items-center justify-between mb-3">
+                                <div>
+                                    <h3 class="text-xs font-extrabold text-slate-900 flex items-center gap-1.5">
+                                        <i data-lucide="pie-chart" class="w-4 h-4 text-brand-600"></i>
+                                        <span>Status Konversi Hasil Follow Up</span>
+                                    </h3>
+                                    <p class="text-[10px] text-slate-500">Distribusi status antrean follow up menuju jadwal sosialisasi FIX</p>
+                                </div>
+                            </div>
+                            <div class="h-64 relative flex items-center justify-center">
+                                <canvas id="chartStatus"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Chart 3: Sebaran Jadwal FIX per Wilayah / Kecamatan (6 Cols) -->
+                        <div class="lg:col-span-6 bg-slate-50/70 p-4 rounded-2xl border border-slate-200/80 flex flex-col justify-between">
+                            <div class="flex items-center justify-between mb-3">
+                                <div>
+                                    <h3 class="text-xs font-extrabold text-slate-900 flex items-center gap-1.5">
+                                        <i data-lucide="map-pin" class="w-4 h-4 text-blue-600"></i>
+                                        <span>Sebaran Jadwal FIX per Wilayah / Kecamatan</span>
+                                    </h3>
+                                    <p class="text-[10px] text-slate-500">Perbandingan sekolah yang sudah FIX dibandingkan total target di kecamatan</p>
+                                </div>
+                            </div>
+                            <div class="h-56 relative w-full">
+                                <canvas id="chartDistrict"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Chart 4: Capaian per Staf Marketing (6 Cols) -->
+                        <div class="lg:col-span-6 bg-slate-50/70 p-4 rounded-2xl border border-slate-200/80 flex flex-col justify-between">
+                            <div class="flex items-center justify-between mb-3">
+                                <div>
+                                    <h3 class="text-xs font-extrabold text-slate-900 flex items-center gap-1.5">
+                                        <i data-lucide="award" class="w-4 h-4 text-purple-600"></i>
+                                        <span>Capaian Jadwal FIX per Staf Marketing</span>
+                                    </h3>
+                                    <p class="text-[10px] text-slate-500">Performa staf dalam mengonfirmasi &amp; mengunci jadwal sosialisasi sekolah</p>
+                                </div>
+                            </div>
+                            <div class="h-56 relative w-full">
+                                <canvas id="chartMarketing"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel 2: Diagram Statistik Kuisioner Siswa & Minat Beasiswa -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-soft overflow-hidden">
+                <div class="p-4 sm:px-6 bg-gradient-to-r from-slate-50 via-white to-slate-50 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-600 text-white flex items-center justify-center font-bold shadow-xs">
+                            <i data-lucide="clipboard-list" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h2 class="text-sm font-extrabold text-slate-900">Analisis Hasil Kuisioner Siswa &amp; Minat Beasiswa</h2>
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                    {{ number_format($funnelData['total_questionnaires']) }} Responden
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-0.5">Rata-rata skor per aspek kuisioner, minat beasiswa UBSI, serta sebaran jurusan &amp; tingkat kelas responden.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-4 sm:p-6 space-y-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                        <!-- Chart 5: Skor per Aspek (7 Cols) -->
+                        <div class="lg:col-span-7 bg-slate-50/70 p-4 rounded-2xl border border-slate-200/80 flex flex-col justify-between">
+                            <h3 class="text-xs font-extrabold text-slate-900 mb-3 flex items-center gap-1.5">
+                                <i data-lucide="bar-chart-2" class="w-4 h-4 text-blue-600"></i>
+                                <span>Rata-rata Skor per Aspek Kuisioner (Skala 1 - 5)</span>
+                            </h3>
+                            <div class="h-64 relative w-full">
+                                <canvas id="chartQuestionnaireSections"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Chart 6: Minat Beasiswa UBSI (5 Cols) -->
+                        <div class="lg:col-span-5 bg-slate-50/70 p-4 rounded-2xl border border-slate-200/80 flex flex-col justify-between">
+                            <h3 class="text-xs font-extrabold text-slate-900 mb-3 flex items-center gap-1.5">
+                                <i data-lucide="pie-chart" class="w-4 h-4 text-emerald-600"></i>
+                                <span>Minat Program Beasiswa UBSI</span>
+                            </h3>
+                            <div class="h-64 relative flex items-center justify-center">
+                                <canvas id="chartQuestionnaireScholarship"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Chart 7: Responden per Jurusan (6 Cols) -->
+                        <div class="lg:col-span-6 bg-slate-50/70 p-4 rounded-2xl border border-slate-200/80 flex flex-col justify-between">
+                            <h3 class="text-xs font-extrabold text-slate-900 mb-3 flex items-center gap-1.5">
+                                <i data-lucide="graduation-cap" class="w-4 h-4 text-purple-600"></i>
+                                <span>Responden per Jurusan SLTA</span>
+                            </h3>
+                            <div class="h-56 relative w-full">
+                                <canvas id="chartQuestionnaireMajors"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Chart 8: Responden per Kelas (6 Cols) -->
+                        <div class="lg:col-span-6 bg-slate-50/70 p-4 rounded-2xl border border-slate-200/80 flex flex-col justify-between">
+                            <h3 class="text-xs font-extrabold text-slate-900 mb-3 flex items-center gap-1.5">
+                                <i data-lucide="layers" class="w-4 h-4 text-teal-600"></i>
+                                <span>Distribusi Responden per Tingkat Kelas</span>
+                            </h3>
+                            <div class="h-56 relative w-full">
+                                <canvas id="chartQuestionnaireClasses"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel 3: Funnel Konversi Prospek PMB (5 Tahapan) -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-soft overflow-hidden">
+                <div class="p-4 sm:px-6 bg-gradient-to-r from-slate-50 via-white to-slate-50 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 to-brand-navy text-white flex items-center justify-center font-bold shadow-xs">
+                            <i data-lucide="trending-up" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h2 class="text-sm font-extrabold text-slate-900">Pipeline Konversi Prospek CRM PMB (5 Tahapan)</h2>
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-purple-100 text-purple-800 border border-purple-300">
+                                    Closing: {{ $funnelData['conversion_rate'] }}%
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-0.5">Konversi tahapan penerimaan calon mahasiswa baru dari pendaftaran akun hingga penetapan Mahasiswa Baru.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-4 sm:p-6">
+                    <div class="h-64 relative w-full">
+                        <canvas id="chartProspectFunnel"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @else
+        <!-- ==================== TAB NAVIGATION (PILIHAN LAPORAN) ==================== -->
     <div class="no-print mb-6">
         <div class="flex flex-wrap items-center gap-1.5 p-1.5 bg-slate-200/70 backdrop-blur-sm rounded-2xl border border-slate-300/60">
             <!-- Tab: Laporan Keseluruhan -->
@@ -1702,6 +1915,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     @push('scripts')
     <script>
@@ -1716,6 +1930,313 @@
         Chart.defaults.font.size = 11;
         Chart.defaults.color = '#64748b';
 
+        @if(($category ?? '') === 'diagram' || ($activeTab ?? '') === 'charts')
+            // Diagram Category Charts
+            const chartTimelineCanvas = document.getElementById('chartTimeline');
+            if (chartTimelineCanvas) {
+                new Chart(chartTimelineCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: @json($chartsData['timeline']['labels'] ?? []),
+                        datasets: [
+                            {
+                                label: 'Jadwal Sosialisasi FIX (Sekolah)',
+                                type: 'bar',
+                                data: @json($chartsData['timeline']['fixed_schools'] ?? []),
+                                backgroundColor: '#10b981',
+                                borderRadius: 6,
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: 'Target Audience Siswa FIX',
+                                type: 'line',
+                                data: @json($chartsData['timeline']['fixed_audience'] ?? []),
+                                borderColor: '#DF0B2B',
+                                backgroundColor: 'rgba(223, 11, 43, 0.1)',
+                                tension: 0.3,
+                                fill: false,
+                                pointRadius: 4,
+                                pointBackgroundColor: '#DF0B2B',
+                                yAxisID: 'yAudience'
+                            },
+                            {
+                                label: 'Pipeline Kunjungan (Proses)',
+                                type: 'bar',
+                                data: @json($chartsData['timeline']['pipeline_schools'] ?? []),
+                                backgroundColor: '#94a3b8',
+                                borderRadius: 6,
+                                yAxisID: 'y'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: '#f1f5f9' },
+                                title: { display: true, text: 'Jumlah Sekolah' }
+                            },
+                            yAudience: {
+                                position: 'right',
+                                beginAtZero: true,
+                                grid: { display: false },
+                                title: { display: true, text: 'Audiens Siswa' }
+                            },
+                            x: { grid: { display: false } }
+                        },
+                        plugins: {
+                            legend: { position: 'top', labels: { boxWidth: 10, usePointStyle: true, padding: 12 } }
+                        }
+                    }
+                });
+            }
+
+            const chartStatusCanvas = document.getElementById('chartStatus');
+            if (chartStatusCanvas) {
+                new Chart(chartStatusCanvas, {
+                    type: 'doughnut',
+                    data: {
+                        labels: @json($chartsData['status']['labels'] ?? []),
+                        datasets: [{
+                            data: @json($chartsData['status']['data'] ?? []),
+                            backgroundColor: @json($chartsData['status']['colors'] ?? []),
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '68%',
+                        plugins: {
+                            legend: { position: 'bottom', labels: { boxWidth: 10, usePointStyle: true, padding: 12 } }
+                        }
+                    }
+                });
+            }
+
+            const chartDistrictCanvas = document.getElementById('chartDistrict');
+            if (chartDistrictCanvas) {
+                new Chart(chartDistrictCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: @json($chartsData['district']['labels'] ?? []),
+                        datasets: [
+                            {
+                                label: 'Jadwal FIX',
+                                data: @json($chartsData['district']['fixed'] ?? []),
+                                backgroundColor: '#10b981',
+                                borderRadius: 4
+                            },
+                            {
+                                label: 'Total Target',
+                                data: @json($chartsData['district']['total'] ?? []),
+                                backgroundColor: '#e2e8f0',
+                                borderRadius: 4
+                            }
+                        ]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                            y: { grid: { display: false } }
+                        },
+                        plugins: {
+                            legend: { position: 'top', labels: { boxWidth: 10, usePointStyle: true } }
+                        }
+                    }
+                });
+            }
+
+            const chartMarketingCanvas = document.getElementById('chartMarketing');
+            if (chartMarketingCanvas) {
+                new Chart(chartMarketingCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: @json($chartsData['marketing']['labels'] ?? []),
+                        datasets: [
+                            {
+                                label: 'Jadwal FIX',
+                                data: @json($chartsData['marketing']['fixed'] ?? []),
+                                backgroundColor: '#8b5cf6',
+                                borderRadius: 4
+                            },
+                            {
+                                label: 'Total Ditugaskan',
+                                data: @json($chartsData['marketing']['total'] ?? []),
+                                backgroundColor: '#cbd5e1',
+                                borderRadius: 4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                            x: { grid: { display: false } }
+                        },
+                        plugins: {
+                            legend: { position: 'top', labels: { boxWidth: 10, usePointStyle: true } }
+                        }
+                    }
+                });
+            }
+
+            const chartQSecCanvas = document.getElementById('chartQuestionnaireSections');
+            if (chartQSecCanvas) {
+                const qSections = @json($chartsData['questionnaire']['sections'] ?? []);
+                new Chart(chartQSecCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(qSections),
+                        datasets: [{
+                            label: 'Rata-rata Skor (Skala 1 - 5)',
+                            data: Object.values(qSections),
+                            backgroundColor: '#3b82f6',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { min: 0, max: 5, ticks: { stepSize: 1 }, grid: { color: '#f1f5f9' } },
+                            x: { grid: { display: false } }
+                        },
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+            }
+
+            const chartQSchCanvas = document.getElementById('chartQuestionnaireScholarship');
+            if (chartQSchCanvas) {
+                new Chart(chartQSchCanvas, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Berminat Beasiswa', 'Tidak Berminat Beasiswa'],
+                        datasets: [{
+                            data: [
+                                {{ $chartsData['questionnaire']['scholarship_yes'] ?? 0 }},
+                                {{ $chartsData['questionnaire']['scholarship_no'] ?? 0 }}
+                            ],
+                            backgroundColor: ['#10b981', '#ef4444'],
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '68%',
+                        plugins: {
+                            legend: { position: 'bottom', labels: { boxWidth: 10, usePointStyle: true, padding: 12 } }
+                        }
+                    }
+                });
+            }
+
+            const chartQMajorsCanvas = document.getElementById('chartQuestionnaireMajors');
+            if (chartQMajorsCanvas) {
+                const qMajors = @json($chartsData['questionnaire']['majors'] ?? []);
+                new Chart(chartQMajorsCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(qMajors),
+                        datasets: [{
+                            label: 'Jumlah Responden',
+                            data: Object.values(qMajors),
+                            backgroundColor: '#8b5cf6',
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                            y: { grid: { display: false } }
+                        },
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+            }
+
+            const chartQClassesCanvas = document.getElementById('chartQuestionnaireClasses');
+            if (chartQClassesCanvas) {
+                const qClasses = @json($chartsData['questionnaire']['classes'] ?? []);
+                new Chart(chartQClassesCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(qClasses),
+                        datasets: [{
+                            label: 'Jumlah Responden',
+                            data: Object.values(qClasses),
+                            backgroundColor: '#14b8a6',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                            x: { grid: { display: false } }
+                        },
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+            }
+
+            const chartFunnelCanvas = document.getElementById('chartProspectFunnel');
+            if (chartFunnelCanvas) {
+                const funnelStages = @json($chartsData['prospect_funnel'] ?? []);
+                new Chart(chartFunnelCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: funnelStages.map(s => s.name),
+                        datasets: [{
+                            label: 'Jumlah Calon Mahasiswa',
+                            data: funnelStages.map(s => s.count),
+                            backgroundColor: ['#6366f1', '#3b82f6', '#0ea5e9', '#f59e0b', '#10b981'],
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                            x: { grid: { display: false } }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    afterLabel: function(context) {
+                                        const idx = context.dataIndex;
+                                        return 'Konversi Relatif: ' + (funnelStages[idx] ? funnelStages[idx].percent : 0) + '%';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        @else
         // 1. OVERVIEW CHARTS
         @if($activeTab === 'overview')
             // District Visit Chart (Bar)
@@ -2148,6 +2669,7 @@
                     }
                 });
             }
+        @endif
         @endif
     });
     </script>

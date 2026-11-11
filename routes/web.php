@@ -176,6 +176,8 @@ Route::middleware(['auth'])->group(function () {
     // Laporan & Analytics Routes
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
+    Route::get('/reports/export-pptx', [ReportController::class, 'exportPptx'])->name('reports.export-pptx');
+    Route::get('/reports/export-pdf', [ReportController::class, 'exportPdf'])->name('reports.export-pdf');
 
     // Informasi PMB UBSI
     Route::get('/informasi-pmb', [\App\Http\Controllers\PmbController::class, 'index'])->name('pmb.index');

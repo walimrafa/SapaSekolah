@@ -224,7 +224,10 @@ class StudentQuestionnaireController extends Controller
             ->with('district:id,name')
             ->orderBy('name')
             ->get();
-        $studyPrograms = \App\Models\StudyProgram::where('status', 1)->orderBy('name')->get();
+        $studyPrograms = \App\Models\StudyProgram::where('status', 1)
+            ->when($activeCampus, fn($q) => $q->where(fn($sub) => $sub->where('campus_id', $activeCampus->id)->orWhereNull('campus_id')))
+            ->orderBy('name')
+            ->get();
 
         $statsBaseQuery = StudentQuestionnaire::query()->whereNotNull('answers');
         if ($activeCampus) {

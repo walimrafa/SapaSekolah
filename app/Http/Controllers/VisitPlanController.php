@@ -16,9 +16,17 @@ class VisitPlanController extends Controller
      */
     public function index(Request $request): View
     {
+        // Auto-expire past unexecuted visit plans so they cleanly leave the active agenda
+        VisitPlan::where('status', 'planned')
+            ->whereDate('planned_date', '<', today())
+            ->update(['status' => 'cancelled']);
+
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $activePeriod = \App\Services\AppContextService::getActivePeriod();
+
         $query = VisitPlan::with(['school.district', 'school.schoolType', 'user']);
 
-        // Filter by Status (Default: 'planned' so finished plans automatically move out of active list)
+        // Filter by Status (Default: 'planned' so finished/expired plans move out of active list)
         $currentStatus = $request->get('status', 'planned');
         if ($currentStatus !== 'all' && !empty($currentStatus)) {
             $query->where('status', $currentStatus);
@@ -43,17 +51,40 @@ class VisitPlanController extends Controller
 
         $plans = $query->orderBy('planned_date', 'asc')->paginate(15)->withQueryString();
 
-        // Data for modal select dropdowns
+        // Data for modal/filter select dropdowns strictly scoped to active campus
         $schools = School::whereHas('district', function($q) {
             $q->whereNotIn('name', \App\Models\District::EXCLUDED_DISTRICTS);
-        })->orderBy('name')->get();
-        $marketingUsers = User::active()->get();
+        })
+        ->when($activeCampus, fn($q) => $q->where('campus_id', $activeCampus->id))
+        ->orderBy('name')
+        ->get();
 
-        // Agenda stats
-        $totalPlanned = VisitPlan::where('status', 'planned')->count();
-        $todayPlanned = VisitPlan::where('status', 'planned')->whereDate('planned_date', today())->count();
-        $totalCompleted = VisitPlan::where('status', 'completed')->count();
-        $totalAll = VisitPlan::count();
+        $marketingUsers = User::active()
+            ->when($activeCampus, function($q) use ($activeCampus) {
+                $q->where(fn($sub) => $sub->where('campus_id', $activeCampus->id)->orWhereNull('campus_id'));
+            })
+            ->orderBy('name')
+            ->get();
+
+        // Agenda stats strictly scoped to active campus and period
+        $statsQuery = VisitPlan::query();
+        if ($activeCampus) {
+            $statsQuery->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)
+                  ->orWhereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id));
+            });
+        }
+        if ($activePeriod) {
+            $statsQuery->where(function ($q) use ($activePeriod) {
+                $q->where('academic_period_id', $activePeriod->id)
+                  ->orWhereNull('academic_period_id');
+            });
+        }
+
+        $totalPlanned = (clone $statsQuery)->where('status', 'planned')->count();
+        $todayPlanned = (clone $statsQuery)->where('status', 'planned')->whereDate('planned_date', today())->count();
+        $totalCompleted = (clone $statsQuery)->where('status', 'completed')->count();
+        $totalAll = (clone $statsQuery)->count();
 
         return view('visit-plans.index', compact(
             'plans',
@@ -72,19 +103,42 @@ class VisitPlanController extends Controller
      */
     public function create(): View
     {
-        $districts = \App\Models\District::has('schools')
-            ->withCount('schools')
-            ->orderBy('name')
-            ->get();
+        // Auto-expire past unexecuted plans on opening form as well
+        VisitPlan::where('status', 'planned')
+            ->whereDate('planned_date', '<', today())
+            ->update(['status' => 'cancelled']);
+
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+
+        $districts = \App\Models\District::whereHas('schools', function($q) use ($activeCampus) {
+            $q->whereNotIn('name', \App\Models\District::EXCLUDED_DISTRICTS);
+            if ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id);
+            }
+        })
+        ->withCount(['schools' => function($q) use ($activeCampus) {
+            $q->whereNotIn('name', \App\Models\District::EXCLUDED_DISTRICTS);
+            if ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id);
+            }
+        }])
+        ->orderBy('name')
+        ->get();
 
         $schools = School::with(['district', 'schoolType'])
             ->whereHas('district', function($q) {
                 $q->whereNotIn('name', \App\Models\District::EXCLUDED_DISTRICTS);
             })
+            ->when($activeCampus, fn($q) => $q->where('campus_id', $activeCampus->id))
             ->orderBy('name')
             ->get();
 
-        $marketingUsers = User::active()->get();
+        $marketingUsers = User::active()
+            ->when($activeCampus, function($q) use ($activeCampus) {
+                $q->where(fn($sub) => $sub->where('campus_id', $activeCampus->id)->orWhereNull('campus_id'));
+            })
+            ->orderBy('name')
+            ->get();
 
         return view('visit-plans.create', compact('districts', 'schools', 'marketingUsers'));
     }
@@ -164,19 +218,37 @@ class VisitPlanController extends Controller
      */
     public function edit(VisitPlan $visitPlan): View
     {
-        $districts = \App\Models\District::has('schools')
-            ->withCount('schools')
-            ->orderBy('name')
-            ->get();
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+
+        $districts = \App\Models\District::whereHas('schools', function($q) use ($activeCampus) {
+            $q->whereNotIn('name', \App\Models\District::EXCLUDED_DISTRICTS);
+            if ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id);
+            }
+        })
+        ->withCount(['schools' => function($q) use ($activeCampus) {
+            $q->whereNotIn('name', \App\Models\District::EXCLUDED_DISTRICTS);
+            if ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id);
+            }
+        }])
+        ->orderBy('name')
+        ->get();
 
         $schools = School::with(['district', 'schoolType'])
             ->whereHas('district', function($q) {
                 $q->whereNotIn('name', \App\Models\District::EXCLUDED_DISTRICTS);
             })
+            ->when($activeCampus, fn($q) => $q->where('campus_id', $activeCampus->id))
             ->orderBy('name')
             ->get();
 
-        $marketingUsers = User::active()->get();
+        $marketingUsers = User::active()
+            ->when($activeCampus, function($q) use ($activeCampus) {
+                $q->where(fn($sub) => $sub->where('campus_id', $activeCampus->id)->orWhereNull('campus_id'));
+            })
+            ->orderBy('name')
+            ->get();
 
         return view('visit-plans.edit', compact('visitPlan', 'districts', 'schools', 'marketingUsers'));
     }
