@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Campus;
 use App\Models\District;
 use App\Models\School;
 use App\Models\SchoolType;
@@ -12,8 +13,8 @@ class MasterSchoolListWithGmapsSeeder extends Seeder
 {
     public function run(): void
     {
-        $campusKrw = \App\Models\Campus::where('code', 'KRW')->first();
-        $campusCkp = \App\Models\Campus::where('code', 'CKP')->first();
+        $campusKrw = Campus::where('code', 'KRW')->first();
+        $campusCkp = Campus::where('code', 'CKP')->first();
         $krwId = $campusKrw ? $campusKrw->id : 1;
         $ckpId = $campusCkp ? $campusCkp->id : 2;
 
