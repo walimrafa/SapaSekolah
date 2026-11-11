@@ -10,8 +10,8 @@
     $isSchoolActive = request()->routeIs('map.*', 'schools.*', 'priorities.*');
     $isFieldActive = request()->routeIs('visit-plans.*', 'visits.*', 'follow-ups.*', 'socializations.completed.*', 'marketing-routes.*', 'activities.*');
     $isCrmActive = request()->routeIs('prospects.*', 'new-students.*', 'student-questionnaires.*', 'student-follow-ups.*', 'study-programs.*');
-    $isEventActive = request()->routeIs('event-proposals.*', 'school-events.*');
-    $isReportActive = request()->routeIs('reports.*', 'comprehensive-reports.*', 'event-reports.*', 'event-students.*');
+    $isEventActive = request()->routeIs('event-proposals.*', 'school-events.*', 'event-students.*');
+    $isReportActive = request()->routeIs('reports.*', 'comprehensive-reports.*', 'event-reports.*');
     $isPmbActive = request()->routeIs('pmb.*', 'e-brochures.*');
     $canAccessPeriodClosing = auth()->user()->isAdmin() 
         || auth()->user()->isPimpinan() 
@@ -330,11 +330,36 @@
                         <span>{{ $lbl('submenu_event_proposals', 'Proposal') }}</span>
                     </div>
                     @if($pendingProposalsCount > 0)
-                        <span class="px-1.5 py-0.2 text-[9px] font-bold bg-amber-500/20 text-amber-300 rounded">{{ $pendingProposalsCount }}</span>
+                        <span class="px-1.5 py-0.2 text-[9px] font-bold bg-amber-400 text-slate-900 rounded-full animate-pulse">{{ $pendingProposalsCount }}</span>
                     @endif
                 </a>
 
-                <!-- 2. Tracking Proposal -->
+                <!-- 2. Hasil Support Event (Data Siswa Masuk) -->
+                <a href="{{ route('event-students.index') }}"
+                    class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('event-students.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <div class="flex items-center space-x-2.5">
+                        <i data-lucide="users" class="w-3.5 h-3.5 text-purple-400"></i>
+                        <span>{{ $lbl('submenu_event_students', 'Hasil Event') }}</span>
+                    </div>
+                    @php
+                        $eventStudentsQuery = \App\Models\StudentQuestionnaire::where(function ($q) {
+                            $q->where('source', 'support_event')->orWhereNotNull('school_event_proposal_id')->orWhere('college_interest_notes', 'like', '%Support Event%');
+                        });
+                        if ($activeCampusId) {
+                            $eventStudentsQuery->where(function ($q) use ($activeCampusId) {
+                                $q->where('campus_id', $activeCampusId)
+                                  ->orWhereHas('school', fn($sq) => $sq->where('campus_id', $activeCampusId))
+                                  ->orWhereHas('eventProposal', fn($ep) => $ep->where('campus_id', $activeCampusId));
+                            });
+                        }
+                        $eventStudentsCount = $eventStudentsQuery->count();
+                    @endphp
+                    @if($eventStudentsCount > 0)
+                        <span class="px-1.5 py-0.2 text-[9px] font-bold bg-purple-500/20 text-purple-300 rounded">{{ $eventStudentsCount }}</span>
+                    @endif
+                </a>
+
+                <!-- 3. Tracking Proposal -->
                 <a href="{{ route('school-events.tracking') }}" target="_blank"
                     class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 hover:bg-slate-800 hover:text-white text-slate-400">
                     <div class="flex items-center space-x-2.5">
@@ -384,12 +409,12 @@
                     <span>{{ $lbl('submenu_report_data', 'Laporan Data') }}</span>
                 </a>
 
-                <!-- 3. Laporan Hasil Support Event (Terpadu Laporan Kegiatan & Hasil Siswa) -->
+                <!-- 3. Laporan Support Event -->
                 <a href="{{ route('event-reports.index') }}"
-                    class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('event-reports.*', 'event-students.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30 font-bold' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('event-reports.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30 font-bold' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <div class="flex items-center space-x-2.5">
                         <i data-lucide="clipboard-check" class="w-3.5 h-3.5 text-purple-400"></i>
-                        <span>{{ $lbl('submenu_report_events', 'Laporan Hasil Event') }}</span>
+                        <span>{{ $lbl('submenu_report_events', 'Laporan Event') }}</span>
                     </div>
                     @php
                         $safeApprovedCount = $approvedEventsCount ?? (\App\Models\SchoolEventProposal::where('status', \App\Models\SchoolEventProposal::STATUS_DISETUJUI)->when($activeCampusId, fn($q) => $q->where('campus_id', $activeCampusId))->count());
