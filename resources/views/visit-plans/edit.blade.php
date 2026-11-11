@@ -12,18 +12,26 @@
             background-color: #ffffff !important;
         }
         .ts-dropdown {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
             border-radius: 0.75rem !important;
             font-size: 0.75rem !important;
-            border-color: #e2e8f0 !important;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
-            z-index: 9999 !important;
+            border: 1px solid #cbd5e1 !important;
+            box-shadow: 0 16px 32px -4px rgba(15, 23, 42, 0.25) !important;
+            z-index: 99999 !important;
+            overflow: hidden !important;
+        }
+        .ts-dropdown .ts-dropdown-content {
+            background-color: #ffffff !important;
+            max-height: 250px !important;
         }
         .ts-dropdown .option {
             padding: 0.5rem 0.75rem !important;
+            background-color: #ffffff !important;
         }
         .ts-dropdown .active {
-            background-color: #f8fafc !important;
-            color: #0f172a !important;
+            background-color: #eff6ff !important;
+            color: #1e40af !important;
             font-weight: 700 !important;
         }
     </style>
@@ -68,7 +76,53 @@
                     this.tsUser = new TomSelect(userEl, {
                         create: false,
                         placeholder: '-- Cari & Pilih Staf Marketing PIC --',
-                        maxOptions: 50
+                        maxOptions: 50,
+                        render: {
+                            option: function(data, escape) {
+                                const role = data.role || (data.text.match(/\((.*?)\)/) ? data.text.match(/\((.*?)\)/)[1] : 'Marketing');
+                                const name = data.name || data.text.replace(/\(.*?\)/, '').trim();
+                                const email = data.email || '';
+                                const campus = data.campus || '';
+
+                                let badgeClass = 'bg-slate-100 text-slate-700 border-slate-200';
+                                const r = role.toLowerCase();
+                                if (r.includes('marketing')) {
+                                    badgeClass = 'bg-amber-100 text-amber-800 border-amber-300';
+                                } else if (r.includes('koordinator')) {
+                                    badgeClass = 'bg-purple-100 text-purple-800 border-purple-300';
+                                } else if (r.includes('admin')) {
+                                    badgeClass = 'bg-blue-100 text-blue-800 border-blue-300';
+                                } else if (r.includes('pimpinan')) {
+                                    badgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-300';
+                                } else if (r.includes('customer')) {
+                                    badgeClass = 'bg-teal-100 text-teal-800 border-teal-300';
+                                }
+
+                                return `<div class="py-2 px-3 flex items-center justify-between border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition">
+                                    <div>
+                                        <div class="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                                            <span class="w-2 h-2 rounded-full ${r.includes('marketing') ? 'bg-amber-500' : 'bg-blue-600'} inline-block"></span>
+                                            <span>${escape(name)}</span>
+                                        </div>
+                                        <div class="text-[10px] text-slate-500 font-normal mt-0.5 pl-3.5">
+                                            ${email ? escape(email) : ''} ${campus ? '• ' + escape(campus) : ''}
+                                        </div>
+                                    </div>
+                                    <span class="px-2 py-0.5 text-[9px] font-extrabold rounded-full border ${badgeClass} shrink-0">
+                                        ${escape(role)}
+                                    </span>
+                                </div>`;
+                            },
+                            item: function(data, escape) {
+                                const role = data.role || (data.text.match(/\((.*?)\)/) ? data.text.match(/\((.*?)\)/)[1] : 'Marketing');
+                                const name = data.name || data.text.replace(/\(.*?\)/, '').trim();
+                                return `<div class="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+                                    <span>${escape(name)}</span>
+                                    <span class="text-[10px] text-slate-500 font-normal">(${escape(role)})</span>
+                                </div>`;
+                            }
+                        }
                     });
                 }
             });
@@ -123,7 +177,11 @@
                             <select id="edit_user_id" name="user_id" required class="user-tom-select w-full px-3 py-2.5 rounded-xl border border-slate-300 font-semibold">
                                 <option value="">-- Pilih Staf Marketing PIC --</option>
                                 @foreach($marketingUsers as $u)
-                                    <option value="{{ $u->id }}" {{ old('user_id', $visitPlan->user_id) == $u->id ? 'selected' : '' }}>
+                                    <option value="{{ $u->id }}" {{ old('user_id', $visitPlan->user_id) == $u->id ? 'selected' : '' }}
+                                        data-name="{{ $u->name }}"
+                                        data-role="{{ $u->role->name ?? 'Marketing' }}"
+                                        data-email="{{ $u->email }}"
+                                        data-campus="{{ $u->campus?->short_name ?: ($u->campus?->name ?? 'Semua Kampus') }}">
                                         {{ $u->name }} ({{ $u->role->name ?? 'Marketing' }})
                                     </option>
                                 @endforeach

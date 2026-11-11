@@ -12,28 +12,31 @@ class MasterSchoolListWithGmapsSeeder extends Seeder
 {
     public function run(): void
     {
+        $campusKrw = \App\Models\Campus::where('code', 'KRW')->first();
+        $krwId = $campusKrw ? $campusKrw->id : 1;
+
         // Koordinat acuan pusat per Kecamatan di Kabupaten Karawang
         $districtCoords = [
-            'Karawang Barat'   => [-6.3054, 107.2995],
-            'Karawang Timur'   => [-6.3200, 107.3250],
+            'Karawang Barat' => [-6.3054, 107.2995],
+            'Karawang Timur' => [-6.3200, 107.3250],
             'Telukjambe Timur' => [-6.3350, 107.2900],
             'Telukjambe Barat' => [-6.3650, 107.2450],
-            'Ciampel'          => [-6.3950, 107.3500],
-            'Klari'            => [-6.3680, 107.3820],
-            'Majalaya'         => [-6.3180, 107.3850],
-            'Telagasari'       => [-6.2750, 107.4180],
-            'Lemahabang'       => [-6.2890, 107.4420],
-            'Rawamerta'        => [-6.2510, 107.3510],
-            'Tempuran'         => [-6.2250, 107.4160],
-            'Kutawaluya'       => [-6.2150, 107.3150],
-            'Rengasdengklok'   => [-6.1950, 107.2950],
-            'Jayakerta'        => [-6.1750, 107.2750],
-            'Pedes'            => [-6.1600, 107.3600],
-            'Cilebar'          => [-6.1800, 107.4100],
-            'Cibuaya'          => [-6.1250, 107.3650],
-            'Tirtajaya'        => [-6.0950, 107.2850],
-            'Batujaya'         => [-6.0500, 107.2500],
-            'Pakisjaya'        => [-6.0120, 107.2120],
+            'Ciampel' => [-6.3950, 107.3500],
+            'Klari' => [-6.3680, 107.3820],
+            'Majalaya' => [-6.3180, 107.3850],
+            'Telagasari' => [-6.2750, 107.4180],
+            'Lemahabang' => [-6.2890, 107.4420],
+            'Rawamerta' => [-6.2510, 107.3510],
+            'Tempuran' => [-6.2250, 107.4160],
+            'Kutawaluya' => [-6.2150, 107.3150],
+            'Rengasdengklok' => [-6.1950, 107.2950],
+            'Jayakerta' => [-6.1750, 107.2750],
+            'Pedes' => [-6.1600, 107.3600],
+            'Cilebar' => [-6.1800, 107.4100],
+            'Cibuaya' => [-6.1250, 107.3650],
+            'Tirtajaya' => [-6.0950, 107.2850],
+            'Batujaya' => [-6.0500, 107.2500],
+            'Pakisjaya' => [-6.0120, 107.2120],
         ];
 
         // Tabel Data Sekolah Lengkap dengan Koordinat Google Maps dari Prompt User
@@ -193,8 +196,8 @@ class MasterSchoolListWithGmapsSeeder extends Seeder
             $name = strtoupper(trim($r[2]));
             $stName = strtoupper(trim($r[3]));
             $status = strtolower(trim($r[4]));
-            $lat = (float)$r[5];
-            $lng = (float)$r[6];
+            $lat = (float) $r[5];
+            $lng = (float) $r[6];
 
             $district = District::where('name', 'like', "%{$districtName}%")->first();
             $districtId = $district ? $district->id : 1;
@@ -209,7 +212,7 @@ class MasterSchoolListWithGmapsSeeder extends Seeder
                 ->first();
 
             $data = [
-                'campus_id' => 1, // UBSI Kampus Karawang
+                'campus_id' => $krwId, // UBSI Kampus Karawang
                 'npsn' => $npsn,
                 'name' => $name,
                 'district_id' => $districtId,

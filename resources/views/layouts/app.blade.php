@@ -38,7 +38,7 @@
     <script src="{{ asset('vendor/select2/select2.min.js') }}"></script>
 
     <!-- Tom Select Searchable Autocomplete Assets -->
-    <link rel="stylesheet" href="{{ asset('vendor/tom-select/css/tom-select.bootstrap5.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('vendor/tom-select/css/tom-select.default.min.css') }}">
     <script src="{{ asset('vendor/tom-select/js/tom-select.complete.min.js') }}"></script>
 
     <!-- Dynamic Theme Styling Variables -->
@@ -48,6 +48,55 @@
             --color-accent: {{ $themeAccent }};
             --color-secondary: {{ $themeSecondary }};
             --color-bg: {{ $themeBg }};
+        }
+        /* Tom Select Global Theme Enhancement (Solid Background & Crisp Dropdown) */
+        .ts-wrapper .ts-control {
+            background-color: #ffffff !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 0.75rem !important;
+            padding: 0.55rem 0.875rem !important;
+            font-size: 0.75rem !important;
+            font-weight: 600 !important;
+            color: #0f172a !important;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+        }
+        .ts-wrapper.focus .ts-control {
+            border-color: var(--color-primary, #0B023E) !important;
+            box-shadow: 0 0 0 3px rgba(11, 2, 62, 0.15) !important;
+        }
+        .ts-dropdown {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 0.75rem !important;
+            box-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.2), 0 4px 6px -2px rgba(15, 23, 42, 0.05) !important;
+            z-index: 99999 !important;
+            margin-top: 4px !important;
+            overflow: hidden !important;
+        }
+        .ts-dropdown .ts-dropdown-content {
+            background-color: #ffffff !important;
+            max-height: 250px !important;
+            padding: 4px !important;
+        }
+        .ts-dropdown .option {
+            padding: 0.625rem 0.875rem !important;
+            border-radius: 0.5rem !important;
+            color: #1e293b !important;
+            font-size: 0.75rem !important;
+            font-weight: 600 !important;
+            transition: all 0.15s ease-in-out !important;
+        }
+        .ts-dropdown .option:hover,
+        .ts-dropdown .option.active {
+            background-color: #eff6ff !important;
+            color: #1e40af !important;
+            font-weight: 700 !important;
+        }
+        .ts-dropdown .option.selected {
+            background-color: #dbeafe !important;
+            color: #1e3a8a !important;
+            font-weight: 800 !important;
         }
         body {
             background-color: var(--color-bg) !important;

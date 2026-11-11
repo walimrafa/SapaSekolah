@@ -110,27 +110,31 @@ class SchoolDestinationAndIsolationTest extends TestCase
         $st = SchoolType::firstOrCreate(['name' => 'SMA']);
         $rolePimpinan = Role::firstOrCreate(['name' => 'Pimpinan']);
 
-        $krwSchool = School::create([
-            'campus_id' => $karawangCampus->id,
-            'district_id' => $krwDistrict->id,
-            'school_type_id' => $st->id,
-            'name' => 'SMAS KORPRI KARAWANG',
-            'npsn' => '20237366',
-            'status' => 'SWASTA',
-            'latitude' => -6.307,
-            'longitude' => 107.295,
-        ]);
+        $krwSchool = School::updateOrCreate(
+            ['npsn' => '20237366'],
+            [
+                'campus_id' => $karawangCampus->id,
+                'district_id' => $krwDistrict->id,
+                'school_type_id' => $st->id,
+                'name' => 'SMAS KORPRI KARAWANG',
+                'status' => 'SWASTA',
+                'latitude' => -6.307,
+                'longitude' => 107.295,
+            ]
+        );
 
-        $ckpSchool = School::create([
-            'campus_id' => $cikampekCampus->id,
-            'district_id' => $ckpDistrict->id,
-            'school_type_id' => $st->id,
-            'name' => 'SMKN 1 CIKAMPEK',
-            'npsn' => '20237367',
-            'status' => 'NEGERI',
-            'latitude' => -6.411,
-            'longitude' => 107.452,
-        ]);
+        $ckpSchool = School::updateOrCreate(
+            ['npsn' => '20237367'],
+            [
+                'campus_id' => $cikampekCampus->id,
+                'district_id' => $ckpDistrict->id,
+                'school_type_id' => $st->id,
+                'name' => 'SMKN 1 CIKAMPEK',
+                'status' => 'NEGERI',
+                'latitude' => -6.411,
+                'longitude' => 107.452,
+            ]
+        );
 
         $pimpinanCikampek = User::firstOrCreate(
             ['email' => 'nurulichsan_test@bsi.ac.id'],
