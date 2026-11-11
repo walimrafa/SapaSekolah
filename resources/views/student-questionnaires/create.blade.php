@@ -137,7 +137,10 @@
                         <select id="school_id" name="school_id" class="w-full px-3.5 py-3 rounded-xl border border-slate-300 font-semibold focus:border-brand-500">
                             <option value="">-- Ketik / Cari Asal Sekolah --</option>
                             @foreach($schools as $sch)
-                                <option value="{{ $sch->id }}" {{ (string)old('school_id', $selectedSchoolId ?? '') === (string)$sch->id ? 'selected' : '' }}>
+                                <option value="{{ $sch->id }}" 
+                                    data-type="{{ $sch->schoolType?->name ?? '' }}" 
+                                    data-name="{{ $sch->name }}"
+                                    {{ (string)old('school_id', $selectedSchoolId ?? '') === (string)$sch->id ? 'selected' : '' }}>
                                     {{ $sch->name }} {{ $sch->district ? '(' . $sch->district->name . ')' : '' }}
                                 </option>
                             @endforeach
@@ -152,12 +155,26 @@
                     </div>
                     <div>
                         <label for="student_class" class="block font-bold text-slate-700 mb-1">Kelas <span class="text-red-500">*</span></label>
-                        <input id="student_class" name="student_class" value="{{ old('student_class') }}" required maxlength="50" placeholder="Contoh: XII IPA 1" class="w-full px-3.5 py-3 rounded-xl border border-slate-300">
+                        <select id="student_class" name="student_class" required class="w-full px-3.5 py-3 rounded-xl border border-slate-300 font-semibold focus:border-brand-500 text-xs">
+                            <option value="">-- Pilih Kelas --</option>
+                            <option value="Kelas X" {{ old('student_class') === 'Kelas X' ? 'selected' : '' }}>Kelas X</option>
+                            <option value="Kelas XI" {{ old('student_class') === 'Kelas XI' ? 'selected' : '' }}>Kelas XI</option>
+                            <option value="Kelas XII" {{ old('student_class', 'Kelas XII') === 'Kelas XII' ? 'selected' : '' }}>Kelas XII</option>
+                        </select>
                         @error('student_class')<p class="mt-1 text-red-600">{{ $message }}</p>@enderror
                     </div>
                     <div>
-                        <label for="student_major" class="block font-bold text-slate-700 mb-1">Jurusan <span class="text-red-500">*</span></label>
-                        <input id="student_major" name="student_major" value="{{ old('student_major') }}" required maxlength="100" placeholder="Contoh: IPA, IPS, RPL" class="w-full px-3.5 py-3 rounded-xl border border-slate-300">
+                        <label for="student_major_select" class="block font-bold text-slate-700 mb-1">Jurusan <span class="text-red-500">*</span></label>
+                        <select id="student_major_select" class="w-full px-3.5 py-3 rounded-xl border border-slate-300 font-semibold focus:border-brand-500 text-xs">
+                            <option value="">-- Pilih Jurusan --</option>
+                            <option value="other">-- Pilihan Lain (Ketik Manual) --</option>
+                        </select>
+                        <input type="hidden" id="student_major" name="student_major" value="{{ old('student_major') }}" required>
+
+                        <div id="manual_major_box" class="mt-2" style="display: none;">
+                            <input type="text" id="custom_major" value="{{ old('student_major') }}" maxlength="100" placeholder="Ketik nama jurusan Anda di sini..." class="w-full px-3.5 py-2.5 rounded-xl border border-amber-300 bg-amber-50/40 text-xs font-semibold focus:border-brand-500">
+                            <p class="text-[11px] text-amber-700 mt-1 font-medium">* Silakan ketik nama jurusan jika tidak tersedia pada pilihan di atas.</p>
+                        </div>
                         @error('student_major')<p class="mt-1 text-red-600">{{ $message }}</p>@enderror
                     </div>
                     <div>
@@ -253,6 +270,180 @@
             const manualBox = document.getElementById('manual_school_box');
             const manualInput = document.getElementById('school_name');
 
+            // Major & Dapodik/Kemenag integration elements
+            const majorSelect = document.getElementById('student_major_select');
+            const majorHidden = document.getElementById('student_major');
+            const manualMajorBox = document.getElementById('manual_major_box');
+            const customMajorInput = document.getElementById('custom_major');
+            let initialSavedMajor = "{{ addslashes(old('student_major', '')) }}";
+
+            function getDapodikKemenagMajors(schoolName, schoolType) {
+                const sName = (schoolName || '').toUpperCase();
+                const sType = (schoolType || '').toUpperCase();
+
+                // 1. Kemenag MA (Madrasah Aliyah)
+                if (sType === 'MA' || sName.includes(' MA ') || sName.startsWith('MA ') || sName.includes('MADRASAH ALIYAH') || sName.startsWith('MAS ')) {
+                    return [
+                        'Ilmu-Ilmu Keagamaan (IIK / Keagamaan)',
+                        'MIPA / IPA (Ilmu Pengetahuan Alam)',
+                        'IPS (Ilmu Pengetahuan Sosial)',
+                        'Bahasa dan Budaya',
+                        'Kurikulum Merdeka'
+                    ];
+                }
+
+                // 2. Dapodik SMK / MAK (Kejuruan)
+                if (sType === 'SMK' || sName.includes('SMK') || sName.includes('KEJURUAN')) {
+                    if (sName.includes('FARMASI') || sName.includes('KESEHATAN')) {
+                        return [
+                            'Farmasi Klinis dan Komunitas',
+                            'Asisten Keperawatan dan Caregiver',
+                            'Teknologi Laboratorium Medik',
+                            'Dental Asisten',
+                            'Teknik Komputer dan Jaringan (TKJ)'
+                        ];
+                    }
+                    if (sName.includes('TI ') || sName.includes('KOMPUTER') || sName.includes('INFORMATIKA') || sName.includes('TELEKOMUNIKASI')) {
+                        return [
+                            'Rekayasa Perangkat Lunak (RPL)',
+                            'Teknik Komputer dan Jaringan (TKJ)',
+                            'Desain Komunikasi Visual (DKV)',
+                            'Sistem Informatika Jaringan dan Aplikasi (SIJA)',
+                            'Teknik Jaringan Akses Telekomunikasi',
+                            'Manajemen Perkantoran dan Layanan Bisnis (MPLB)',
+                            'Akuntansi dan Keuangan Lembaga (AKL)'
+                        ];
+                    }
+                    if (sName.includes('BISNIS') || sName.includes('MANAJEMEN') || sName.includes('EKONOMI') || sName.includes('AKUNTANSI')) {
+                        return [
+                            'Akuntansi dan Keuangan Lembaga (AKL)',
+                            'Manajemen Perkantoran dan Layanan Bisnis (MPLB)',
+                            'Pemasaran / Bisnis Digital',
+                            'Perbankan dan Keuangan Mikro',
+                            'Rekayasa Perangkat Lunak (RPL)'
+                        ];
+                    }
+                    return [
+                        'Teknik Komputer dan Jaringan (TKJ)',
+                        'Rekayasa Perangkat Lunak (RPL)',
+                        'Desain Komunikasi Visual (DKV)',
+                        'Akuntansi dan Keuangan Lembaga (AKL)',
+                        'Manajemen Perkantoran dan Layanan Bisnis (MPLB)',
+                        'Pemasaran dan Bisnis Digital',
+                        'Teknik Kendaraan Ringan Otomotif (TKRO)',
+                        'Teknik dan Bisnis Sepeda Motor (TBSM)',
+                        'Teknik Pemesinan (TP)',
+                        'Teknik Pengelasan (Welding)',
+                        'Teknik Instalasi Tenaga Listrik (TITL)',
+                        'Teknik Elektronika Industri',
+                        'Perhotelan dan Jasa Pariwisata',
+                        'Kuliner / Tata Boga'
+                    ];
+                }
+
+                // 3. Dapodik SMA
+                if (sType === 'SMA' || sName.includes('SMA') || sName.startsWith('SMAN') || sName.startsWith('SMAS')) {
+                    return [
+                        'MIPA / IPA (Matematika & Ilmu Pengetahuan Alam)',
+                        'IPS (Ilmu Pengetahuan Sosial)',
+                        'Bahasa dan Budaya',
+                        'Kurikulum Merdeka (Peminatan Fase F)'
+                    ];
+                }
+
+                // 4. Default Gabungan
+                return [
+                    'MIPA / IPA',
+                    'IPS',
+                    'Teknik Komputer dan Jaringan (TKJ)',
+                    'Rekayasa Perangkat Lunak (RPL)',
+                    'Akuntansi dan Keuangan Lembaga (AKL)',
+                    'Manajemen Perkantoran dan Layanan Bisnis (MPLB)',
+                    'Teknik Kendaraan Ringan (TKRO)',
+                    'Ilmu Keagamaan (IIK)'
+                ];
+            }
+
+            function syncMajors(targetValue = '') {
+                if (!majorSelect) return;
+
+                let sName = '';
+                let sType = '';
+
+                const selectedVal = $schoolSelect.val();
+                if (selectedVal && selectedVal !== 'other') {
+                    const opt = $schoolSelect.find('option:selected');
+                    sName = opt.data('name') || opt.text();
+                    sType = opt.data('type') || '';
+                } else if (selectedVal === 'other' && manualInput) {
+                    sName = manualInput.value;
+                }
+
+                const majors = getDapodikKemenagMajors(sName, sType);
+
+                // Rebuild select options
+                majorSelect.innerHTML = '<option value="">-- Pilih Jurusan --</option>';
+                majors.forEach(function(m) {
+                    const opt = document.createElement('option');
+                    opt.value = m;
+                    opt.textContent = m;
+                    majorSelect.appendChild(opt);
+                });
+
+                const otherOpt = document.createElement('option');
+                otherOpt.value = 'other';
+                otherOpt.textContent = '-- Pilihan Lain (Ketik Manual) --';
+                majorSelect.appendChild(otherOpt);
+
+                if (targetValue) {
+                    let matched = false;
+                    for (let i = 0; i < majorSelect.options.length; i++) {
+                        if (majorSelect.options[i].value.toLowerCase() === targetValue.toLowerCase()) {
+                            majorSelect.selectedIndex = i;
+                            majorHidden.value = majorSelect.options[i].value;
+                            matched = true;
+                            break;
+                        }
+                    }
+                    if (!matched) {
+                        majorSelect.value = 'other';
+                        manualMajorBox.style.display = 'block';
+                        customMajorInput.value = targetValue;
+                        majorHidden.value = targetValue;
+                    } else {
+                        manualMajorBox.style.display = 'none';
+                    }
+                } else {
+                    majorSelect.value = '';
+                    majorHidden.value = '';
+                    manualMajorBox.style.display = 'none';
+                }
+            }
+
+            if (majorSelect) {
+                majorSelect.addEventListener('change', function() {
+                    if (this.value === 'other') {
+                        manualMajorBox.style.display = 'block';
+                        customMajorInput.focus();
+                        majorHidden.value = customMajorInput.value.trim();
+                    } else if (this.value === '') {
+                        manualMajorBox.style.display = 'none';
+                        majorHidden.value = '';
+                    } else {
+                        manualMajorBox.style.display = 'none';
+                        majorHidden.value = this.value;
+                    }
+                });
+            }
+
+            if (customMajorInput) {
+                customMajorInput.addEventListener('input', function() {
+                    if (majorSelect && majorSelect.value === 'other') {
+                        majorHidden.value = this.value.trim();
+                    }
+                });
+            }
+
             if ($schoolSelect.length && typeof $.fn.select2 !== 'undefined') {
                 $schoolSelect.select2({
                     placeholder: '-- Ketik / Cari Asal Sekolah --',
@@ -290,9 +481,23 @@
                     if (val) {
                         container.find('.select2-selection').removeClass('select2-invalid');
                     }
+
+                    // Dynamically refresh majors based on selected school
+                    syncMajors(majorHidden.value || initialSavedMajor);
+                    initialSavedMajor = '';
                 }
 
                 $schoolSelect.on('change', syncSchoolVisibility);
+                if (manualInput) {
+                    manualInput.addEventListener('input', function() {
+                        if ($schoolSelect.val() === 'other') {
+                            syncMajors(majorHidden.value || customMajorInput.value);
+                        }
+                    });
+                }
+
+                // Initial sync on load
+                syncSchoolVisibility();
 
                 // Form submit validation handler
                 const form = $schoolSelect.closest('form')[0];
@@ -317,8 +522,29 @@
                             }
                             return false;
                         }
+
+                        // Validate major
+                        if (majorSelect && majorSelect.value === 'other') {
+                            const customVal = customMajorInput ? customMajorInput.value.trim() : '';
+                            if (!customVal) {
+                                e.preventDefault();
+                                customMajorInput.focus();
+                                customMajorInput.classList.add('border-red-500');
+                                return false;
+                            }
+                            majorHidden.value = customVal;
+                        } else if (majorSelect && !majorSelect.value) {
+                            e.preventDefault();
+                            majorSelect.focus();
+                            majorSelect.classList.add('border-red-500');
+                            return false;
+                        } else if (majorSelect) {
+                            majorHidden.value = majorSelect.value;
+                        }
                     });
                 }
+            } else {
+                syncMajors(initialSavedMajor);
             }
         });
     </script>

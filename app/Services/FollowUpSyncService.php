@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\AcademicPeriod;
 use App\Models\FollowUp;
 use App\Models\SchoolVisit;
 use Carbon\Carbon;
@@ -54,7 +55,7 @@ class FollowUpSyncService
         $campusId = $visit->school?->campus_id 
             ?: ($visit->campus_id ?: 1);
         $periodId = $visit->academic_period_id 
-            ?: (\App\Models\AcademicPeriod::getCurrent()?->id ?: 1);
+            ?: (AcademicPeriod::getCurrent()?->id ?: 1);
 
         $data = [
             'school_id' => $visit->school_id,

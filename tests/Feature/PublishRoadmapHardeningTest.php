@@ -5,9 +5,12 @@ namespace Tests\Feature;
 use App\Models\AcademicPeriod;
 use App\Models\ActivityLog;
 use App\Models\Campus;
+use App\Models\FollowUp;
+use App\Models\MarketingActivity;
 use App\Models\Prospect;
 use App\Models\Role;
 use App\Models\School;
+use App\Models\SchoolEventProposal;
 use App\Models\StudentQuestionnaire;
 use App\Models\User;
 use App\Services\AppContextService;
@@ -538,7 +541,7 @@ class PublishRoadmapHardeningTest extends TestCase
 
         $response->assertRedirect(route('activities.index'));
 
-        $activity = \App\Models\MarketingActivity::where('name', 'Education Expo Jawa Barat 2026')->first();
+        $activity = MarketingActivity::where('name', 'Education Expo Jawa Barat 2026')->first();
         $this->assertNotNull($activity);
         $this->assertNotNull($activity->document_path);
         $this->assertNotEmpty($activity->drive_folder_url);
@@ -569,7 +572,7 @@ class PublishRoadmapHardeningTest extends TestCase
             'grade_12_count' => 150,
         ]);
 
-        $followUp = \App\Models\FollowUp::create([
+        $followUp = FollowUp::create([
             'user_id' => $admin->id,
             'school_id' => $school->id,
             'academic_period_id' => AcademicPeriod::first()?->id,
@@ -666,7 +669,7 @@ class PublishRoadmapHardeningTest extends TestCase
         $krwCampus = Campus::where('code', 'KRW')->first();
         $this->assertNotNull($krwCampus);
 
-        $proposal = \App\Models\SchoolEventProposal::create([
+        $proposal = SchoolEventProposal::create([
             'reference_no' => 'EVT-TEST-' . time(),
             'campus_id' => $krwCampus->id,
             'school_name' => 'SMKN 1 Karawang',
@@ -680,7 +683,7 @@ class PublishRoadmapHardeningTest extends TestCase
             'support_type_requested' => 'Sponsorship & Stand Booth',
             'proposal_file_path' => 'event-proposals/test.pdf',
             'proposal_file_name' => 'test.pdf',
-            'status' => \App\Models\SchoolEventProposal::STATUS_MENUNGGU_REVIEW,
+            'status' => SchoolEventProposal::STATUS_MENUNGGU_REVIEW,
         ]);
 
         $response = $this->get(route('school-events.success', $proposal->reference_no));
@@ -697,7 +700,7 @@ class PublishRoadmapHardeningTest extends TestCase
     {
         $campus = Campus::firstOrCreate(['code' => 'KRW'], ['name' => 'UBSI Kampus Karawang', 'is_default' => true, 'is_active' => true]);
         $refNo = 'EVT-TRACK-' . time();
-        $proposal = \App\Models\SchoolEventProposal::create([
+        $proposal = SchoolEventProposal::create([
             'reference_no' => $refNo,
             'campus_id' => $campus->id,
             'school_name' => 'SMK Bina Informatika',
@@ -711,7 +714,7 @@ class PublishRoadmapHardeningTest extends TestCase
             'support_type_requested' => 'Narasumber & Sponsorship',
             'proposal_file_path' => 'event-proposals/test.pdf',
             'proposal_file_name' => 'test.pdf',
-            'status' => \App\Models\SchoolEventProposal::STATUS_DISETUJUI,
+            'status' => SchoolEventProposal::STATUS_DISETUJUI,
             'approved_amount' => 500000,
             'approved_support_items' => 'Speaker, Brosur & Spanduk',
         ]);
@@ -735,7 +738,7 @@ class PublishRoadmapHardeningTest extends TestCase
         $krw = Campus::where('code', 'KRW')->first();
         $ckp = Campus::where('code', 'CKP')->first();
 
-        $krwProposal = \App\Models\SchoolEventProposal::create([
+        $krwProposal = SchoolEventProposal::create([
             'reference_no' => 'EVT-KRW-' . time(),
             'campus_id' => $krw->id,
             'school_name' => 'Sekolah Karawang Unik',
@@ -749,10 +752,10 @@ class PublishRoadmapHardeningTest extends TestCase
             'support_type_requested' => 'Sponsorship',
             'proposal_file_path' => 'event-proposals/test.pdf',
             'proposal_file_name' => 'test.pdf',
-            'status' => \App\Models\SchoolEventProposal::STATUS_MENUNGGU_REVIEW,
+            'status' => SchoolEventProposal::STATUS_MENUNGGU_REVIEW,
         ]);
 
-        $ckpProposal = \App\Models\SchoolEventProposal::create([
+        $ckpProposal = SchoolEventProposal::create([
             'reference_no' => 'EVT-CKP-' . time(),
             'campus_id' => $ckp->id,
             'school_name' => 'Sekolah Cikampek Unik',
@@ -766,7 +769,7 @@ class PublishRoadmapHardeningTest extends TestCase
             'support_type_requested' => 'Sponsorship',
             'proposal_file_path' => 'event-proposals/test.pdf',
             'proposal_file_name' => 'test.pdf',
-            'status' => \App\Models\SchoolEventProposal::STATUS_MENUNGGU_REVIEW,
+            'status' => SchoolEventProposal::STATUS_MENUNGGU_REVIEW,
         ]);
 
         // When viewing with Karawang active campus session

@@ -13,7 +13,9 @@ class MasterSchoolListWithGmapsSeeder extends Seeder
     public function run(): void
     {
         $campusKrw = \App\Models\Campus::where('code', 'KRW')->first();
+        $campusCkp = \App\Models\Campus::where('code', 'CKP')->first();
         $krwId = $campusKrw ? $campusKrw->id : 1;
+        $ckpId = $campusCkp ? $campusCkp->id : 2;
 
         // Koordinat acuan pusat per Kecamatan di Kabupaten Karawang
         $districtCoords = [
@@ -213,6 +215,68 @@ class MasterSchoolListWithGmapsSeeder extends Seeder
 
             $data = [
                 'campus_id' => $krwId, // UBSI Kampus Karawang
+                'npsn' => $npsn,
+                'name' => $name,
+                'district_id' => $districtId,
+                'school_type_id' => $stId,
+                'status' => $status,
+                'latitude' => $lat,
+                'longitude' => $lng,
+                'distance_from_campus' => $distFromCampus,
+                'status_school' => 'aktif',
+            ];
+
+            if ($school) {
+                $school->update($data);
+            } else {
+                $data['student_count'] = rand(400, 1100);
+                $data['grade_12_count'] = rand(120, 350);
+                School::create($data);
+            }
+        }
+
+        // Sekolah Wilayah UBSI Kampus Cikampek (Cikampek, Purwasari, Kotabaru, Jatisari, Banyusari, Tirtamulya, Cilamaya)
+        $ckpSchools = [
+            ['20237430', 'Cikampek', 'SMAN 1 CIKAMPEK', 'SMA', 'negeri', -6.4050, 107.4520],
+            ['20237431', 'Cikampek', 'SMKN 1 CIKAMPEK', 'SMK', 'negeri', -6.4110, 107.4580],
+            ['20237432', 'Cikampek', 'SMKS TI MUHAMMADIYAH 1 CIKAMPEK', 'SMK', 'swasta', -6.4180, 107.4470],
+            ['20237433', 'Cikampek', 'SMKS IT MARIFATUSSALAAM', 'SMK', 'swasta', -6.4130, 107.4600],
+            ['20237434', 'Purwasari', 'SMAN 1 PURWASARI', 'SMA', 'negeri', -6.3980, 107.4120],
+            ['20237435', 'Purwasari', 'SMKN 1 PURWASARI', 'SMK', 'negeri', -6.3910, 107.4080],
+            ['20237436', 'Kotabaru', 'SMAN 1 KOTABARU', 'SMA', 'negeri', -6.4020, 107.4810],
+            ['20237437', 'Kotabaru', 'SMKN 1 KOTABARU', 'SMK', 'negeri', -6.3950, 107.4780],
+            ['20237438', 'Jatisari', 'SMAN 1 JATISARI', 'SMA', 'negeri', -6.3880, 107.5300],
+            ['20237439', 'Jatisari', 'SMKN 1 JATISARI', 'SMK', 'negeri', -6.3820, 107.5250],
+            ['20237440', 'Banyusari', 'SMAN 1 BANYUSARI', 'SMA', 'negeri', -6.3250, 107.5450],
+            ['20237441', 'Tirtamulya', 'SMAN 1 TIRTAMULYA', 'SMA', 'negeri', -6.4350, 107.4850],
+            ['20237442', 'Cilamaya Wetan', 'SMAN 1 CILAMAYA', 'SMA', 'negeri', -6.2550, 107.5750],
+            ['20237443', 'Cilamaya Wetan', 'SMKN 1 CILAMAYA', 'SMK', 'negeri', -6.2620, 107.5680],
+            ['20237444', 'Cilamaya Kulon', 'MAS ASSHIDDIQIYAH CILAMAYA', 'MA', 'swasta', -6.2410, 107.5210],
+        ];
+
+        foreach ($ckpSchools as $r) {
+            $npsn = trim($r[0]);
+            $districtName = trim($r[1]);
+            $name = strtoupper(trim($r[2]));
+            $stName = strtoupper(trim($r[3]));
+            $status = strtolower(trim($r[4]));
+            $lat = (float) $r[5];
+            $lng = (float) $r[6];
+
+            $district = District::where('name', 'like', "%{$districtName}%")->first();
+            $districtId = $district ? $district->id : 25; // default Cikampek
+
+            $st = SchoolType::where('name', $stName)->first();
+            $stId = $st ? $st->id : 1;
+
+            $distFromCampus = $scoringService->calculateDistanceFromCampus($lat, $lng);
+
+            $school = School::where('npsn', $npsn)
+                ->orWhere('name', 'like', "%{$name}%")
+                ->first();
+
+            $data = [
+                'campus_id' => $ckpId, // UBSI Kampus Cikampek
                 'npsn' => $npsn,
                 'name' => $name,
                 'district_id' => $districtId,

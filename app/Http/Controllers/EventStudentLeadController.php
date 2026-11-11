@@ -29,8 +29,8 @@ class EventStudentLeadController extends Controller
         }
 
         $schoolsQuery = School::query()
-            ->select('id', 'name', 'district_id', 'campus_id')
-            ->with(['district:id,name', 'campus']);
+            ->select('id', 'name', 'district_id', 'campus_id', 'school_type_id')
+            ->with(['district:id,name', 'campus', 'schoolType']);
 
         if ($requestedCampusId && $activeCampus) {
             $schoolsQuery->where('campus_id', $activeCampus->id);

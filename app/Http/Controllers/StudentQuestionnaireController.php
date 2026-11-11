@@ -60,7 +60,7 @@ class StudentQuestionnaireController extends Controller
             ]);
         }
 
-        $schoolsQuery = School::with(['district', 'campus']);
+        $schoolsQuery = School::with(['district', 'campus', 'schoolType']);
         if ($requestedCampusId && $activeCampus) {
             $schoolsQuery->where('campus_id', $activeCampus->id);
         }
