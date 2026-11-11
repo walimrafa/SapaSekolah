@@ -112,19 +112,6 @@
             </div>
         </div>
 
-        <!-- Tab Navigasi Terpadu Laporan Support Event -->
-        <div class="flex flex-wrap items-center gap-2 p-1.5 bg-slate-200/80 backdrop-blur-sm rounded-2xl border border-slate-300/70">
-            <a href="{{ route('event-reports.index') }}"
-                class="px-4 py-2.5 rounded-xl text-xs font-bold flex items-center space-x-2 transition text-slate-600 hover:text-slate-900 hover:bg-white/60">
-                <i data-lucide="clipboard-check" class="w-4 h-4 text-emerald-600"></i>
-                <span>1. Laporan &amp; Dokumentasi Kegiatan Event</span>
-            </a>
-            <a href="{{ route('event-students.index') }}"
-                class="px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center space-x-2 transition bg-white text-slate-900 shadow-sm border border-slate-200/60">
-                <i data-lucide="users" class="w-4 h-4 text-purple-500"></i>
-                <span>2. Data Siswa Hasil Support Event</span>
-            </a>
-        </div>
 
         <!-- Metric Stat Cards -->
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
