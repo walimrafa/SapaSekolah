@@ -48,91 +48,7 @@
         </a>
     </div>
 
-    <div class="max-w-3xl" x-data="{
-        districts: {{ json_encode($districts) }},
-        allSchools: {{ json_encode($schools) }},
-        selectedDistrictId: '{{ old('district_id', $visitPlan->school->district_id ?? '') }}',
-        selectedSchoolId: '{{ old('school_id', $visitPlan->school_id) }}',
-        tsDistrict: null,
-        tsUser: null,
-
-        init() {
-            this.$nextTick(() => {
-                const districtEl = document.getElementById('edit_district_filter');
-                if (districtEl && window.TomSelect) {
-                    this.tsDistrict = new TomSelect(districtEl, {
-                        create: false,
-                        placeholder: '-- Cari & Filter Kecamatan ({{ $schools->count() }} Sekolah Tersedia) --',
-                        allowEmptyOption: true,
-                        maxOptions: 100,
-                        onChange: (val) => {
-                            this.selectedDistrictId = val;
-                        }
-                    });
-                }
-
-                const userEl = document.getElementById('edit_user_id');
-                if (userEl && window.TomSelect) {
-                    this.tsUser = new TomSelect(userEl, {
-                        create: false,
-                        placeholder: '-- Cari & Pilih Staf Marketing PIC --',
-                        maxOptions: 50,
-                        render: {
-                            option: function(data, escape) {
-                                const role = data.role || (data.text.match(/\((.*?)\)/) ? data.text.match(/\((.*?)\)/)[1] : 'Marketing');
-                                const name = data.name || data.text.replace(/\(.*?\)/, '').trim();
-                                const email = data.email || '';
-                                const campus = data.campus || '';
-
-                                let badgeClass = 'bg-slate-100 text-slate-700 border-slate-200';
-                                const r = role.toLowerCase();
-                                if (r.includes('marketing')) {
-                                    badgeClass = 'bg-amber-100 text-amber-800 border-amber-300';
-                                } else if (r.includes('koordinator')) {
-                                    badgeClass = 'bg-purple-100 text-purple-800 border-purple-300';
-                                } else if (r.includes('admin')) {
-                                    badgeClass = 'bg-blue-100 text-blue-800 border-blue-300';
-                                } else if (r.includes('pimpinan')) {
-                                    badgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-300';
-                                } else if (r.includes('customer')) {
-                                    badgeClass = 'bg-teal-100 text-teal-800 border-teal-300';
-                                }
-
-                                return `<div class="py-2 px-3 flex items-center justify-between border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition">
-                                    <div>
-                                        <div class="font-bold text-slate-900 text-xs flex items-center gap-1.5">
-                                            <span class="w-2 h-2 rounded-full ${r.includes('marketing') ? 'bg-amber-500' : 'bg-blue-600'} inline-block"></span>
-                                            <span>${escape(name)}</span>
-                                        </div>
-                                        <div class="text-[10px] text-slate-500 font-normal mt-0.5 pl-3.5">
-                                            ${email ? escape(email) : ''} ${campus ? '• ' + escape(campus) : ''}
-                                        </div>
-                                    </div>
-                                    <span class="px-2 py-0.5 text-[9px] font-extrabold rounded-full border ${badgeClass} shrink-0">
-                                        ${escape(role)}
-                                    </span>
-                                </div>`;
-                            },
-                            item: function(data, escape) {
-                                const role = data.role || (data.text.match(/\((.*?)\)/) ? data.text.match(/\((.*?)\)/)[1] : 'Marketing');
-                                const name = data.name || data.text.replace(/\(.*?\)/, '').trim();
-                                return `<div class="font-bold text-xs text-slate-900 flex items-center gap-1.5">
-                                    <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
-                                    <span>${escape(name)}</span>
-                                    <span class="text-[10px] text-slate-500 font-normal">(${escape(role)})</span>
-                                </div>`;
-                            }
-                        }
-                    });
-                }
-            });
-        },
-
-        get filteredSchools() {
-            if (!this.selectedDistrictId) return this.allSchools;
-            return this.allSchools.filter(s => s.district_id == this.selectedDistrictId);
-        }
-    }">
+    <div class="max-w-3xl" x-data="initVisitPlanEdit()">
         <form method="POST" action="{{ route('visit-plans.update', $visitPlan->id) }}" class="space-y-6">
             @csrf
             @method('PUT')
@@ -236,4 +152,94 @@
             </div>
         </form>
     </div>
+
+    <script>
+        function initVisitPlanEdit() {
+            return {
+                districts: @json($districts),
+                allSchools: @json($schools),
+                selectedDistrictId: '{{ old('district_id', $visitPlan->school->district_id ?? '') }}',
+                selectedSchoolId: '{{ old('school_id', $visitPlan->school_id) }}',
+                tsDistrict: null,
+                tsUser: null,
+
+                init() {
+                    this.$nextTick(() => {
+                        const districtEl = document.getElementById('edit_district_filter');
+                        if (districtEl && window.TomSelect) {
+                            this.tsDistrict = new TomSelect(districtEl, {
+                                create: false,
+                                placeholder: '-- Cari & Filter Kecamatan ({{ $schools->count() }} Sekolah Tersedia) --',
+                                allowEmptyOption: true,
+                                maxOptions: 100,
+                                onChange: (val) => {
+                                    this.selectedDistrictId = val;
+                                }
+                            });
+                        }
+
+                        const userEl = document.getElementById('edit_user_id');
+                        if (userEl && window.TomSelect) {
+                            this.tsUser = new TomSelect(userEl, {
+                                create: false,
+                                placeholder: '-- Cari & Pilih Staf Marketing PIC --',
+                                maxOptions: 50,
+                                render: {
+                                    option: function(data, escape) {
+                                        const role = data.role || (data.text.match(/\((.*?)\)/) ? data.text.match(/\((.*?)\)/)[1] : 'Marketing');
+                                        const name = data.name || data.text.replace(/\(.*?\)/, '').trim();
+                                        const email = data.email || '';
+                                        const campus = data.campus || '';
+
+                                        let badgeClass = 'bg-slate-100 text-slate-700 border-slate-200';
+                                        const r = role.toLowerCase();
+                                        if (r.includes('marketing')) {
+                                            badgeClass = 'bg-amber-100 text-amber-800 border-amber-300';
+                                        } else if (r.includes('koordinator')) {
+                                            badgeClass = 'bg-purple-100 text-purple-800 border-purple-300';
+                                        } else if (r.includes('admin')) {
+                                            badgeClass = 'bg-blue-100 text-blue-800 border-blue-300';
+                                        } else if (r.includes('pimpinan')) {
+                                            badgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-300';
+                                        } else if (r.includes('customer')) {
+                                            badgeClass = 'bg-teal-100 text-teal-800 border-teal-300';
+                                        }
+
+                                        return '<div class="py-2 px-3 flex items-center justify-between border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition">' +
+                                            '<div>' +
+                                                '<div class="font-bold text-slate-900 text-xs flex items-center gap-1.5">' +
+                                                    '<span class="w-2 h-2 rounded-full ' + (r.includes('marketing') ? 'bg-amber-500' : 'bg-blue-600') + ' inline-block"></span>' +
+                                                    '<span>' + escape(name) + '</span>' +
+                                                '</div>' +
+                                                '<div class="text-[10px] text-slate-500 font-normal mt-0.5 pl-3.5">' +
+                                                    (email ? escape(email) : '') + (campus ? ' • ' + escape(campus) : '') +
+                                                '</div>' +
+                                            '</div>' +
+                                            '<span class="px-2 py-0.5 text-[9px] font-extrabold rounded-full border ' + badgeClass + ' shrink-0">' +
+                                                escape(role) +
+                                            '</span>' +
+                                        '</div>';
+                                    },
+                                    item: function(data, escape) {
+                                        const role = data.role || (data.text.match(/\((.*?)\)/) ? data.text.match(/\((.*?)\)/)[1] : 'Marketing');
+                                        const name = data.name || data.text.replace(/\(.*?\)/, '').trim();
+                                        return '<div class="font-bold text-xs text-slate-900 flex items-center gap-1.5">' +
+                                            '<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>' +
+                                            '<span>' + escape(name) + '</span>' +
+                                            '<span class="text-[10px] text-slate-500 font-normal">(' + escape(role) + ')</span>' +
+                                        '</div>';
+                                    }
+                                }
+                            });
+                        }
+                    });
+                },
+
+                get filteredSchools() {
+                    if (!this.selectedDistrictId) return this.allSchools;
+                    return this.allSchools.filter(s => s.district_id == this.selectedDistrictId);
+                }
+            };
+        }
+    </script>
 </x-app-layout>

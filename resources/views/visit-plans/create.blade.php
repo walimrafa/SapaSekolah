@@ -55,202 +55,7 @@
         }
     </style>
 
-    <div class="max-w-4xl" x-data="{
-        districts: {{ json_encode($districts) }},
-        allSchools: {{ json_encode($schools) }},
-        selectedDistrictId: '{{ old('district_id', '') }}',
-        selectedSchoolIds: {{ json_encode(array_map('intval', old('school_ids', []))) }},
-        searchQuery: '',
-        errorMessage: '',
-        selectedPriority: '{{ old('priority', 'B') }}',
-        priorityAutoFilled: false,
-        tsDistrict: null,
-        tsUser: null,
-
-        init() {
-            this.$nextTick(() => {
-                const districtEl = document.getElementById('district_filter');
-                if (districtEl && window.TomSelect) {
-                    this.tsDistrict = new TomSelect(districtEl, {
-                        create: false,
-                        placeholder: '-- Cari & Pilih Kecamatan ({{ $schools->count() }} Sekolah Tersedia) --',
-                        allowEmptyOption: true,
-                        maxOptions: 100,
-                        onChange: (val) => {
-                            this.selectedDistrictId = val;
-                            this.searchQuery = '';
-                        }
-                    });
-                }
-
-                const userEl = document.getElementById('user_id');
-                if (userEl && window.TomSelect) {
-                    this.tsUser = new TomSelect(userEl, {
-                        create: false,
-                        placeholder: '-- Cari & Pilih Staf Marketing PIC --',
-                        maxOptions: 50,
-                        render: {
-                            option: function(data, escape) {
-                                const role = data.role || (data.text.match(/\((.*?)\)/) ? data.text.match(/\((.*?)\)/)[1] : 'Marketing');
-                                const name = data.name || data.text.replace(/\(.*?\)/, '').trim();
-                                const email = data.email || '';
-                                const campus = data.campus || '';
-
-                                let badgeClass = 'bg-slate-100 text-slate-700 border-slate-200';
-                                const r = role.toLowerCase();
-                                if (r.includes('marketing')) {
-                                    badgeClass = 'bg-amber-100 text-amber-800 border-amber-300';
-                                } else if (r.includes('koordinator')) {
-                                    badgeClass = 'bg-purple-100 text-purple-800 border-purple-300';
-                                } else if (r.includes('admin')) {
-                                    badgeClass = 'bg-blue-100 text-blue-800 border-blue-300';
-                                } else if (r.includes('pimpinan')) {
-                                    badgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-300';
-                                } else if (r.includes('customer')) {
-                                    badgeClass = 'bg-teal-100 text-teal-800 border-teal-300';
-                                }
-
-                                return `<div class="py-2 px-3 flex items-center justify-between border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition">
-                                    <div>
-                                        <div class="font-bold text-slate-900 text-xs flex items-center gap-1.5">
-                                            <span class="w-2 h-2 rounded-full ${r.includes('marketing') ? 'bg-amber-500' : 'bg-blue-600'} inline-block"></span>
-                                            <span>${escape(name)}</span>
-                                        </div>
-                                        <div class="text-[10px] text-slate-500 font-normal mt-0.5 pl-3.5">
-                                            ${email ? escape(email) : ''} ${campus ? '• ' + escape(campus) : ''}
-                                        </div>
-                                    </div>
-                                    <span class="px-2 py-0.5 text-[9px] font-extrabold rounded-full border ${badgeClass} shrink-0">
-                                        ${escape(role)}
-                                    </span>
-                                </div>`;
-                            },
-                            item: function(data, escape) {
-                                const role = data.role || (data.text.match(/\((.*?)\)/) ? data.text.match(/\((.*?)\)/)[1] : 'Marketing');
-                                const name = data.name || data.text.replace(/\(.*?\)/, '').trim();
-                                return `<div class="font-bold text-xs text-slate-900 flex items-center gap-1.5">
-                                    <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
-                                    <span>${escape(name)}</span>
-                                    <span class="text-[10px] text-slate-500 font-normal">(${escape(role)})</span>
-                                </div>`;
-                            }
-                        }
-                    });
-                }
-            });
-
-            this.$watch('selectedDistrictId', (val) => {
-                if (this.tsDistrict && this.tsDistrict.getValue() !== String(val || '')) {
-                    this.tsDistrict.setValue(val || '', true);
-                }
-            });
-        },
-
-        get filteredSchools() {
-            let list = this.allSchools;
-            if (this.selectedDistrictId) {
-                list = list.filter(s => s.district_id == this.selectedDistrictId);
-            }
-            if (this.searchQuery && this.searchQuery.trim() !== '') {
-                const q = this.searchQuery.toLowerCase().trim();
-                list = list.filter(s => {
-                    const name = (s.name || '').toLowerCase();
-                    const npsn = (s.npsn || '').toLowerCase();
-                    const districtName = (s.district ? s.district.name : '').toLowerCase();
-                    return name.includes(q) || npsn.includes(q) || districtName.includes(q);
-                });
-            }
-            return list;
-        },
-
-        get selectedSchoolsList() {
-            return this.allSchools.filter(s => this.selectedSchoolIds.includes(parseInt(s.id)));
-        },
-
-        get areAllFilteredSelected() {
-            if (this.filteredSchools.length === 0) return false;
-            return this.filteredSchools.every(s => this.selectedSchoolIds.includes(parseInt(s.id)));
-        },
-
-        // Auto-detect priority among selected schools (A > B > C)
-        autoFillPriority() {
-            if (this.selectedSchoolIds.length === 0) {
-                this.priorityAutoFilled = false;
-                return;
-            }
-            const selected = this.allSchools.filter(s => this.selectedSchoolIds.includes(parseInt(s.id)));
-            const levels = selected.map(s => s.priority_level || 'C');
-            if (levels.includes('A')) {
-                this.selectedPriority = 'A';
-            } else if (levels.includes('B')) {
-                this.selectedPriority = 'B';
-            } else {
-                this.selectedPriority = 'C';
-            }
-            this.priorityAutoFilled = (this.selectedSchoolIds.length > 1);
-        },
-
-        toggleSchool(id) {
-            id = parseInt(id);
-            const index = this.selectedSchoolIds.indexOf(id);
-            if (index > -1) {
-                this.selectedSchoolIds.splice(index, 1);
-            } else {
-                this.selectedSchoolIds.push(id);
-            }
-            this.errorMessage = '';
-            this.autoFillPriority();
-        },
-
-        isSchoolSelected(id) {
-            return this.selectedSchoolIds.includes(parseInt(id));
-        },
-
-        selectAllFiltered() {
-            const currentIds = this.filteredSchools.map(s => parseInt(s.id));
-            currentIds.forEach(id => {
-                if (!this.selectedSchoolIds.includes(id)) {
-                    this.selectedSchoolIds.push(id);
-                }
-            });
-            this.errorMessage = '';
-            this.autoFillPriority();
-        },
-
-        deselectAllFiltered() {
-            const currentIds = this.filteredSchools.map(s => parseInt(s.id));
-            this.selectedSchoolIds = this.selectedSchoolIds.filter(id => !currentIds.includes(id));
-            this.autoFillPriority();
-        },
-
-        clearAllSelections() {
-            this.selectedSchoolIds = [];
-            this.priorityAutoFilled = false;
-        },
-
-        removeSchool(id) {
-            id = parseInt(id);
-            this.selectedSchoolIds = this.selectedSchoolIds.filter(item => item !== id);
-            this.autoFillPriority();
-        },
-
-        getDistrictName(districtId) {
-            if (!districtId) return 'Semua Kecamatan';
-            const d = this.districts.find(item => item.id == districtId);
-            return d ? d.name : '';
-        },
-
-        handleSubmit(e) {
-            if (this.selectedSchoolIds.length === 0) {
-                e.preventDefault();
-                this.errorMessage = 'Pilih minimal satu sekolah tujuan untuk diagendakan.';
-                const el = document.getElementById('school_selection_card');
-                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                return false;
-            }
-            return true;
-        }
-    }">
+    <div class="max-w-4xl" x-data="initVisitPlanCreate()">
         <form method="POST" action="{{ route('visit-plans.store') }}" @submit="handleSubmit($event)" class="space-y-6">
             @csrf
 
@@ -509,4 +314,204 @@
             </div>
         </form>
     </div>
+
+    <script>
+        function initVisitPlanCreate() {
+            return {
+                districts: @json($districts),
+                allSchools: @json($schools),
+                selectedDistrictId: '{{ old('district_id', '') }}',
+                selectedSchoolIds: @json(array_map('intval', old('school_ids', []))),
+                searchQuery: '',
+                errorMessage: '',
+                selectedPriority: '{{ old('priority', 'B') }}',
+                priorityAutoFilled: false,
+                tsDistrict: null,
+                tsUser: null,
+
+                init() {
+                    this.$nextTick(() => {
+                        const districtEl = document.getElementById('district_filter');
+                        if (districtEl && window.TomSelect) {
+                            this.tsDistrict = new TomSelect(districtEl, {
+                                create: false,
+                                placeholder: '-- Cari & Pilih Kecamatan ({{ $schools->count() }} Sekolah Tersedia) --',
+                                allowEmptyOption: true,
+                                maxOptions: 100,
+                                onChange: (val) => {
+                                    this.selectedDistrictId = val;
+                                    this.searchQuery = '';
+                                }
+                            });
+                        }
+
+                        const userEl = document.getElementById('user_id');
+                        if (userEl && window.TomSelect) {
+                            this.tsUser = new TomSelect(userEl, {
+                                create: false,
+                                placeholder: '-- Cari & Pilih Staf Marketing PIC --',
+                                maxOptions: 50,
+                                render: {
+                                    option: function(data, escape) {
+                                        const role = data.role || (data.text.match(/\((.*?)\)/) ? data.text.match(/\((.*?)\)/)[1] : 'Marketing');
+                                        const name = data.name || data.text.replace(/\(.*?\)/, '').trim();
+                                        const email = data.email || '';
+                                        const campus = data.campus || '';
+
+                                        let badgeClass = 'bg-slate-100 text-slate-700 border-slate-200';
+                                        const r = role.toLowerCase();
+                                        if (r.includes('marketing')) {
+                                            badgeClass = 'bg-amber-100 text-amber-800 border-amber-300';
+                                        } else if (r.includes('koordinator')) {
+                                            badgeClass = 'bg-purple-100 text-purple-800 border-purple-300';
+                                        } else if (r.includes('admin')) {
+                                            badgeClass = 'bg-blue-100 text-blue-800 border-blue-300';
+                                        } else if (r.includes('pimpinan')) {
+                                            badgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-300';
+                                        } else if (r.includes('customer')) {
+                                            badgeClass = 'bg-teal-100 text-teal-800 border-teal-300';
+                                        }
+
+                                        return '<div class="py-2 px-3 flex items-center justify-between border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition">' +
+                                            '<div>' +
+                                                '<div class="font-bold text-slate-900 text-xs flex items-center gap-1.5">' +
+                                                    '<span class="w-2 h-2 rounded-full ' + (r.includes('marketing') ? 'bg-amber-500' : 'bg-blue-600') + ' inline-block"></span>' +
+                                                    '<span>' + escape(name) + '</span>' +
+                                                '</div>' +
+                                                '<div class="text-[10px] text-slate-500 font-normal mt-0.5 pl-3.5">' +
+                                                    (email ? escape(email) : '') + (campus ? ' • ' + escape(campus) : '') +
+                                                '</div>' +
+                                            '</div>' +
+                                            '<span class="px-2 py-0.5 text-[9px] font-extrabold rounded-full border ' + badgeClass + ' shrink-0">' +
+                                                escape(role) +
+                                            '</span>' +
+                                        '</div>';
+                                    },
+                                    item: function(data, escape) {
+                                        const role = data.role || (data.text.match(/\((.*?)\)/) ? data.text.match(/\((.*?)\)/)[1] : 'Marketing');
+                                        const name = data.name || data.text.replace(/\(.*?\)/, '').trim();
+                                        return '<div class="font-bold text-xs text-slate-900 flex items-center gap-1.5">' +
+                                            '<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>' +
+                                            '<span>' + escape(name) + '</span>' +
+                                            '<span class="text-[10px] text-slate-500 font-normal">(' + escape(role) + ')</span>' +
+                                        '</div>';
+                                    }
+                                }
+                            });
+                        }
+                    });
+
+                    this.$watch('selectedDistrictId', (val) => {
+                        if (this.tsDistrict && this.tsDistrict.getValue() !== String(val || '')) {
+                            this.tsDistrict.setValue(val || '', true);
+                        }
+                    });
+                },
+
+                get filteredSchools() {
+                    let list = this.allSchools;
+                    if (this.selectedDistrictId) {
+                        list = list.filter(s => s.district_id == this.selectedDistrictId);
+                    }
+                    if (this.searchQuery && this.searchQuery.trim() !== '') {
+                        const q = this.searchQuery.toLowerCase().trim();
+                        list = list.filter(s => {
+                            const name = (s.name || '').toLowerCase();
+                            const npsn = (s.npsn || '').toLowerCase();
+                            const districtName = (s.district ? s.district.name : '').toLowerCase();
+                            return name.includes(q) || npsn.includes(q) || districtName.includes(q);
+                        });
+                    }
+                    return list;
+                },
+
+                get selectedSchoolsList() {
+                    return this.allSchools.filter(s => this.selectedSchoolIds.includes(parseInt(s.id)));
+                },
+
+                get areAllFilteredSelected() {
+                    if (this.filteredSchools.length === 0) return false;
+                    return this.filteredSchools.every(s => this.selectedSchoolIds.includes(parseInt(s.id)));
+                },
+
+                autoFillPriority() {
+                    if (this.selectedSchoolIds.length === 0) {
+                        this.priorityAutoFilled = false;
+                        return;
+                    }
+                    const selected = this.allSchools.filter(s => this.selectedSchoolIds.includes(parseInt(s.id)));
+                    const levels = selected.map(s => s.priority_level || 'C');
+                    if (levels.includes('A')) {
+                        this.selectedPriority = 'A';
+                    } else if (levels.includes('B')) {
+                        this.selectedPriority = 'B';
+                    } else {
+                        this.selectedPriority = 'C';
+                    }
+                    this.priorityAutoFilled = (this.selectedSchoolIds.length > 1);
+                },
+
+                toggleSchool(id) {
+                    id = parseInt(id);
+                    const index = this.selectedSchoolIds.indexOf(id);
+                    if (index > -1) {
+                        this.selectedSchoolIds.splice(index, 1);
+                    } else {
+                        this.selectedSchoolIds.push(id);
+                    }
+                    this.errorMessage = '';
+                    this.autoFillPriority();
+                },
+
+                isSchoolSelected(id) {
+                    return this.selectedSchoolIds.includes(parseInt(id));
+                },
+
+                selectAllFiltered() {
+                    const currentIds = this.filteredSchools.map(s => parseInt(s.id));
+                    currentIds.forEach(id => {
+                        if (!this.selectedSchoolIds.includes(id)) {
+                            this.selectedSchoolIds.push(id);
+                        }
+                    });
+                    this.errorMessage = '';
+                    this.autoFillPriority();
+                },
+
+                deselectAllFiltered() {
+                    const currentIds = this.filteredSchools.map(s => parseInt(s.id));
+                    this.selectedSchoolIds = this.selectedSchoolIds.filter(id => !currentIds.includes(id));
+                    this.autoFillPriority();
+                },
+
+                clearAllSelections() {
+                    this.selectedSchoolIds = [];
+                    this.priorityAutoFilled = false;
+                },
+
+                removeSchool(id) {
+                    id = parseInt(id);
+                    this.selectedSchoolIds = this.selectedSchoolIds.filter(item => item !== id);
+                    this.autoFillPriority();
+                },
+
+                getDistrictName(districtId) {
+                    if (!districtId) return 'Semua Kecamatan';
+                    const d = this.districts.find(item => item.id == districtId);
+                    return d ? d.name : '';
+                },
+
+                handleSubmit(e) {
+                    if (this.selectedSchoolIds.length === 0) {
+                        e.preventDefault();
+                        this.errorMessage = 'Pilih minimal satu sekolah tujuan untuk diagendakan.';
+                        const el = document.getElementById('school_selection_card');
+                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        return false;
+                    }
+                    return true;
+                }
+            };
+        }
+    </script>
 </x-app-layout>
