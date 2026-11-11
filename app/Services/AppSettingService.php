@@ -100,7 +100,6 @@ class AppSettingService
             'submenu_questionnaires' => 'Kuisioner',
             'submenu_student_followups' => 'Follow Up',
             'submenu_study_programs' => 'Prodi',
-            'submenu_reports' => 'Laporan',
 
             // 6. Support Event Sekolah
             'menu_events' => 'Support Event',
@@ -109,7 +108,15 @@ class AppSettingService
             'submenu_event_reports' => 'Laporan',
             'submenu_event_students' => 'Hasil Event',
 
-            // 7. Informasi PMB
+            // 7. Laporan dan Analisis
+            'menu_reports' => 'Laporan & Analisis',
+            'badge_reports' => 'Analisis',
+            'submenu_report_charts' => 'Diagram & Analisis',
+            'submenu_report_data' => 'Laporan Data',
+            'submenu_report_export' => 'Ekspor & Rekap',
+            'submenu_report_events' => 'Laporan Event',
+
+            // 8. Informasi PMB
             'menu_pmb' => 'Info PMB',
             'badge_pmb' => 'UBSI',
             'submenu_pmb_portal' => 'Portal',

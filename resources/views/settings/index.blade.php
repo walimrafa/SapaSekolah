@@ -288,6 +288,12 @@
                         <i data-lucide="sparkles" class="w-3.5 h-3.5 text-purple-400"></i>
                         <span>Support Event</span>
                     </button>
+                    <button type="button" @click="activeTab = 'reports'"
+                        :class="activeTab === 'reports' ? 'bg-slate-900 text-white font-bold shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 font-semibold'"
+                        class="px-3 py-1.5 rounded-xl transition flex items-center gap-1.5">
+                        <i data-lucide="bar-chart-3" class="w-3.5 h-3.5 text-amber-400"></i>
+                        <span>Laporan &amp; Analisis</span>
+                    </button>
                     <button type="button" @click="activeTab = 'pmb'"
                         :class="activeTab === 'pmb' ? 'bg-slate-900 text-white font-bold shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 font-semibold'"
                         class="px-3 py-1.5 rounded-xl transition flex items-center gap-1.5">
@@ -526,13 +532,6 @@
                                         data-default="Prodi" placeholder="Prodi"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
-                                <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Laporan</label>
-                                    <input type="text" name="sidebar_labels[submenu_reports]"
-                                        value="{{ old('sidebar_labels.submenu_reports', $settings['sidebar_labels']['submenu_reports'] ?? 'Laporan') }}"
-                                        data-default="Laporan" placeholder="Laporan"
-                                        class="w-full px-3 py-2 rounded-xl border border-slate-300">
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -584,6 +583,66 @@
                                     <input type="text" name="sidebar_labels[submenu_event_reports]"
                                         value="{{ old('sidebar_labels.submenu_event_reports', $settings['sidebar_labels']['submenu_event_reports'] ?? 'Laporan') }}"
                                         data-default="Laporan" placeholder="Laporan"
+                                        class="w-full px-3 py-2 rounded-xl border border-slate-300">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Laporan & Analisis -->
+                <div x-show="activeTab === 'reports'" class="space-y-4 text-xs" style="display: none;">
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4">
+                        <div class="font-bold text-slate-800 flex items-center gap-2">
+                            <i data-lucide="bar-chart-3" class="w-4 h-4 text-amber-500"></i>
+                            <span>Kelompok Accordion Laporan &amp; Analisis</span>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block font-semibold text-slate-600 mb-1">Nama Menu Utama (Accordion)</label>
+                                <input type="text" name="sidebar_labels[menu_reports]"
+                                    value="{{ old('sidebar_labels.menu_reports', $settings['sidebar_labels']['menu_reports'] ?? 'Laporan & Analisis') }}"
+                                    data-default="Laporan & Analisis" placeholder="Laporan & Analisis"
+                                    class="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-600 mb-1">Label Tag Badge Kanan</label>
+                                <input type="text" name="sidebar_labels[badge_reports]"
+                                    value="{{ old('sidebar_labels.badge_reports', $settings['sidebar_labels']['badge_reports'] ?? 'Analisis') }}"
+                                    data-default="Analisis" placeholder="Analisis"
+                                    class="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold">
+                            </div>
+                        </div>
+
+                        <div class="pt-2 border-t border-slate-200">
+                            <p class="text-[11px] font-bold text-slate-500 mb-3">Sub-Menu Navigasi Laporan &amp; Analisis:</p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Diagram &amp; Analisis</label>
+                                    <input type="text" name="sidebar_labels[submenu_report_charts]"
+                                        value="{{ old('sidebar_labels.submenu_report_charts', $settings['sidebar_labels']['submenu_report_charts'] ?? 'Diagram & Analisis') }}"
+                                        data-default="Diagram & Analisis" placeholder="Diagram & Analisis"
+                                        class="w-full px-3 py-2 rounded-xl border border-slate-300">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Laporan Data</label>
+                                    <input type="text" name="sidebar_labels[submenu_report_data]"
+                                        value="{{ old('sidebar_labels.submenu_report_data', $settings['sidebar_labels']['submenu_report_data'] ?? 'Laporan Data') }}"
+                                        data-default="Laporan Data" placeholder="Laporan Data"
+                                        class="w-full px-3 py-2 rounded-xl border border-slate-300">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Ekspor &amp; Rekap</label>
+                                    <input type="text" name="sidebar_labels[submenu_report_export]"
+                                        value="{{ old('sidebar_labels.submenu_report_export', $settings['sidebar_labels']['submenu_report_export'] ?? 'Ekspor & Rekap') }}"
+                                        data-default="Ekspor & Rekap" placeholder="Ekspor & Rekap"
+                                        class="w-full px-3 py-2 rounded-xl border border-slate-300">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Laporan Event</label>
+                                    <input type="text" name="sidebar_labels[submenu_report_events]"
+                                        value="{{ old('sidebar_labels.submenu_report_events', $settings['sidebar_labels']['submenu_report_events'] ?? 'Laporan Event') }}"
+                                        data-default="Laporan Event" placeholder="Laporan Event"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                             </div>

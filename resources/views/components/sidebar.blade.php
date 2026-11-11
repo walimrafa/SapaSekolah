@@ -9,8 +9,9 @@
     // Check active states for auto-expanding current menu
     $isSchoolActive = request()->routeIs('map.*', 'schools.*', 'priorities.*');
     $isFieldActive = request()->routeIs('visit-plans.*', 'visits.*', 'follow-ups.*', 'socializations.completed.*', 'marketing-routes.*', 'activities.*');
-    $isCrmActive = request()->routeIs('prospects.*', 'new-students.*', 'student-questionnaires.*', 'student-follow-ups.*', 'study-programs.*', 'reports.*', 'comprehensive-reports.*');
-    $isEventActive = request()->routeIs('event-proposals.*', 'event-reports.*', 'school-events.*', 'event-students.*');
+    $isCrmActive = request()->routeIs('prospects.*', 'new-students.*', 'student-questionnaires.*', 'student-follow-ups.*', 'study-programs.*');
+    $isEventActive = request()->routeIs('event-proposals.*', 'school-events.*', 'event-students.*');
+    $isReportActive = request()->routeIs('reports.*', 'comprehensive-reports.*', 'event-reports.*');
     $isPmbActive = request()->routeIs('pmb.*', 'e-brochures.*');
     $canAccessPeriodClosing = auth()->user()->isAdmin() 
         || auth()->user()->isPimpinan() 
@@ -282,21 +283,6 @@
                     <i data-lucide="graduation-cap" class="w-3.5 h-3.5"></i>
                     <span>{{ $lbl('submenu_study_programs', 'Prodi') }}</span>
                 </a>
-
-                <a href="{{ route('reports.index') }}"
-                    class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('reports.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                    <i data-lucide="bar-chart-3" class="w-3.5 h-3.5"></i>
-                    <span>{{ $lbl('submenu_reports', 'Laporan') }}</span>
-                </a>
-
-                <a href="{{ route('comprehensive-reports.index') }}"
-                    class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('comprehensive-reports.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30 font-bold' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                    <div class="flex items-center space-x-2.5">
-                        <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-emerald-400"></i>
-                        <span>Ekspor</span>
-                    </div>
-                    <span class="px-1.5 py-0.2 text-[9px] font-bold bg-emerald-500/20 text-emerald-300 rounded">XLSX</span>
-                </a>
             </div>
         </div>
 
@@ -389,6 +375,71 @@
                     @endphp
                     @if($approvedEventsCount > 0)
                         <span class="px-1.5 py-0.2 text-[9px] font-bold bg-emerald-500/20 text-emerald-300 rounded">{{ $approvedEventsCount }}</span>
+                    @endif
+                </a>
+            </div>
+        </div>
+
+        <!-- Laporan & Analisis -->
+        <div x-data="{ expanded: {{ $isReportActive ? 'true' : 'false' }} }" class="space-y-1">
+            <button @click="expanded = !expanded" type="button"
+                class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition duration-150 {{ $isReportActive ? 'text-white bg-slate-800/80 font-bold border-l-2 border-brand-500' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
+                <div class="flex items-center space-x-3">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4 {{ $isReportActive ? 'text-amber-400' : 'text-slate-400' }}"></i>
+                    <span>{{ $lbl('menu_reports', 'Laporan & Analisis') }}</span>
+                </div>
+                <div class="flex items-center space-x-1.5">
+                    <span class="px-1.5 py-0.2 text-[9px] font-bold bg-amber-500/20 text-amber-300 rounded">{{ $lbl('badge_reports', 'Analisis') }}</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform duration-200" :class="expanded ? 'rotate-180 text-amber-400' : ''"></i>
+                </div>
+            </button>
+
+            <!-- Submenu Items -->
+            <div x-show="expanded" 
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 -translate-y-1"
+                x-transition:enter-end="opacity-100 translate-y-0"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100 translate-y-0"
+                x-transition:leave-end="opacity-0 -translate-y-1"
+                class="pl-4 ml-4 border-l border-slate-800 space-y-1 pt-1" style="display: none;">
+                
+                <!-- 1. Diagram & Analisis Visual -->
+                <a href="{{ route('reports.index', ['category' => 'diagram', 'tab' => 'charts']) }}"
+                    class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ (request()->routeIs('reports.*') && (request('category') === 'diagram' || (!request('category') && request('tab') !== 'visits' && request('tab') !== 'followups' && request('tab') !== 'activities' && request('tab') !== 'prospects' && request('tab') !== 'questionnaires' && request('tab') !== 'schools') || request('tab') === 'charts')) ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30 font-bold' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <i data-lucide="pie-chart" class="w-3.5 h-3.5 text-amber-400"></i>
+                    <span>{{ $lbl('submenu_report_charts', 'Diagram & Analisis') }}</span>
+                </a>
+
+                <!-- 2. Laporan Data Tabular -->
+                <a href="{{ route('reports.index', ['category' => 'data', 'tab' => 'visits']) }}"
+                    class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ (request()->routeIs('reports.*') && (request('category') === 'data' || in_array(request('tab'), ['visits', 'followups', 'activities', 'prospects', 'questionnaires', 'schools'])) && request('tab') !== 'charts') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30 font-bold' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <i data-lucide="table" class="w-3.5 h-3.5 text-emerald-400"></i>
+                    <span>{{ $lbl('submenu_report_data', 'Laporan Data') }}</span>
+                </a>
+
+                <!-- 3. Ekspor & Rekap Multi-format -->
+                <a href="{{ route('comprehensive-reports.index') }}"
+                    class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('comprehensive-reports.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30 font-bold' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <div class="flex items-center space-x-2.5">
+                        <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-sky-400"></i>
+                        <span>{{ $lbl('submenu_report_export', 'Ekspor & Rekap') }}</span>
+                    </div>
+                    <span class="px-1.5 py-0.2 text-[9px] font-bold bg-sky-500/20 text-sky-300 rounded">XLSX</span>
+                </a>
+
+                <!-- 4. Laporan Kegiatan Support Event -->
+                <a href="{{ route('event-reports.index') }}"
+                    class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('event-reports.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30 font-bold' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <div class="flex items-center space-x-2.5">
+                        <i data-lucide="clipboard-check" class="w-3.5 h-3.5 text-purple-400"></i>
+                        <span>{{ $lbl('submenu_report_events', 'Laporan Event') }}</span>
+                    </div>
+                    @php
+                        $safeApprovedCount = $approvedEventsCount ?? (\App\Models\SchoolEventProposal::where('status', \App\Models\SchoolEventProposal::STATUS_DISETUJUI)->when($activeCampusId, fn($q) => $q->where('campus_id', $activeCampusId))->count());
+                    @endphp
+                    @if($safeApprovedCount > 0)
+                        <span class="px-1.5 py-0.2 text-[9px] font-bold bg-purple-500/20 text-purple-300 rounded">{{ $safeApprovedCount }}</span>
                     @endif
                 </a>
             </div>
