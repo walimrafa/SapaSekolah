@@ -17,6 +17,14 @@ class StudentQuestionnaire extends Model
     public const STATUS_DAFTAR_APLIKASI = 'daftar_aplikasi';
     public const STATUS_CLOSING = 'daftar_aplikasi'; // Alias for backwards compatibility
 
+    public const KOL_STATUS_KANDIDAT = 'kandidat';
+    public const KOL_STATUS_DIHUBUNGI = 'dihubungi';
+    public const KOL_STATUS_BERSEDIA = 'bersedia';
+    public const KOL_STATUS_DITOLAK = 'ditolak';
+    public const KOL_STATUS_AKTIF = 'aktif';
+
+    public const KOL_MIN_FOLLOWERS = 2000;
+
     protected $fillable = [
         'school_id',
         'campus_id',
@@ -30,6 +38,13 @@ class StudentQuestionnaire extends Model
         'student_phone',
         'student_email',
         'student_social_media',
+        'instagram_handle',
+        'instagram_followers',
+        'tiktok_handle',
+        'tiktok_followers',
+        'is_kol',
+        'kol_status',
+        'kol_notes',
         'guardian_name',
         'guardian_phone',
         'guardian_social_media',
@@ -51,6 +66,16 @@ class StudentQuestionnaire extends Model
         'answers' => 'array',
         'last_followup_at' => 'datetime',
         'assigned_at' => 'datetime',
+        'instagram_followers' => 'integer',
+        'tiktok_followers' => 'integer',
+        'is_kol' => 'boolean',
+    ];
+
+    protected $attributes = [
+        'is_kol' => false,
+        'kol_status' => self::KOL_STATUS_KANDIDAT,
+        'instagram_followers' => 0,
+        'tiktok_followers' => 0,
     ];
 
     public static function followupStatusOptions(): array
@@ -90,11 +115,79 @@ class StudentQuestionnaire extends Model
 
     protected static function booted(): void
     {
+        static::saving(function (StudentQuestionnaire $student) {
+            $igFollowers = (int) ($student->instagram_followers ?? 0);
+            $tiktokFollowers = (int) ($student->tiktok_followers ?? 0);
+
+            // Jika followers instagram >= 2000 atau tiktok >= 2000, otomatis kandidat KOL
+            if ($igFollowers >= self::KOL_MIN_FOLLOWERS || $tiktokFollowers >= self::KOL_MIN_FOLLOWERS) {
+                $student->is_kol = true;
+                if (empty($student->kol_status)) {
+                    $student->kol_status = self::KOL_STATUS_KANDIDAT;
+                }
+            } else {
+                if ($student->is_kol === null) {
+                    $student->is_kol = false;
+                }
+            }
+        });
+
         static::saved(function (StudentQuestionnaire $student) {
             if (in_array($student->followup_status, [self::STATUS_DAFTAR_APLIKASI, 'closing', 'daftar_aplikasi'])) {
                 \App\Services\ProspectSyncService::syncStudentQuestionnaire($student);
             }
         });
+    }
+
+    /**
+     * Scope: Hanya ambil kandidat KOL (berdasarkan flag is_kol atau follower >= 2000)
+     */
+    public function scopeKolCandidates($query)
+    {
+        return $query->where(function ($q) {
+            $q->where('is_kol', true)
+              ->orWhere('instagram_followers', '>=', self::KOL_MIN_FOLLOWERS)
+              ->orWhere('tiktok_followers', '>=', self::KOL_MIN_FOLLOWERS);
+        });
+    }
+
+    public static function kolStatusOptions(): array
+    {
+        return [
+            self::KOL_STATUS_KANDIDAT => 'Kandidat',
+            self::KOL_STATUS_DIHUBUNGI => 'Sudah Dihubungi',
+            self::KOL_STATUS_BERSEDIA => 'Bersedia / Deal',
+            self::KOL_STATUS_DITOLAK => 'Tidak Bersedia / Menolak',
+            self::KOL_STATUS_AKTIF => 'Aktif KOL UBSI',
+        ];
+    }
+
+    public function getKolStatusLabelAttribute(): string
+    {
+        return self::kolStatusOptions()[$this->kol_status] ?? ucfirst($this->kol_status ?? 'Kandidat');
+    }
+
+    public function getCleanInstagramHandleAttribute(): ?string
+    {
+        $handle = $this->instagram_handle ?: $this->student_social_media;
+        if (!$handle) {
+            return null;
+        }
+        $handle = trim($handle);
+        $handle = ltrim($handle, '@');
+        if (str_contains($handle, 'instagram.com/')) {
+            $parts = explode('instagram.com/', $handle);
+            $handle = trim($parts[1] ?? '', '/');
+        }
+        $handle = explode(' ', $handle)[0];
+        $handle = explode('?', $handle)[0];
+        return $handle ?: null;
+    }
+
+    public function getInstagramUrlAttribute(): ?string
+    {
+        $handle = $this->clean_instagram_handle;
+        return $handle ? "https://instagram.com/{$handle}" : null;
     }
 
     public function syncToProspect(array $extra = []): ?Prospect

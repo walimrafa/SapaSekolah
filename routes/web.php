@@ -134,6 +134,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/new-students/export', [\App\Http\Controllers\NewStudentController::class, 'export'])->name('new-students.export');
     Route::post('/new-students/{prospect}/unvalidate', [\App\Http\Controllers\NewStudentController::class, 'unvalidate'])->name('new-students.unvalidate');
 
+    // Rekomendasi KOL / Student Influencer (Khusus Admin, Pimpinan, dan Koordinator Marketing)
+    Route::middleware('role:Admin,Pimpinan,Koordinator Marketing')->group(function () {
+        Route::get('/kol-recommendations', [\App\Http\Controllers\KolRecommendationController::class, 'index'])->name('kol-recommendations.index');
+        Route::put('/kol-recommendations/{studentQuestionnaire}/status', [\App\Http\Controllers\KolRecommendationController::class, 'updateStatus'])->name('kol-recommendations.update-status');
+        Route::get('/kol-recommendations/export', [\App\Http\Controllers\KolRecommendationController::class, 'exportExcel'])->name('kol-recommendations.export');
+    });
+
     // Follow Up Routes (Sekolah)
     Route::get('/follow-ups/export', [FollowUpController::class, 'export'])->name('follow-ups.export');
     Route::get('/follow-ups', [FollowUpController::class, 'index'])->name('follow-ups.index');

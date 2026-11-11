@@ -196,8 +196,26 @@
                         @error('student_email')<p class="mt-1 text-red-600">{{ $message }}</p>@enderror
                     </div>
                     <div>
-                        <label for="student_social_media" class="block font-bold text-slate-700 mb-1">Akun Medsos Siswa</label>
-                        <input id="student_social_media" name="student_social_media" value="{{ old('student_social_media') }}" maxlength="255" placeholder="IG / TikTok / YouTube / Facebook" class="w-full px-3.5 py-3 rounded-xl border border-slate-300">
+                        <label for="instagram_handle" class="block font-bold text-slate-700 mb-1">
+                            Akun Instagram (IG)
+                        </label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 font-bold text-sm">@</span>
+                            <input id="instagram_handle" name="instagram_handle" value="{{ old('instagram_handle', old('student_social_media')) }}" maxlength="150" placeholder="username_ig" class="w-full pl-8 pr-3.5 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="instagram_followers" class="block font-bold text-slate-700 mb-1">
+                            Jumlah Followers IG
+                        </label>
+                        <input id="instagram_followers" name="instagram_followers" type="number" min="0" value="{{ old('instagram_followers') }}" placeholder="Contoh: 2500" class="w-full px-3.5 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500">
+                        <p class="mt-1 text-[11px] text-pink-600 font-semibold flex items-center gap-1">
+                            <span>✨</span> Follower ≥ 2.000 otomatis direkomendasikan jadi Brand Ambassador / KOL Kampus!
+                        </p>
+                    </div>
+                    <div>
+                        <label for="student_social_media" class="block font-bold text-slate-700 mb-1">Akun Medsos Lainnya (Opsional)</label>
+                        <input id="student_social_media" name="student_social_media" value="{{ old('student_social_media') }}" maxlength="255" placeholder="TikTok / YouTube / FB" class="w-full px-3.5 py-3 rounded-xl border border-slate-300">
                     </div>
                     <div>
                         <label for="guardian_name" class="block font-bold text-slate-700 mb-1">Nama Wali <span class="text-red-500">*</span></label>

@@ -196,6 +196,15 @@ class User extends Authenticatable
     }
 
     /**
+     * Cek apakah user berwenang mengakses menu dan data Rekomendasi KOL.
+     * Hanya Administrator, Pimpinan, dan Koordinator Marketing.
+     */
+    public function canAccessKolMenu(): bool
+    {
+        return $this->isAdmin() || $this->isPimpinan() || $this->isKoordinator();
+    }
+
+    /**
      * User memiliki banyak penugasan data follow up siswa (ploting).
      */
     public function assignedStudentQuestionnaires(): HasMany

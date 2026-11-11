@@ -104,6 +104,10 @@ class StudentQuestionnaireController extends Controller
             'student_phone' => ['required', 'string', 'max:30'],
             'student_email' => ['required', 'email', 'max:150'],
             'student_social_media' => ['nullable', 'string', 'max:255'],
+            'instagram_handle' => ['nullable', 'string', 'max:150'],
+            'instagram_followers' => ['nullable', 'integer', 'min:0'],
+            'tiktok_handle' => ['nullable', 'string', 'max:150'],
+            'tiktok_followers' => ['nullable', 'integer', 'min:0'],
             'guardian_name' => ['required', 'string', 'max:150'],
             'guardian_phone' => ['required', 'string', 'max:30'],
             'guardian_social_media' => ['nullable', 'string', 'max:255'],
@@ -159,6 +163,10 @@ class StudentQuestionnaireController extends Controller
             'student_phone' => $validated['student_phone'],
             'student_email' => $validated['student_email'],
             'student_social_media' => $validated['student_social_media'] ?? null,
+            'instagram_handle' => $validated['instagram_handle'] ?? $request->input('instagram_handle'),
+            'instagram_followers' => !empty($validated['instagram_followers']) ? (int) $validated['instagram_followers'] : (int) ($request->input('instagram_followers') ?? 0),
+            'tiktok_handle' => $validated['tiktok_handle'] ?? $request->input('tiktok_handle'),
+            'tiktok_followers' => !empty($validated['tiktok_followers']) ? (int) $validated['tiktok_followers'] : (int) ($request->input('tiktok_followers') ?? 0),
             'guardian_name' => $validated['guardian_name'],
             'guardian_phone' => $validated['guardian_phone'],
             'guardian_social_media' => $validated['guardian_social_media'] ?? null,
@@ -494,6 +502,13 @@ class StudentQuestionnaireController extends Controller
             'student_phone' => ['required', 'string', 'max:30'],
             'student_email' => ['nullable', 'email', 'max:150'],
             'student_social_media' => ['nullable', 'string', 'max:255'],
+            'instagram_handle' => ['nullable', 'string', 'max:150'],
+            'instagram_followers' => ['nullable', 'integer', 'min:0'],
+            'tiktok_handle' => ['nullable', 'string', 'max:150'],
+            'tiktok_followers' => ['nullable', 'integer', 'min:0'],
+            'is_kol' => ['nullable', 'boolean'],
+            'kol_status' => ['nullable', 'string', 'max:50'],
+            'kol_notes' => ['nullable', 'string'],
             'guardian_name' => ['nullable', 'string', 'max:150'],
             'guardian_phone' => ['nullable', 'string', 'max:30'],
             'guardian_social_media' => ['nullable', 'string', 'max:255'],
@@ -527,6 +542,13 @@ class StudentQuestionnaireController extends Controller
             'student_phone' => $validated['student_phone'],
             'student_email' => $validated['student_email'] ?? null,
             'student_social_media' => $validated['student_social_media'] ?? null,
+            'instagram_handle' => $request->input('instagram_handle'),
+            'instagram_followers' => (int) ($request->input('instagram_followers') ?? 0),
+            'tiktok_handle' => $request->input('tiktok_handle'),
+            'tiktok_followers' => (int) ($request->input('tiktok_followers') ?? 0),
+            'is_kol' => $request->boolean('is_kol'),
+            'kol_status' => $request->input('kol_status', StudentQuestionnaire::KOL_STATUS_KANDIDAT),
+            'kol_notes' => $request->input('kol_notes'),
             'guardian_name' => $validated['guardian_name'] ?? null,
             'guardian_phone' => $validated['guardian_phone'] ?? null,
             'guardian_social_media' => $validated['guardian_social_media'] ?? null,
@@ -534,6 +556,28 @@ class StudentQuestionnaireController extends Controller
             'scholarship_notes' => $validated['scholarship_notes'] ?? $studentQuestionnaire->scholarship_notes,
             'college_interest_notes' => $validated['college_interest_notes'] ?? $studentQuestionnaire->college_interest_notes,
         ];
+
+        if ($request->has('instagram_handle')) {
+            $dataToUpdate['instagram_handle'] = $request->input('instagram_handle');
+        }
+        if ($request->has('instagram_followers')) {
+            $dataToUpdate['instagram_followers'] = (int) $request->input('instagram_followers');
+        }
+        if ($request->has('tiktok_handle')) {
+            $dataToUpdate['tiktok_handle'] = $request->input('tiktok_handle');
+        }
+        if ($request->has('tiktok_followers')) {
+            $dataToUpdate['tiktok_followers'] = (int) $request->input('tiktok_followers');
+        }
+        if ($request->has('is_kol')) {
+            $dataToUpdate['is_kol'] = $request->boolean('is_kol');
+        }
+        if ($request->has('kol_status')) {
+            $dataToUpdate['kol_status'] = $request->input('kol_status');
+        }
+        if ($request->has('kol_notes')) {
+            $dataToUpdate['kol_notes'] = $request->input('kol_notes');
+        }
 
         if ($request->has('answers') && is_array($request->answers)) {
             $existingAnswers = $studentQuestionnaire->answers ?? [];
@@ -590,6 +634,13 @@ class StudentQuestionnaireController extends Controller
             'student_phone' => ['required', 'string', 'max:30'],
             'student_email' => ['nullable', 'email', 'max:150'],
             'student_social_media' => ['nullable', 'string', 'max:255'],
+            'instagram_handle' => ['nullable', 'string', 'max:150'],
+            'instagram_followers' => ['nullable', 'integer', 'min:0'],
+            'tiktok_handle' => ['nullable', 'string', 'max:150'],
+            'tiktok_followers' => ['nullable', 'integer', 'min:0'],
+            'is_kol' => ['nullable', 'boolean'],
+            'kol_status' => ['nullable', 'string', 'max:50'],
+            'kol_notes' => ['nullable', 'string'],
             'guardian_name' => ['nullable', 'string', 'max:150'],
             'guardian_phone' => ['nullable', 'string', 'max:30'],
             'guardian_social_media' => ['nullable', 'string', 'max:255'],
@@ -646,6 +697,13 @@ class StudentQuestionnaireController extends Controller
             'student_phone' => $validated['student_phone'],
             'student_email' => $validated['student_email'] ?? null,
             'student_social_media' => $validated['student_social_media'] ?? null,
+            'instagram_handle' => $request->input('instagram_handle'),
+            'instagram_followers' => (int) ($request->input('instagram_followers') ?? 0),
+            'tiktok_handle' => $request->input('tiktok_handle'),
+            'tiktok_followers' => (int) ($request->input('tiktok_followers') ?? 0),
+            'is_kol' => $request->boolean('is_kol'),
+            'kol_status' => $request->input('kol_status', StudentQuestionnaire::KOL_STATUS_KANDIDAT),
+            'kol_notes' => $request->input('kol_notes'),
             'guardian_name' => $validated['guardian_name'] ?? null,
             'guardian_phone' => $validated['guardian_phone'] ?? null,
             'guardian_social_media' => $validated['guardian_social_media'] ?? null,

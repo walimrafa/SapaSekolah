@@ -9,7 +9,7 @@
     // Check active states for auto-expanding current menu
     $isSchoolActive = request()->routeIs('map.*', 'schools.*', 'priorities.*');
     $isFieldActive = request()->routeIs('visit-plans.*', 'visits.*', 'follow-ups.*', 'socializations.completed.*', 'marketing-routes.*', 'activities.*');
-    $isCrmActive = request()->routeIs('prospects.*', 'new-students.*', 'student-questionnaires.*', 'student-follow-ups.*', 'study-programs.*');
+    $isCrmActive = request()->routeIs('prospects.*', 'new-students.*', 'student-questionnaires.*', 'student-follow-ups.*', 'study-programs.*', 'kol-recommendations.*');
     $isEventActive = request()->routeIs('event-proposals.*', 'school-events.*', 'event-students.*');
     $isReportActive = request()->routeIs('reports.*', 'comprehensive-reports.*', 'event-reports.*');
     $isPmbActive = request()->routeIs('pmb.*', 'e-brochures.*');
@@ -277,6 +277,31 @@
                     <i data-lucide="user-check" class="w-3.5 h-3.5 text-emerald-400"></i>
                     <span>{{ $lbl('submenu_student_followups', 'Follow Up') }}</span>
                 </a>
+
+                {{-- Rekomendasi KOL (Hanya Administrator, Pimpinan, dan Koordinator) --}}
+                @if(auth()->user()->canAccessKolMenu())
+                <a href="{{ route('kol-recommendations.index') }}"
+                    class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('kol-recommendations.*') ? 'bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-sm shadow-pink-600/30 font-bold' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <div class="flex items-center space-x-2.5">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-pink-400"></i>
+                        <span>{{ $lbl('submenu_kol_recommendations', 'Rekomendasi KOL') }}</span>
+                    </div>
+                    @php
+                        $kolCandidateQuery = \App\Models\StudentQuestionnaire::kolCandidates();
+                        if ($sidebarCampus) {
+                            $kolCandidateQuery->where(function($q) use ($sidebarCampus) {
+                                $q->where('campus_id', $sidebarCampus->id)
+                                  ->orWhereHas('school', fn($sq) => $sq->where('campus_id', $sidebarCampus->id))
+                                  ->orWhereHas('eventProposal', fn($ep) => $ep->where('campus_id', $sidebarCampus->id));
+                            });
+                        }
+                        $kolCandidateCount = $kolCandidateQuery->count();
+                    @endphp
+                    @if($kolCandidateCount > 0)
+                        <span class="px-1.5 py-0.2 text-[9px] font-bold bg-pink-500/20 text-pink-300 border border-pink-500/30 rounded">{{ $kolCandidateCount }}</span>
+                    @endif
+                </a>
+                @endif
 
                 <a href="{{ route('study-programs.index') }}"
                     class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('study-programs.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">

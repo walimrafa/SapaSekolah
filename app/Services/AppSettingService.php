@@ -99,6 +99,7 @@ class AppSettingService
             'submenu_new_students' => 'Mahasiswa Baru',
             'submenu_questionnaires' => 'Kuisioner',
             'submenu_student_followups' => 'Follow Up',
+            'submenu_kol_recommendations' => 'Rekomendasi KOL',
             'submenu_study_programs' => 'Prodi',
 
             // 6. Support Event Sekolah
