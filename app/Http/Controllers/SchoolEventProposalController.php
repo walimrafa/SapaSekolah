@@ -216,17 +216,10 @@ class SchoolEventProposalController extends Controller
     public function index(Request $request): View
     {
         $activeCampus = \App\Services\AppContextService::getActiveCampus();
-        $campuses = \App\Models\Campus::where('is_active', true)->orderBy('id')->get();
-        
-        $selectedCampusId = $request->query('campus_id');
-        if (!$selectedCampusId || $selectedCampusId === 'all') {
-            $selectedCampusId = $activeCampus?->id ?? $campuses->first()?->id;
-        }
-
         $query = SchoolEventProposal::with(['school.district', 'reviewer', 'campus'])->latest();
 
-        if ($selectedCampusId) {
-            $query->where('campus_id', $selectedCampusId);
+        if ($activeCampus) {
+            $query->where('campus_id', $activeCampus->id);
         }
 
         if ($request->filled('status')) {
@@ -256,13 +249,8 @@ class SchoolEventProposalController extends Controller
         $proposals = $query->paginate(12)->withQueryString();
 
         $baseQuery = SchoolEventProposal::query();
-        if ($selectedCampusId) {
-            $baseQuery->where('campus_id', $selectedCampusId);
-        }
-
-        $campusCounts = [];
-        foreach ($campuses as $cmp) {
-            $campusCounts[$cmp->id] = SchoolEventProposal::where('campus_id', $cmp->id)->count();
+        if ($activeCampus) {
+            $baseQuery->where('campus_id', $activeCampus->id);
         }
 
         $stats = [
@@ -274,7 +262,7 @@ class SchoolEventProposalController extends Controller
             'ditolak' => (clone $baseQuery)->where('status', SchoolEventProposal::STATUS_DITOLAK)->count(),
         ];
 
-        return view('event-proposals.index', compact('proposals', 'stats', 'activeCampus', 'campuses', 'selectedCampusId', 'campusCounts'));
+        return view('event-proposals.index', compact('proposals', 'stats', 'activeCampus'));
     }
 
     /**
@@ -375,21 +363,15 @@ class SchoolEventProposalController extends Controller
     public function reportsIndex(Request $request): View
     {
         $activeCampus = \App\Services\AppContextService::getActiveCampus();
-        $campuses = \App\Models\Campus::where('is_active', true)->orderBy('id')->get();
-        
-        $selectedCampusId = $request->query('campus_id');
-        if (!$selectedCampusId || $selectedCampusId === 'all') {
-            $selectedCampusId = $activeCampus?->id ?? $campuses->first()?->id;
-        }
 
-        // Hanya tampilkan event yang sudah disetujui untuk kampus yang dipilih
+        // Hanya tampilkan event yang sudah disetujui untuk kampus yang aktif
         $query = SchoolEventProposal::where('status', SchoolEventProposal::STATUS_DISETUJUI)
             ->with(['school.district', 'reviewer', 'reporter', 'campus'])
             ->withCount('studentLeads')
             ->orderBy('event_date', 'desc');
 
-        if ($selectedCampusId) {
-            $query->where('campus_id', $selectedCampusId);
+        if ($activeCampus) {
+            $query->where('campus_id', $activeCampus->id);
         }
 
         if ($request->filled('execution_status')) {
@@ -410,13 +392,8 @@ class SchoolEventProposalController extends Controller
         $events = $query->paginate(12)->withQueryString();
 
         $baseStatsQuery = SchoolEventProposal::where('status', SchoolEventProposal::STATUS_DISETUJUI);
-        if ($selectedCampusId) {
-            $baseStatsQuery->where('campus_id', $selectedCampusId);
-        }
-
-        $campusCounts = [];
-        foreach ($campuses as $cmp) {
-            $campusCounts[$cmp->id] = SchoolEventProposal::where('status', SchoolEventProposal::STATUS_DISETUJUI)->where('campus_id', $cmp->id)->count();
+        if ($activeCampus) {
+            $baseStatsQuery->where('campus_id', $activeCampus->id);
         }
 
         $stats = [
@@ -427,7 +404,7 @@ class SchoolEventProposalController extends Controller
             'total_dana_disetujui' => (clone $baseStatsQuery)->sum('approved_amount'),
         ];
 
-        return view('event-reports.index', compact('events', 'stats', 'activeCampus', 'campuses', 'selectedCampusId', 'campusCounts'));
+        return view('event-reports.index', compact('events', 'stats', 'activeCampus'));
     }
 
     /**
