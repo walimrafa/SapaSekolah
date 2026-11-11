@@ -572,10 +572,10 @@
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                                 <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Hasil Event</label>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Data Siswa Hasil Support Event</label>
                                     <input type="text" name="sidebar_labels[submenu_event_students]"
-                                        value="{{ old('sidebar_labels.submenu_event_students', $settings['sidebar_labels']['submenu_event_students'] ?? 'Hasil Event') }}"
-                                        data-default="Hasil Event" placeholder="Hasil Event"
+                                        value="{{ old('sidebar_labels.submenu_event_students', $settings['sidebar_labels']['submenu_event_students'] ?? 'Data Siswa Hasil Support Event') }}"
+                                        data-default="Data Siswa Hasil Support Event" placeholder="Data Siswa Hasil Support Event"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                             </div>
@@ -625,10 +625,10 @@
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                                 <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Laporan Event</label>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Laporan &amp; Dokumentasi Kegiatan</label>
                                     <input type="text" name="sidebar_labels[submenu_report_events]"
-                                        value="{{ old('sidebar_labels.submenu_report_events', $settings['sidebar_labels']['submenu_report_events'] ?? 'Laporan Event') }}"
-                                        data-default="Laporan Event" placeholder="Laporan Event"
+                                        value="{{ old('sidebar_labels.submenu_report_events', $settings['sidebar_labels']['submenu_report_events'] ?? 'Laporan & Dokumentasi Kegiatan') }}"
+                                        data-default="Laporan &amp; Dokumentasi Kegiatan" placeholder="Laporan &amp; Dokumentasi Kegiatan"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                                 <div>

@@ -343,4 +343,20 @@ class EventStudentLeadController extends Controller
     {
         return $service->export($request);
     }
+
+    /**
+     * Export Hasil Support Event data to Printable PDF View.
+     */
+    public function exportPdf(Request $request, \App\Services\EventStudentExportImportService $service)
+    {
+        return $service->exportPdf($request);
+    }
+
+    /**
+     * Export Hasil Support Event data to PowerPoint (.pptx).
+     */
+    public function exportPptx(Request $request, \App\Services\EventStudentExportImportService $service)
+    {
+        return $service->exportPptx($request);
+    }
 }

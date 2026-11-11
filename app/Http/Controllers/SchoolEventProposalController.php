@@ -515,4 +515,28 @@ class SchoolEventProposalController extends Controller
 
         return back()->with('success', "Dokumentasi dan laporan kegiatan '{$proposal->event_name}' berhasil diperbarui.");
     }
+
+    /**
+     * Export Laporan & Dokumentasi Kegiatan to Excel (.xlsx).
+     */
+    public function exportExcel(Request $request, \App\Services\EventReportExportService $service): StreamedResponse
+    {
+        return $service->exportExcel($request);
+    }
+
+    /**
+     * Export Laporan & Dokumentasi Kegiatan to Printable PDF.
+     */
+    public function exportPdf(Request $request, \App\Services\EventReportExportService $service): View
+    {
+        return $service->exportPdf($request);
+    }
+
+    /**
+     * Export Laporan & Dokumentasi Kegiatan to PowerPoint (.pptx).
+     */
+    public function exportPptx(Request $request, \App\Services\EventReportExportService $service): StreamedResponse
+    {
+        return $service->exportPptx($request);
+    }
 }

@@ -5,9 +5,11 @@ namespace App\Services;
 use App\Models\School;
 use App\Models\SchoolEventProposal;
 use App\Models\StudentQuestionnaire;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -17,6 +19,7 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use ZipArchive;
 
 class EventStudentExportImportService
 {
@@ -526,6 +529,455 @@ class EventStudentExportImportService
             'Pragma' => 'no-cache',
             'Expires' => '0',
         ]);
+    }
+
+    /**
+     * Get filtered student leads collection.
+     */
+    public function getFilteredStudents(Request $request)
+    {
+        $query = StudentQuestionnaire::query()
+            ->where(function ($q) {
+                $q->where('source', 'support_event')
+                  ->orWhereNotNull('school_event_proposal_id')
+                  ->orWhere('college_interest_notes', 'like', '%Support Event%');
+            })
+            ->with(['school.district', 'eventProposal', 'lastFollowedUpBy'])
+            ->latest();
+
+        if ($request->filled('event_id')) {
+            $query->where('school_event_proposal_id', $request->event_id);
+        }
+
+        if ($request->filled('scholarship_interest')) {
+            $query->where('scholarship_interest', $request->scholarship_interest);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('followup_status', $request->status);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('student_name', 'like', "%{$search}%")
+                  ->orWhere('student_phone', 'like', "%{$search}%")
+                  ->orWhere('student_email', 'like', "%{$search}%")
+                  ->orWhere('school_name', 'like', "%{$search}%")
+                  ->orWhere('student_class', 'like', "%{$search}%")
+                  ->orWhere('student_major', 'like', "%{$search}%");
+            });
+        }
+
+        return $query->get();
+    }
+
+    /**
+     * Export Hasil Support Event data to Printable PDF View.
+     */
+    public function exportPdf(Request $request): View
+    {
+        $students = $this->getFilteredStudents($request);
+        $activeCampus = AppContextService::getActiveCampus();
+        $campusName = $activeCampus ? $activeCampus->name : AppSettingService::get('campus_name', 'Universitas Bina Sarana Informatika (UBSI)');
+        $exportDate = Carbon::now()->translatedFormat('d F Y, H:i') . ' WIB';
+
+        $metrics = [
+            'total' => $students->count(),
+            'scholarship_yes' => $students->where('scholarship_interest', 'ya')->count(),
+            'scholarship_no' => $students->where('scholarship_interest', 'tidak')->count(),
+            'belum_dihubungi' => $students->where('followup_status', StudentQuestionnaire::STATUS_BELUM_DIHUBUNGI)->count(),
+            'terfollowup' => $students->where('followup_status', '!=', StudentQuestionnaire::STATUS_BELUM_DIHUBUNGI)->count(),
+        ];
+
+        return view('event-students.pdf', compact('students', 'campusName', 'exportDate', 'metrics'));
+    }
+
+    /**
+     * Export Hasil Support Event data to PowerPoint Presentation (.pptx).
+     */
+    public function exportPptx(Request $request): StreamedResponse
+    {
+        $students = $this->getFilteredStudents($request);
+        $activeCampus = AppContextService::getActiveCampus();
+        $campusName = $activeCampus ? $activeCampus->name : AppSettingService::get('campus_name', 'Universitas Bina Sarana Informatika');
+        $periodName = AppContextService::getActivePeriod()?->name ?? (date('Y') . '/' . (date('Y') + 1));
+        $exportDate = Carbon::now()->translatedFormat('d F Y, H:i') . ' WIB';
+        $fileName = 'Data_Siswa_Hasil_Support_Event_' . date('Ymd_His') . '.pptx';
+
+        $metrics = [
+            'total' => $students->count(),
+            'scholarship_yes' => $students->where('scholarship_interest', 'ya')->count(),
+            'scholarship_no' => $students->where('scholarship_interest', 'tidak')->count(),
+            'belum_dihubungi' => $students->where('followup_status', StudentQuestionnaire::STATUS_BELUM_DIHUBUNGI)->count(),
+            'terfollowup' => $students->where('followup_status', '!=', StudentQuestionnaire::STATUS_BELUM_DIHUBUNGI)->count(),
+        ];
+
+        $binary = $this->generateStudentPptxBinary($students, $metrics, $campusName, $periodName, $exportDate);
+
+        return response()->streamDownload(function () use ($binary) {
+            echo $binary;
+        }, $fileName, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'Cache-Control' => 'max-age=0',
+        ]);
+    }
+
+    protected function generateStudentPptxBinary($students, array $metrics, string $campusName, string $periodName, string $exportDate): string
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'sapa_stud_pptx_');
+        $zip = new ZipArchive();
+        $zip->open($tempFile, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+
+        $slideCount = 5;
+        $zip->addFromString('[Content_Types].xml', $this->getContentTypesXml($slideCount));
+        $zip->addFromString('_rels/.rels', $this->getRootRelsXml());
+        $zip->addFromString('ppt/presentation.xml', $this->getPresentationXml($slideCount));
+        $zip->addFromString('ppt/_rels/presentation.xml.rels', $this->getPresentationRelsXml($slideCount));
+
+        $zip->addFromString('ppt/slideMasters/slideMaster1.xml', $this->getSlideMasterXml());
+        $zip->addFromString('ppt/slideMasters/_rels/slideMaster1.xml.rels', $this->getSlideMasterRelsXml());
+        $zip->addFromString('ppt/slideLayouts/slideLayout1.xml', $this->getSlideLayoutXml());
+        $zip->addFromString('ppt/slideLayouts/_rels/slideLayout1.xml.rels', $this->getSlideLayoutRelsXml());
+
+        // Slide 1: Cover
+        $zip->addFromString('ppt/slides/slide1.xml', $this->getSlide1CoverXml($campusName, $periodName, $exportDate));
+        $zip->addFromString('ppt/slides/_rels/slide1.xml.rels', $this->getSlideRelsXml());
+
+        // Slide 2: KPI Leads
+        $zip->addFromString('ppt/slides/slide2.xml', $this->getSlide2KpiXml($metrics, $campusName));
+        $zip->addFromString('ppt/slides/_rels/slide2.xml.rels', $this->getSlideRelsXml());
+
+        // Slide 3: Top Sekolah Asal Leads
+        $zip->addFromString('ppt/slides/slide3.xml', $this->getSlide3SchoolsXml($students, $campusName));
+        $zip->addFromString('ppt/slides/_rels/slide3.xml.rels', $this->getSlideRelsXml());
+
+        // Slide 4: Potensi Beasiswa
+        $zip->addFromString('ppt/slides/slide4.xml', $this->getSlide4ScholarshipXml($metrics, $campusName));
+        $zip->addFromString('ppt/slides/_rels/slide4.xml.rels', $this->getSlideRelsXml());
+
+        // Slide 5: Rekomendasi Follow Up
+        $zip->addFromString('ppt/slides/slide5.xml', $this->getSlide5FollowupXml($campusName, $periodName, $exportDate));
+        $zip->addFromString('ppt/slides/_rels/slide5.xml.rels', $this->getSlideRelsXml());
+
+        $zip->close();
+        $content = file_get_contents($tempFile);
+        @unlink($tempFile);
+
+        return $content;
+    }
+
+    protected function getContentTypesXml(int $slideCount): string
+    {
+        $slidesXml = '';
+        for ($i = 1; $i <= $slideCount; $i++) {
+            $slidesXml .= '<Override PartName="/ppt/slides/slide' . $i . '.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>';
+        }
+
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+            . '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+            . '<Default Extension="xml" ContentType="application/xml"/>'
+            . '<Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/>'
+            . '<Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/>'
+            . '<Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/>'
+            . $slidesXml
+            . '</Types>';
+    }
+
+    protected function getRootRelsXml(): string
+    {
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/>'
+            . '</Relationships>';
+    }
+
+    protected function getPresentationXml(int $slideCount): string
+    {
+        $sldIdList = '';
+        for ($i = 1; $i <= $slideCount; $i++) {
+            $sldIdList .= '<p:sldId id="' . (255 + $i) . '" r:id="rId' . ($i + 1) . '"/>';
+        }
+
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">'
+            . '<p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst>'
+            . '<p:sldIdLst>' . $sldIdList . '</p:sldIdLst>'
+            . '<p:sldSz cx="12192000" cy="6858000" type="screen16x9"/>'
+            . '<p:notesSz cx="6858000" cy="9144000"/>'
+            . '</p:presentation>';
+    }
+
+    protected function getPresentationRelsXml(int $slideCount): string
+    {
+        $rels = '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/>';
+        for ($i = 1; $i <= $slideCount; $i++) {
+            $rels .= '<Relationship Id="rId' . ($i + 1) . '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide' . $i . '.xml"/>';
+        }
+
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            . $rels
+            . '</Relationships>';
+    }
+
+    protected function getSlideMasterXml(): string
+    {
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<p:sldMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">'
+            . '<p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld>'
+            . '<p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/>'
+            . '<p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst>'
+            . '</p:sldMaster>';
+    }
+
+    protected function getSlideMasterRelsXml(): string
+    {
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>'
+            . '</Relationships>';
+    }
+
+    protected function getSlideLayoutXml(): string
+    {
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<p:sldLayout xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" type="blank">'
+            . '<p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld>'
+            . '</p:sldLayout>';
+    }
+
+    protected function getSlideLayoutRelsXml(): string
+    {
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>'
+            . '</Relationships>';
+    }
+
+    protected function getSlideRelsXml(): string
+    {
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>'
+            . '</Relationships>';
+    }
+
+    protected function getSlide1CoverXml(string $campusName, string $periodName, string $exportDate): string
+    {
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">'
+            . '<p:cSld><p:spTree>'
+            . '<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>'
+            . '<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>'
+            . $this->buildBoxShape(2, 'BgNavy', 0, 0, 12192000, 6858000, '0B023E')
+            . $this->buildBoxShape(3, 'AccentStrip', 0, 0, 12192000, 120000, 'DF0B2B')
+            . $this->buildBoxShape(4, 'TagPill', 914400, 1400000, 3800000, 420000, '8B5CF6')
+            . $this->buildTextShape(5, 'TagText', 914400, 1400000, 3800000, 420000, 'STUDENT LEADS REPORT', 'FFFFFF', 12, true, 'ctr')
+            . $this->buildTextShape(6, 'Title', 914400, 2200000, 10363200, 1400000, 'DATA SISWA HASIL SUPPORT EVENT', 'FFFFFF', 34, true, 'l')
+            . $this->buildTextShape(7, 'Subtitle', 914400, 3700000, 10363200, 600000, strtoupper($campusName) . ' • TAHUN AKADEMIK ' . strtoupper($periodName), 'F59E0B', 18, true, 'l')
+            . $this->buildTextShape(8, 'Desc', 914400, 4400000, 10363200, 600000, 'Rekapitulasi Penjaringan Leads Calon Mahasiswa dari Kegiatan Support Event Sekolah', '94A3B8', 13, false, 'l')
+            . $this->buildBoxShape(9, 'InfoBar', 914400, 5600000, 10363200, 700000, '1E1B4B')
+            . $this->buildTextShape(10, 'InfoText', 1100000, 5700000, 10000000, 500000, 'Generated by SAPA Sekolah • Tanggal: ' . $exportDate . ' • ' . $campusName, 'E2E8F0', 11, false, 'l')
+            . '</p:spTree></p:cSld></p:sld>';
+    }
+
+    protected function getSlide2KpiXml(array $metrics, string $campusName): string
+    {
+        $total = number_format($metrics['total'] ?? 0);
+        $beasiswa = number_format($metrics['scholarship_yes'] ?? 0);
+        $belum = number_format($metrics['belum_dihubungi'] ?? 0);
+        $terfollowup = number_format($metrics['terfollowup'] ?? 0);
+
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">'
+            . '<p:cSld><p:spTree>'
+            . '<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>'
+            . '<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>'
+            . $this->buildBoxShape(2, 'BgNavy', 0, 0, 12192000, 6858000, '0B023E')
+            . $this->buildBoxShape(3, 'AccentStrip', 0, 0, 12192000, 90000, 'DF0B2B')
+            . $this->buildTextShape(4, 'Header', 800000, 500000, 10500000, 600000, 'CAPAIAN PENJARINGAN LEADS SISWA EVENT', 'FFFFFF', 24, true, 'l')
+            . $this->buildTextShape(5, 'Subheader', 800000, 1100000, 10500000, 400000, 'Statistik Calon Mahasiswa Terdaftar dari Booth & Stand Event • ' . $campusName, 'F59E0B', 12, false, 'l')
+
+            // Card 1: Total Siswa
+            . $this->buildBoxShape(6, 'Card1', 800000, 1800000, 2450000, 2200000, '1E293B')
+            . $this->buildBoxShape(7, 'Card1Top', 800000, 1800000, 2450000, 50000, '8B5CF6')
+            . $this->buildTextShape(8, 'Card1Lbl', 950000, 1950000, 2150000, 350000, 'TOTAL SISWA TERDAFTAR', '94A3B8', 11, true, 'l')
+            . $this->buildTextShape(9, 'Card1Val', 950000, 2300000, 2150000, 750000, $total, 'FFFFFF', 34, true, 'l')
+            . $this->buildTextShape(10, 'Card1Sub', 950000, 3200000, 2150000, 500000, 'Leads Masuk ke Database', 'A78BFA', 11, true, 'l')
+
+            // Card 2: Minat Beasiswa
+            . $this->buildBoxShape(11, 'Card2', 3450000, 1800000, 2450000, 2200000, '1E293B')
+            . $this->buildBoxShape(12, 'Card2Top', 3450000, 1800000, 2450000, 50000, '10B981')
+            . $this->buildTextShape(13, 'Card2Lbl', 3600000, 1950000, 2150000, 350000, 'BERMINAT BEASISWA', '94A3B8', 11, true, 'l')
+            . $this->buildTextShape(14, 'Card2Val', 3600000, 2300000, 2150000, 750000, $beasiswa, 'FFFFFF', 34, true, 'l')
+            . $this->buildTextShape(15, 'Card2Sub', 3600000, 3200000, 2150000, 500000, 'Prioritas Penawaran Admisi', '34D399', 11, true, 'l')
+
+            // Card 3: Belum Dihubungi
+            . $this->buildBoxShape(16, 'Card3', 6100000, 1800000, 2450000, 2200000, '1E293B')
+            . $this->buildBoxShape(17, 'Card3Top', 6100000, 1800000, 2450000, 50000, 'F59E0B')
+            . $this->buildTextShape(18, 'Card3Lbl', 6250000, 1950000, 2150000, 350000, 'BELUM DIHUBUNGI', '94A3B8', 11, true, 'l')
+            . $this->buildTextShape(19, 'Card3Val', 6250000, 2300000, 2150000, 750000, $belum, 'FFFFFF', 34, true, 'l')
+            . $this->buildTextShape(20, 'Card3Sub', 6250000, 3200000, 2150000, 500000, 'Antrian Follow Up Petugas', 'FBBF24', 11, true, 'l')
+
+            // Card 4: Ter-Follow Up
+            . $this->buildBoxShape(21, 'Card4', 8750000, 1800000, 2600000, 2200000, '1E293B')
+            . $this->buildBoxShape(22, 'Card4Top', 8750000, 1800000, 2600000, 50000, '3B82F6')
+            . $this->buildTextShape(23, 'Card4Lbl', 8900000, 1950000, 2300000, 350000, 'SUDAH DIHUBUNGI', '94A3B8', 11, true, 'l')
+            . $this->buildTextShape(24, 'Card4Val', 8900000, 2300000, 2300000, 750000, $terfollowup, 'FFFFFF', 34, true, 'l')
+            . $this->buildTextShape(25, 'Card4Sub', 8900000, 3200000, 2300000, 500000, 'Tindak Lanjut Telepon / WA', '60A5FA', 11, true, 'l')
+
+            // Summary Box
+            . $this->buildBoxShape(26, 'SummaryBox', 800000, 4300000, 10550000, 1900000, '1E1B4B')
+            . $this->buildTextShape(27, 'SumTitle', 1050000, 4450000, 10000000, 350000, 'STATUS INTEGRASI DATA LEADS EVENT:', 'F59E0B', 12, true, 'l')
+            . $this->buildTextShape(28, 'SumText', 1050000, 4850000, 10000000, 1200000, "1. Setiap siswa yang mengisi QR barcode atau formulir langsung masuk ke antrian follow up CRM.\n2. Siswa berminat beasiswa memiliki potensi konversi pendaftaran kuliah lebih tinggi.\n3. Petugas marketing dapat memantau respon siswa (berminat, no respon, daftar aplikasi) secara realtime.", 'E2E8F0', 11, false, 'l')
+
+            . '</p:spTree></p:cSld></p:sld>';
+    }
+
+    protected function getSlide3SchoolsXml($students, string $campusName): string
+    {
+        $schoolCounts = $students->groupBy('school_display_name')->map->count()->sortDesc()->take(5);
+        $rowsXml = '';
+        $y = 1800000;
+
+        foreach ($schoolCounts as $schName => $count) {
+            $rowsXml .= $this->buildBoxShape(rand(100, 9999), 'RowBg', 800000, $y, 10550000, 680000, '1E293B')
+                . $this->buildTextShape(rand(100, 9999), 'RowTitle', 950000, $y + 160000, 7000000, 350000, $schName ?: 'Sekolah Mitra', 'FFFFFF', 12, true, 'l')
+                . $this->buildTextShape(rand(100, 9999), 'RowStat', 8000000, $y + 160000, 3100000, 350000, "{$count} Siswa Terjaring", 'F59E0B', 12, true, 'r');
+            $y += 780000;
+        }
+
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">'
+            . '<p:cSld><p:spTree>'
+            . '<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>'
+            . '<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>'
+            . $this->buildBoxShape(2, 'BgNavy', 0, 0, 12192000, 6858000, '0B023E')
+            . $this->buildBoxShape(3, 'AccentStrip', 0, 0, 12192000, 90000, 'DF0B2B')
+            . $this->buildTextShape(4, 'Header', 800000, 500000, 10500000, 600000, 'SEKOLAH DENGAN PENJARINGAN LEADS TERBANYAK', 'FFFFFF', 24, true, 'l')
+            . $this->buildTextShape(5, 'Subheader', 800000, 1100000, 10500000, 400000, 'Peringkat sekolah asal siswa yang aktif berpartisipasi pada event • ' . $campusName, 'F59E0B', 12, false, 'l')
+            . $rowsXml
+            . '</p:spTree></p:cSld></p:sld>';
+    }
+
+    protected function getSlide4ScholarshipXml(array $metrics, string $campusName): string
+    {
+        $yes = number_format($metrics['scholarship_yes'] ?? 0);
+        $no = number_format($metrics['scholarship_no'] ?? 0);
+        $total = $metrics['total'] ?? 0;
+        $pctYes = ($total > 0) ? round(($metrics['scholarship_yes'] / $total) * 100, 1) : 0;
+        $pctNo = ($total > 0) ? round(($metrics['scholarship_no'] / $total) * 100, 1) : 0;
+
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">'
+            . '<p:cSld><p:spTree>'
+            . '<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>'
+            . '<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>'
+            . $this->buildBoxShape(2, 'BgNavy', 0, 0, 12192000, 6858000, '0B023E')
+            . $this->buildBoxShape(3, 'AccentStrip', 0, 0, 12192000, 90000, 'DF0B2B')
+            . $this->buildTextShape(4, 'Header', 800000, 500000, 10500000, 600000, 'ANALISIS MINAT BEASISWA KULIAH', 'FFFFFF', 24, true, 'l')
+            . $this->buildTextShape(5, 'Subheader', 800000, 1100000, 10500000, 400000, 'Peminatan program beasiswa vs pendaftaran reguler siswa event • ' . $campusName, 'F59E0B', 12, false, 'l')
+
+            // Box Beasiswa Ya
+            . $this->buildBoxShape(6, 'BoxYes', 800000, 1800000, 5100000, 2400000, '1E293B')
+            . $this->buildBoxShape(7, 'BoxYesTop', 800000, 1800000, 5100000, 60000, '10B981')
+            . $this->buildTextShape(8, 'YesLbl', 1100000, 2050000, 4500000, 350000, 'BERMINAT BEASISWA (KIP / PRESTASI)', '34D399', 12, true, 'l')
+            . $this->buildTextShape(9, 'YesVal', 1100000, 2500000, 4500000, 900000, $yes . ' Siswa', 'FFFFFF', 36, true, 'l')
+            . $this->buildTextShape(10, 'YesSub', 1100000, 3550000, 4500000, 400000, "Porsi: {$pctYes}% dari total leads", '10B981', 12, true, 'l')
+
+            // Box Reguler
+            . $this->buildBoxShape(11, 'BoxNo', 6250000, 1800000, 5100000, 2400000, '1E293B')
+            . $this->buildBoxShape(12, 'BoxNoTop', 6250000, 1800000, 5100000, 60000, '64748B')
+            . $this->buildTextShape(13, 'NoLbl', 6550000, 2050000, 4500000, 350000, 'JALUR REGULER / MANDIRI', '94A3B8', 12, true, 'l')
+            . $this->buildTextShape(14, 'NoVal', 6550000, 2500000, 4500000, 900000, $no . ' Siswa', 'FFFFFF', 36, true, 'l')
+            . $this->buildTextShape(15, 'NoSub', 6550000, 3550000, 4500000, 400000, "Porsi: {$pctNo}% dari total leads", '94A3B8', 12, false, 'l')
+
+            // Summary Box
+            . $this->buildBoxShape(16, 'BottomInfo', 800000, 4500000, 10550000, 1600000, '1E1B4B')
+            . $this->buildTextShape(17, 'BInfoT', 1050000, 4700000, 10000000, 350000, 'STRATEGI PENAWARAN BEASISWA:', 'F59E0B', 12, true, 'l')
+            . $this->buildTextShape(18, 'BInfoD', 1050000, 5150000, 10000000, 800000, "Siswa berminat beasiswa harus segera diarahkan untuk melengkapi berkas syarat KIP-K / Beasiswa Prestasi dan membuat akun PMB melalui aplikasi atau portal resmi kampus.", 'E2E8F0', 11, false, 'l')
+
+            . '</p:spTree></p:cSld></p:sld>';
+    }
+
+    protected function getSlide5FollowupXml(string $campusName, string $periodName, string $exportDate): string
+    {
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">'
+            . '<p:cSld><p:spTree>'
+            . '<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>'
+            . '<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>'
+            . $this->buildBoxShape(2, 'BgNavy', 0, 0, 12192000, 6858000, '0B023E')
+            . $this->buildBoxShape(3, 'AccentStrip', 0, 0, 12192000, 90000, 'DF0B2B')
+            . $this->buildTextShape(4, 'Header', 800000, 500000, 10500000, 600000, 'ALUR TINDAK LANJUT FOLLOW UP & ADMISI', 'FFFFFF', 24, true, 'l')
+            . $this->buildTextShape(5, 'Subheader', 800000, 1100000, 10500000, 400000, 'Standar Operasional Penanganan Leads Siswa Event • ' . $campusName, 'F59E0B', 12, false, 'l')
+
+            . $this->buildBoxShape(6, 'P1', 800000, 1800000, 10550000, 1100000, '1E293B')
+            . $this->buildTextShape(7, 'P1T', 1050000, 1920000, 10000000, 300000, '1. PLOTING PETUGAS MARKETING', 'F59E0B', 11, true, 'l')
+            . $this->buildTextShape(8, 'P1D', 1050000, 2250000, 10000000, 500000, 'Gunakan fitur Ploting Petugas untuk membagi data siswa secara otomatis dan merata kepada seluruh staf marketing aktif.', 'E2E8F0', 10, false, 'l')
+
+            . $this->buildBoxShape(9, 'P2', 800000, 3050000, 10550000, 1100000, '1E293B')
+            . $this->buildTextShape(10, 'P2T', 1050000, 3170000, 10000000, 300000, '2. KOMUNIKASI WHATSAPP & TELEPON', '38BDF8', 11, true, 'l')
+            . $this->buildTextShape(11, 'P2D', 1050000, 3500000, 10000000, 500000, 'Kirimkan pesan personal via template WhatsApp resmi SAPA Sekolah untuk menyapa siswa dan menawarkan e-brosur program studi.', 'E2E8F0', 10, false, 'l')
+
+            . $this->buildBoxShape(12, 'P3', 800000, 4300000, 10550000, 1100000, '1E293B')
+            . $this->buildTextShape(13, 'P3T', 1050000, 4420000, 10000000, 300000, '3. KONVERSI KE APLIKASI PMB', '34D399', 11, true, 'l')
+            . $this->buildTextShape(14, 'P3D', 1050000, 4750000, 10000000, 500000, 'Bantu siswa hingga tahap pembuatan akun dan pendaftaran aplikasi PMB UBSI untuk mengamankan kuota beasiswa.', 'E2E8F0', 10, false, 'l')
+
+            . $this->buildBoxShape(15, 'FooterBox', 800000, 5700000, 10550000, 600000, '1E1B4B')
+            . $this->buildTextShape(16, 'FooterText', 1050000, 5820000, 10000000, 350000, "SAPA Sekolah • {$campusName} • Diekspor pada {$exportDate}", '94A3B8', 10, false, 'l')
+
+            . '</p:spTree></p:cSld></p:sld>';
+    }
+
+    protected function buildBoxShape(int $id, string $name, int $x, int $y, int $cx, int $cy, string $colorHex): string
+    {
+        return '<p:sp>'
+            . '<p:nvSpPr><p:cNvPr id="' . $id . '" name="' . $name . '"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr/></p:nvSpPr>'
+            . '<p:spPr>'
+            . '<a:xfrm><a:off x="' . $x . '" y="' . $y . '"/><a:ext cx="' . $cx . '" cy="' . $cy . '"/></a:xfrm>'
+            . '<a:prstGeom prst="roundRect"><a:avLst><a:gd name="adj" fmla="val 8000"/></a:avLst></a:prstGeom>'
+            . '<a:solidFill><a:srgbClr val="' . $colorHex . '"/></a:solidFill>'
+            . '<a:ln w="0"><a:noFill/></a:ln>'
+            . '</p:spPr>'
+            . '</p:sp>';
+    }
+
+    protected function buildTextShape(int $id, string $name, int $x, int $y, int $cx, int $cy, string $text, string $colorHex, int $fontSize = 12, bool $bold = false, string $align = 'l'): string
+    {
+        $escaped = htmlspecialchars($text, ENT_XML1, 'UTF-8');
+        $paragraphs = explode("\n", $escaped);
+        $pXml = '';
+
+        foreach ($paragraphs as $para) {
+            $pXml .= '<a:p>'
+                . '<a:pPr algn="' . $align . '"/>'
+                . '<a:r>'
+                . '<a:rPr lang="id-ID" sz="' . ($fontSize * 100) . '" b="' . ($bold ? '1' : '0') . '">'
+                . '<a:solidFill><a:srgbClr val="' . $colorHex . '"/></a:solidFill>'
+                . '<a:latin typeface="Segoe UI"/>'
+                . '</a:rPr>'
+                . '<a:t>' . $para . '</a:t>'
+                . '</a:r>'
+                . '</a:p>';
+        }
+
+        return '<p:sp>'
+            . '<p:nvSpPr><p:cNvPr id="' . $id . '" name="' . $name . '"/><p:cNvSpPr txBox="1"><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr/></p:nvPr>'
+            . '<p:spPr>'
+            . '<a:xfrm><a:off x="' . $x . '" y="' . $y . '"/><a:ext cx="' . $cx . '" cy="' . $cy . '"/></a:xfrm>'
+            . '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>'
+            . '<a:noFill/>'
+            . '<a:ln w="0"><a:noFill/></a:ln>'
+            . '</p:spPr>'
+            . '<p:txBody>'
+            . '<a:bodyPr vert="horz" lIns="0" tIns="0" rIns="0" bIns="0" wrap="square"/>'
+            . '<a:lstStyle/>'
+            . $pXml
+            . '</p:txBody>'
+            . '</p:sp>';
     }
 
     /**

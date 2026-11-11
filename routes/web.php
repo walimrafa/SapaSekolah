@@ -196,6 +196,9 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/event-proposals/{proposal}', [\App\Http\Controllers\SchoolEventProposalController::class, 'destroy'])->name('event-proposals.destroy');
 
     Route::get('/event-reports', [\App\Http\Controllers\SchoolEventProposalController::class, 'reportsIndex'])->name('event-reports.index');
+    Route::get('/event-reports/export-excel', [\App\Http\Controllers\SchoolEventProposalController::class, 'exportExcel'])->name('event-reports.export-excel');
+    Route::get('/event-reports/export-pdf', [\App\Http\Controllers\SchoolEventProposalController::class, 'exportPdf'])->name('event-reports.export-pdf');
+    Route::get('/event-reports/export-pptx', [\App\Http\Controllers\SchoolEventProposalController::class, 'exportPptx'])->name('event-reports.export-pptx');
     Route::post('/event-reports/{proposal}/documentation', [\App\Http\Controllers\SchoolEventProposalController::class, 'updateReport'])->name('event-reports.update-documentation');
 
     // Hasil Support Event - Data Siswa Event (Tersinkron ke Follow Up)
@@ -203,6 +206,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/hasil-support-event-data/template', [\App\Http\Controllers\EventStudentLeadController::class, 'downloadTemplate'])->name('event-students.template');
     Route::post('/hasil-support-event-data/import', [\App\Http\Controllers\EventStudentLeadController::class, 'import'])->name('event-students.import');
     Route::get('/hasil-support-event-data/export', [\App\Http\Controllers\EventStudentLeadController::class, 'export'])->name('event-students.export');
+    Route::get('/hasil-support-event-data/export-pdf', [\App\Http\Controllers\EventStudentLeadController::class, 'exportPdf'])->name('event-students.export-pdf');
+    Route::get('/hasil-support-event-data/export-pptx', [\App\Http\Controllers\EventStudentLeadController::class, 'exportPptx'])->name('event-students.export-pptx');
 
     // 3. Prioritas Sekolah (Scoring & Ranking - Admin, Pimpinan, Koordinator, Marketing)
     Route::middleware('role:Admin,Pimpinan,Koordinator Marketing,Marketing')->group(function () {

@@ -903,4 +903,35 @@ class PublishRoadmapHardeningTest extends TestCase
         $publicEventForm->assertSee('Universitas Bina Sarana Informatika (UBSI)');
         $publicEventForm->assertDontSee('Universitas Bina Sarana Informatika (UBSI) Kampus Karawang');
     }
+
+    public function test_event_reports_and_student_leads_can_be_exported_to_excel_pdf_and_pptx(): void
+    {
+        $admin = User::whereHas('role', fn($q) => $q->where('name', 'Admin'))->first() ?? User::factory()->create();
+
+        // 1. Verify Event Reports exports
+        $excelReport = $this->actingAs($admin)->get(route('event-reports.export-excel'));
+        $excelReport->assertOk();
+        $this->assertStringContainsString('spreadsheetml.sheet', (string)$excelReport->headers->get('content-type'));
+
+        $pdfReport = $this->actingAs($admin)->get(route('event-reports.export-pdf'));
+        $pdfReport->assertOk();
+        $pdfReport->assertSee('Laporan &amp; Dokumentasi Kegiatan', false);
+
+        $pptxReport = $this->actingAs($admin)->get(route('event-reports.export-pptx'));
+        $pptxReport->assertOk();
+        $this->assertStringContainsString('presentationml.presentation', (string)$pptxReport->headers->get('content-type'));
+
+        // 2. Verify Student Leads exports
+        $excelStudents = $this->actingAs($admin)->get(route('event-students.export'));
+        $excelStudents->assertOk();
+        $this->assertStringContainsString('spreadsheetml.sheet', (string)$excelStudents->headers->get('content-type'));
+
+        $pdfStudents = $this->actingAs($admin)->get(route('event-students.export-pdf'));
+        $pdfStudents->assertOk();
+        $pdfStudents->assertSee('Data Siswa Hasil Support Event');
+
+        $pptxStudents = $this->actingAs($admin)->get(route('event-students.export-pptx'));
+        $pptxStudents->assertOk();
+        $this->assertStringContainsString('presentationml.presentation', (string)$pptxStudents->headers->get('content-type'));
+    }
 }

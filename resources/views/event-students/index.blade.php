@@ -81,10 +81,26 @@
                         <span>Import Data Manual</span>
                     </button>
 
+                    <!-- Export Options: Excel, PDF, PPT -->
                     <a href="{{ route('event-students.export', request()->query()) }}"
-                        class="inline-flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition hover:scale-105">
-                        <i data-lucide="download" class="w-4 h-4"></i>
-                        <span>Download Excel</span>
+                        class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition hover:scale-105"
+                        title="Download Data Siswa Event dalam format Excel">
+                        <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
+                        <span>Export Excel</span>
+                    </a>
+
+                    <a href="{{ route('event-students.export-pdf', request()->query()) }}" target="_blank"
+                        class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/20 transition hover:scale-105"
+                        title="Cetak atau Simpan Data Siswa Event sebagai PDF">
+                        <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                        <span>Export PDF</span>
+                    </a>
+
+                    <a href="{{ route('event-students.export-pptx', request()->query()) }}"
+                        class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 shadow-md shadow-amber-400/20 transition hover:scale-105"
+                        title="Download Slide Presentasi PowerPoint (.pptx)">
+                        <i data-lucide="presentation" class="w-3.5 h-3.5"></i>
+                        <span>Export PPT</span>
                     </a>
 
                     <a href="{{ route('student-follow-ups.index', ['source' => 'support_event']) }}"

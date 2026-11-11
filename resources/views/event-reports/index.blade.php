@@ -24,11 +24,33 @@
                     </p>
                 </div>
 
-                <div class="flex flex-wrap items-center gap-3 shrink-0">
+                <div class="flex flex-wrap items-center gap-2.5 shrink-0">
+                    <!-- Export Group: Excel, PDF, PPTX -->
+                    <a href="{{ route('event-reports.export-excel', request()->query()) }}"
+                        class="inline-flex items-center space-x-1.5 px-3 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition hover:scale-105"
+                        title="Download Rekap Laporan Event dalam format Microsoft Excel">
+                        <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
+                        <span>Export Excel</span>
+                    </a>
+
+                    <a href="{{ route('event-reports.export-pdf', request()->query()) }}" target="_blank"
+                        class="inline-flex items-center space-x-1.5 px-3 py-2.5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/20 transition hover:scale-105"
+                        title="Cetak atau Simpan Laporan Event sebagai Dokumen PDF">
+                        <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                        <span>Export PDF</span>
+                    </a>
+
+                    <a href="{{ route('event-reports.export-pptx', request()->query()) }}"
+                        class="inline-flex items-center space-x-1.5 px-3 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 shadow-md shadow-amber-400/20 transition hover:scale-105"
+                        title="Download Slide Presentasi Eksekutif PowerPoint (.pptx)">
+                        <i data-lucide="presentation" class="w-3.5 h-3.5"></i>
+                        <span>Export PPT</span>
+                    </a>
+
                     <!-- Tombol Buka Root Google Drive Sesuai Kampus Aktif -->
                     <a href="{{ \App\Services\GoogleDriveService::getFolderUrlForCampus() }}"
                         target="_blank"
-                        class="inline-flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-white text-slate-800 hover:bg-slate-50 border border-slate-200 shadow-sm transition"
+                        class="inline-flex items-center space-x-1.5 px-3 py-2.5 rounded-xl text-xs font-bold bg-white text-slate-800 hover:bg-slate-50 border border-slate-200 shadow-sm transition"
                         title="Buka Folder Google Drive Dokumentasi ({{ \App\Services\GoogleDriveService::getFolderLabelForCampus() }})">
                         <i data-lucide="folder" class="w-4 h-4 text-amber-500"></i>
                         <span>{{ \App\Services\GoogleDriveService::getFolderLabelForCampus() }}</span>
@@ -36,9 +58,9 @@
                     </a>
 
                     <a href="{{ route('event-proposals.index') }}"
-                        class="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 shadow-sm transition">
+                        class="inline-flex items-center space-x-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 shadow-sm transition">
                         <i data-lucide="inbox" class="w-4 h-4 text-amber-400"></i>
-                        <span>Data Proposal Masuk</span>
+                        <span>Proposal</span>
                     </a>
                 </div>
             </div>

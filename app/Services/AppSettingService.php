@@ -105,14 +105,14 @@ class AppSettingService
             'menu_events' => 'Support Event',
             'badge_events' => 'Event',
             'submenu_event_proposals' => 'Proposal',
-            'submenu_event_students' => 'Hasil Event',
+            'submenu_event_students' => 'Data Siswa Hasil Support Event',
 
             // 7. Laporan
             'menu_reports' => 'Laporan',
             'badge_reports' => 'Laporan',
             'submenu_report_charts' => 'Diagram & Analisis',
             'submenu_report_data' => 'Laporan Data',
-            'submenu_report_events' => 'Laporan Event',
+            'submenu_report_events' => 'Laporan & Dokumentasi Kegiatan',
             'submenu_report_export' => 'Ekspor & Rekap',
 
             // 8. Informasi PMB

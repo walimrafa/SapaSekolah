@@ -339,7 +339,7 @@
                     class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('event-students.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <div class="flex items-center space-x-2.5">
                         <i data-lucide="users" class="w-3.5 h-3.5 text-purple-400"></i>
-                        <span>{{ $lbl('submenu_event_students', 'Hasil Event') }}</span>
+                        <span>{{ $lbl('submenu_event_students', 'Data Siswa Hasil Support Event') }}</span>
                     </div>
                     @php
                         $eventStudentsQuery = \App\Models\StudentQuestionnaire::where(function ($q) {
@@ -414,7 +414,7 @@
                     class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('event-reports.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30 font-bold' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <div class="flex items-center space-x-2.5">
                         <i data-lucide="clipboard-check" class="w-3.5 h-3.5 text-purple-400"></i>
-                        <span>{{ $lbl('submenu_report_events', 'Laporan Event') }}</span>
+                        <span>{{ $lbl('submenu_report_events', 'Laporan & Dokumentasi Kegiatan') }}</span>
                     </div>
                     @php
                         $safeApprovedCount = $approvedEventsCount ?? (\App\Models\SchoolEventProposal::where('status', \App\Models\SchoolEventProposal::STATUS_DISETUJUI)->when($activeCampusId, fn($q) => $q->where('campus_id', $activeCampusId))->count());
