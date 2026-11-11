@@ -31,14 +31,17 @@ class EventReportExportService
     public function getFilteredEvents(Request $request)
     {
         $activeCampus = AppContextService::getActiveCampus();
-        $selectedCampusId = $request->query('campus_id', $activeCampus?->id ?? 'all');
+        $selectedCampusId = $request->query('campus_id');
+        if (!$selectedCampusId || $selectedCampusId === 'all') {
+            $selectedCampusId = $activeCampus?->id ?? Campus::first()?->id;
+        }
 
         $query = SchoolEventProposal::where('status', SchoolEventProposal::STATUS_DISETUJUI)
             ->with(['school.district', 'reviewer', 'reporter', 'campus'])
             ->withCount('studentLeads')
             ->orderBy('event_date', 'desc');
 
-        if ($selectedCampusId && $selectedCampusId !== 'all') {
+        if ($selectedCampusId) {
             $query->where('campus_id', $selectedCampusId);
         }
 
@@ -67,7 +70,9 @@ class EventReportExportService
     {
         $events = $this->getFilteredEvents($request);
         $activeCampus = AppContextService::getActiveCampus();
-        $campusName = $activeCampus ? $activeCampus->name : AppSettingService::get('campus_name', 'Universitas Bina Sarana Informatika');
+        $selectedCampusId = $request->query('campus_id', $activeCampus?->id ?? Campus::first()?->id);
+        $targetCampus = Campus::find($selectedCampusId) ?? $activeCampus;
+        $campusName = $targetCampus ? $targetCampus->name : AppSettingService::get('campus_name', 'Universitas Bina Sarana Informatika');
         $fileName = 'Laporan_Dokumentasi_Support_Event_' . date('Ymd_His') . '.xlsx';
 
         return response()->streamDownload(function () use ($events, $campusName) {
@@ -168,7 +173,9 @@ class EventReportExportService
     {
         $events = $this->getFilteredEvents($request);
         $activeCampus = AppContextService::getActiveCampus();
-        $campusName = $activeCampus ? $activeCampus->name : AppSettingService::get('campus_name', 'Universitas Bina Sarana Informatika (UBSI)');
+        $selectedCampusId = $request->query('campus_id', $activeCampus?->id ?? Campus::first()?->id);
+        $targetCampus = Campus::find($selectedCampusId) ?? $activeCampus;
+        $campusName = $targetCampus ? $targetCampus->name : AppSettingService::get('campus_name', 'Universitas Bina Sarana Informatika (UBSI)');
         $exportDate = Carbon::now()->translatedFormat('d F Y, H:i') . ' WIB';
 
         $totalApproved = $events->count();
@@ -193,7 +200,9 @@ class EventReportExportService
     {
         $events = $this->getFilteredEvents($request);
         $activeCampus = AppContextService::getActiveCampus();
-        $campusName = $activeCampus ? $activeCampus->name : AppSettingService::get('campus_name', 'Universitas Bina Sarana Informatika');
+        $selectedCampusId = $request->query('campus_id', $activeCampus?->id ?? Campus::first()?->id);
+        $targetCampus = Campus::find($selectedCampusId) ?? $activeCampus;
+        $campusName = $targetCampus ? $targetCampus->name : AppSettingService::get('campus_name', 'Universitas Bina Sarana Informatika');
         $periodName = AppContextService::getActivePeriod()?->name ?? (date('Y') . '/' . (date('Y') + 1));
         $exportDate = Carbon::now()->translatedFormat('d F Y, H:i') . ' WIB';
         $fileName = 'Laporan_Dokumentasi_Support_Event_' . date('Ymd_His') . '.pptx';

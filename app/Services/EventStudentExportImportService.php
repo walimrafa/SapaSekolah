@@ -389,6 +389,15 @@ class EventStudentExportImportService
             ->with(['school.district', 'eventProposal', 'lastFollowedUpBy'])
             ->latest();
 
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        if ($activeCampus) {
+            $query->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)
+                  ->orWhereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id))
+                  ->orWhereHas('eventProposal', fn($ep) => $ep->where('campus_id', $activeCampus->id));
+            });
+        }
+
         if ($request->filled('event_id')) {
             $query->where('school_event_proposal_id', $request->event_id);
         }
@@ -544,6 +553,15 @@ class EventStudentExportImportService
             })
             ->with(['school.district', 'eventProposal', 'lastFollowedUpBy'])
             ->latest();
+
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        if ($activeCampus) {
+            $query->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)
+                  ->orWhereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id))
+                  ->orWhereHas('eventProposal', fn($ep) => $ep->where('campus_id', $activeCampus->id));
+            });
+        }
 
         if ($request->filled('event_id')) {
             $query->where('school_event_proposal_id', $request->event_id);

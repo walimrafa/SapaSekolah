@@ -26,21 +26,21 @@
 
                 <div class="flex flex-wrap items-center gap-2.5 shrink-0">
                     <!-- Export Group: Excel, PDF, PPTX -->
-                    <a href="{{ route('event-reports.export-excel', request()->query()) }}"
+                    <a href="{{ route('event-reports.export-excel', array_merge(request()->query(), ['campus_id' => $selectedCampusId])) }}"
                         class="inline-flex items-center space-x-1.5 px-3 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition hover:scale-105"
                         title="Download Rekap Laporan Event dalam format Microsoft Excel">
                         <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
                         <span>Export Excel</span>
                     </a>
 
-                    <a href="{{ route('event-reports.export-pdf', request()->query()) }}" target="_blank"
+                    <a href="{{ route('event-reports.export-pdf', array_merge(request()->query(), ['campus_id' => $selectedCampusId])) }}" target="_blank"
                         class="inline-flex items-center space-x-1.5 px-3 py-2.5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/20 transition hover:scale-105"
                         title="Cetak atau Simpan Laporan Event sebagai Dokumen PDF">
                         <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
                         <span>Export PDF</span>
                     </a>
 
-                    <a href="{{ route('event-reports.export-pptx', request()->query()) }}"
+                    <a href="{{ route('event-reports.export-pptx', array_merge(request()->query(), ['campus_id' => $selectedCampusId])) }}"
                         class="inline-flex items-center space-x-1.5 px-3 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 shadow-md shadow-amber-400/20 transition hover:scale-105"
                         title="Download Slide Presentasi Eksekutif PowerPoint (.pptx)">
                         <i data-lucide="presentation" class="w-3.5 h-3.5"></i>
@@ -72,47 +72,43 @@
             <div class="flex items-center space-x-2">
                 <span class="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Kampus:</span>
                 <div class="inline-flex rounded-xl bg-slate-100 p-1">
-                    <a href="{{ route('event-reports.index', array_merge(request()->except('campus_id'), ['campus_id' => 'all'])) }}"
-                        class="px-3 py-1.5 rounded-lg text-xs font-bold transition {{ ($selectedCampusId === 'all' || !$selectedCampusId) ? 'bg-brand-navy text-white shadow-sm' : 'text-slate-600 hover:text-slate-900' }}">
-                        Semua Kampus ({{ $campusCounts['all'] ?? 0 }})
-                    </a>
                     @foreach($campuses as $cmp)
                         <a href="{{ route('event-reports.index', array_merge(request()->except('campus_id'), ['campus_id' => $cmp->id])) }}"
-                            class="px-3 py-1.5 rounded-lg text-xs font-bold transition {{ (string)$selectedCampusId === (string)$cmp->id ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900' }}">
+                            class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition {{ (string)$selectedCampusId === (string)$cmp->id ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900' }}">
                             {{ $cmp->name }} ({{ $campusCounts[$cmp->id] ?? 0 }})
                         </a>
                     @endforeach
                 </div>
             </div>
             <div class="text-xs text-slate-500 font-medium hidden sm:block">
-                Menampilkan laporan: <strong class="text-slate-800">{{ $selectedCampusId === 'all' || !$selectedCampusId ? 'Semua Wilayah Operasional' : ($campuses->firstWhere('id', $selectedCampusId)?->name ?? 'Wilayah Terpilih') }}</strong>
+                Menampilkan laporan: <strong class="text-slate-800">{{ $campuses->firstWhere('id', $selectedCampusId)?->name ?? 'Wilayah Terpilih' }}</strong>
             </div>
         </div>
 
         <!-- Metric Stat Cards -->
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-            <a href="{{ route('event-reports.index', request()->has('campus_id') ? ['campus_id' => request('campus_id')] : []) }}" 
+            <a href="{{ route('event-reports.index', ['campus_id' => $selectedCampusId]) }}" 
                 class="p-4 bg-white rounded-2xl border transition hover:shadow-md {{ !request('execution_status') ? 'border-brand-500 ring-2 ring-brand-500/20' : 'border-slate-200/90' }}">
                 <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Disetujui</p>
                 <p class="text-2xl font-extrabold text-slate-900 mt-1">{{ number_format($stats['total_disetujui']) }}</p>
                 <span class="text-[11px] text-slate-500 font-medium">Event Siap Support</span>
             </a>
 
-            <a href="{{ route('event-reports.index', array_merge(request()->has('campus_id') ? ['campus_id' => request('campus_id')] : [], ['execution_status' => 'menunggu_pelaksanaan'])) }}" 
+            <a href="{{ route('event-reports.index', ['campus_id' => $selectedCampusId, 'execution_status' => 'menunggu_pelaksanaan']) }}" 
                 class="p-4 bg-white rounded-2xl border transition hover:shadow-md {{ request('execution_status') === 'menunggu_pelaksanaan' ? 'border-amber-500 ring-2 ring-amber-500/20' : 'border-slate-200/90' }}">
                 <p class="text-[11px] font-bold text-amber-600 uppercase tracking-wider">Menunggu Acara</p>
                 <p class="text-2xl font-extrabold text-amber-600 mt-1">{{ number_format($stats['menunggu_pelaksanaan']) }}</p>
                 <span class="text-[11px] text-amber-700 font-medium">Jadwal Mendatang</span>
             </a>
 
-            <a href="{{ route('event-reports.index', array_merge(request()->has('campus_id') ? ['campus_id' => request('campus_id')] : [], ['execution_status' => 'sedang_berjalan'])) }}" 
+            <a href="{{ route('event-reports.index', ['campus_id' => $selectedCampusId, 'execution_status' => 'sedang_berjalan']) }}" 
                 class="p-4 bg-white rounded-2xl border transition hover:shadow-md {{ request('execution_status') === 'sedang_berjalan' ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-slate-200/90' }}">
                 <p class="text-[11px] font-bold text-blue-600 uppercase tracking-wider">Sedang Berjalan</p>
                 <p class="text-2xl font-extrabold text-blue-600 mt-1">{{ number_format($stats['sedang_berjalan']) }}</p>
                 <span class="text-[11px] text-blue-700 font-medium">Dalam Pelaksanaan</span>
             </a>
 
-            <a href="{{ route('event-reports.index', array_merge(request()->has('campus_id') ? ['campus_id' => request('campus_id')] : [], ['execution_status' => 'selesai'])) }}" 
+            <a href="{{ route('event-reports.index', ['campus_id' => $selectedCampusId, 'execution_status' => 'selesai']) }}" 
                 class="p-4 bg-white rounded-2xl border transition hover:shadow-md {{ request('execution_status') === 'selesai' ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-200/90' }}">
                 <p class="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Terdokumentasi</p>
                 <p class="text-2xl font-extrabold text-emerald-600 mt-1">{{ number_format($stats['selesai']) }}</p>
@@ -129,9 +125,7 @@
         <!-- Filter & Search Bar -->
         <div class="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-sm">
             <form method="GET" action="{{ route('event-reports.index') }}" class="flex flex-col md:flex-row items-center gap-3">
-                @if(request()->has('campus_id'))
-                    <input type="hidden" name="campus_id" value="{{ request('campus_id') }}">
-                @endif
+                <input type="hidden" name="campus_id" value="{{ $selectedCampusId }}">
                 <div class="relative flex-1 w-full">
                     <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                         <i data-lucide="search" class="w-4 h-4"></i>
@@ -153,7 +147,7 @@
                     </button>
 
                     @if(request()->anyFilled(['q', 'execution_status']))
-                        <a href="{{ route('event-reports.index') }}" class="px-3 py-2.5 rounded-xl text-sm font-medium bg-slate-100 hover:bg-slate-200 text-slate-600 transition" title="Reset Filter">
+                        <a href="{{ route('event-reports.index', ['campus_id' => $selectedCampusId]) }}" class="px-3 py-2.5 rounded-xl text-sm font-medium bg-slate-100 hover:bg-slate-200 text-slate-600 transition" title="Reset Filter">
                             <i data-lucide="x" class="w-4 h-4"></i>
                         </a>
                     @endif

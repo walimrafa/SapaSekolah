@@ -51,33 +51,29 @@
             <div class="flex items-center space-x-2">
                 <span class="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Kampus:</span>
                 <div class="inline-flex rounded-xl bg-slate-100 p-1">
-                    <a href="{{ route('event-proposals.index', array_merge(request()->except('campus_id'), ['campus_id' => 'all'])) }}"
-                        class="px-3 py-1.5 rounded-lg text-xs font-bold transition {{ ($selectedCampusId === 'all' || !$selectedCampusId) ? 'bg-brand-navy text-white shadow-sm' : 'text-slate-600 hover:text-slate-900' }}">
-                        Semua Kampus ({{ $campusCounts['all'] ?? 0 }})
-                    </a>
                     @foreach($campuses as $cmp)
                         <a href="{{ route('event-proposals.index', array_merge(request()->except('campus_id'), ['campus_id' => $cmp->id])) }}"
-                            class="px-3 py-1.5 rounded-lg text-xs font-bold transition {{ (string)$selectedCampusId === (string)$cmp->id ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900' }}">
+                            class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition {{ (string)$selectedCampusId === (string)$cmp->id ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900' }}">
                             {{ $cmp->name }} ({{ $campusCounts[$cmp->id] ?? 0 }})
                         </a>
                     @endforeach
                 </div>
             </div>
             <div class="text-xs text-slate-500 font-medium hidden sm:block">
-                Menampilkan proposal: <strong class="text-slate-800">{{ $selectedCampusId === 'all' || !$selectedCampusId ? 'Semua Wilayah Operasional' : ($campuses->firstWhere('id', $selectedCampusId)?->name ?? 'Wilayah Terpilih') }}</strong>
+                Menampilkan proposal: <strong class="text-slate-800">{{ $campuses->firstWhere('id', $selectedCampusId)?->name ?? 'Wilayah Terpilih' }}</strong>
             </div>
         </div>
 
         <!-- Metric Stat Cards -->
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-            <a href="{{ route('event-proposals.index', request()->has('campus_id') ? ['campus_id' => request('campus_id')] : []) }}" 
+            <a href="{{ route('event-proposals.index', ['campus_id' => $selectedCampusId]) }}" 
                 class="p-4 bg-white rounded-2xl border transition hover:shadow-md {{ !request('status') ? 'border-brand-500 ring-2 ring-brand-500/20' : 'border-slate-200/90' }}">
                 <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Masuk</p>
                 <p class="text-2xl font-extrabold text-slate-900 mt-1">{{ number_format($stats['total']) }}</p>
                 <span class="text-[11px] text-slate-500 font-medium">Semua Usulan</span>
             </a>
 
-            <a href="{{ route('event-proposals.index', array_merge(request()->has('campus_id') ? ['campus_id' => request('campus_id')] : [], ['status' => 'menunggu_review'])) }}" 
+            <a href="{{ route('event-proposals.index', ['campus_id' => $selectedCampusId, 'status' => 'menunggu_review']) }}" 
                 class="p-4 bg-white rounded-2xl border transition hover:shadow-md {{ request('status') === 'menunggu_review' ? 'border-amber-500 ring-2 ring-amber-500/20' : 'border-slate-200/90' }}">
                 <p class="text-[11px] font-bold text-amber-600 uppercase tracking-wider flex items-center justify-between">
                     <span>Review Baru</span>
@@ -89,28 +85,28 @@
                 <span class="text-[11px] text-amber-700 font-medium">Perlu Ditinjau</span>
             </a>
 
-            <a href="{{ route('event-proposals.index', array_merge(request()->has('campus_id') ? ['campus_id' => request('campus_id')] : [], ['status' => 'diajukan_ke_pusat'])) }}" 
+            <a href="{{ route('event-proposals.index', ['campus_id' => $selectedCampusId, 'status' => 'diajukan_ke_pusat']) }}" 
                 class="p-4 bg-white rounded-2xl border transition hover:shadow-md {{ request('status') === 'diajukan_ke_pusat' ? 'border-indigo-500 ring-2 ring-indigo-500/20' : 'border-slate-200/90' }}">
                 <p class="text-[11px] font-bold text-indigo-600 uppercase tracking-wider">Ke Pusat</p>
                 <p class="text-2xl font-extrabold text-indigo-600 mt-1">{{ number_format($stats['diajukan_ke_pusat']) }}</p>
                 <span class="text-[11px] text-indigo-700 font-medium">Diajukan ke Pusat</span>
             </a>
 
-            <a href="{{ route('event-proposals.index', array_merge(request()->has('campus_id') ? ['campus_id' => request('campus_id')] : [], ['status' => 'menunggu_acc'])) }}" 
+            <a href="{{ route('event-proposals.index', ['campus_id' => $selectedCampusId, 'status' => 'menunggu_acc']) }}" 
                 class="p-4 bg-white rounded-2xl border transition hover:shadow-md {{ request('status') === 'menunggu_acc' ? 'border-purple-500 ring-2 ring-purple-500/20' : 'border-slate-200/90' }}">
                 <p class="text-[11px] font-bold text-purple-600 uppercase tracking-wider">Menunggu ACC</p>
                 <p class="text-2xl font-extrabold text-purple-600 mt-1">{{ number_format($stats['menunggu_acc']) }}</p>
                 <span class="text-[11px] text-purple-700 font-medium">Disposisi ACC</span>
             </a>
 
-            <a href="{{ route('event-proposals.index', array_merge(request()->has('campus_id') ? ['campus_id' => request('campus_id')] : [], ['status' => 'disetujui'])) }}" 
+            <a href="{{ route('event-proposals.index', ['campus_id' => $selectedCampusId, 'status' => 'disetujui']) }}" 
                 class="p-4 bg-white rounded-2xl border transition hover:shadow-md {{ request('status') === 'disetujui' ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-200/90' }}">
                 <p class="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Disetujui</p>
                 <p class="text-2xl font-extrabold text-emerald-600 mt-1">{{ number_format($stats['disetujui']) }}</p>
                 <span class="text-[11px] text-emerald-700 font-medium">Masuk Laporan</span>
             </a>
 
-            <a href="{{ route('event-proposals.index', array_merge(request()->has('campus_id') ? ['campus_id' => request('campus_id')] : [], ['status' => 'ditolak'])) }}" 
+            <a href="{{ route('event-proposals.index', ['campus_id' => $selectedCampusId, 'status' => 'ditolak']) }}" 
                 class="p-4 bg-white rounded-2xl border transition hover:shadow-md {{ request('status') === 'ditolak' ? 'border-rose-500 ring-2 ring-rose-500/20' : 'border-slate-200/90' }}">
                 <p class="text-[11px] font-bold text-rose-600 uppercase tracking-wider">Ditolak</p>
                 <p class="text-2xl font-extrabold text-rose-600 mt-1">{{ number_format($stats['ditolak']) }}</p>
@@ -121,9 +117,7 @@
         <!-- Filter & Search Bar -->
         <div class="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-sm">
             <form method="GET" action="{{ route('event-proposals.index') }}" class="flex flex-col md:flex-row items-center gap-3">
-                @if(request()->has('campus_id'))
-                    <input type="hidden" name="campus_id" value="{{ request('campus_id') }}">
-                @endif
+                <input type="hidden" name="campus_id" value="{{ $selectedCampusId }}">
                 <div class="relative flex-1 w-full">
                     <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                         <i data-lucide="search" class="w-4 h-4"></i>
@@ -147,7 +141,7 @@
                     </button>
 
                     @if(request()->anyFilled(['q', 'status']))
-                        <a href="{{ route('event-proposals.index') }}" class="px-3 py-2.5 rounded-xl text-sm font-medium bg-slate-100 hover:bg-slate-200 text-slate-600 transition" title="Reset Filter">
+                        <a href="{{ route('event-proposals.index', ['campus_id' => $selectedCampusId]) }}" class="px-3 py-2.5 rounded-xl text-sm font-medium bg-slate-100 hover:bg-slate-200 text-slate-600 transition" title="Reset Filter">
                             <i data-lucide="x" class="w-4 h-4"></i>
                         </a>
                     @endif

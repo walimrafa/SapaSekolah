@@ -216,12 +216,16 @@ class SchoolEventProposalController extends Controller
     public function index(Request $request): View
     {
         $activeCampus = \App\Services\AppContextService::getActiveCampus();
-        $campuses = \App\Models\Campus::orderBy('id')->get();
-        $selectedCampusId = $request->query('campus_id', $activeCampus?->id ?? 'all');
+        $campuses = \App\Models\Campus::where('is_active', true)->orderBy('id')->get();
+        
+        $selectedCampusId = $request->query('campus_id');
+        if (!$selectedCampusId || $selectedCampusId === 'all') {
+            $selectedCampusId = $activeCampus?->id ?? $campuses->first()?->id;
+        }
 
         $query = SchoolEventProposal::with(['school.district', 'reviewer', 'campus'])->latest();
 
-        if ($selectedCampusId && $selectedCampusId !== 'all') {
+        if ($selectedCampusId) {
             $query->where('campus_id', $selectedCampusId);
         }
 
@@ -252,7 +256,7 @@ class SchoolEventProposalController extends Controller
         $proposals = $query->paginate(12)->withQueryString();
 
         $baseQuery = SchoolEventProposal::query();
-        if ($selectedCampusId && $selectedCampusId !== 'all') {
+        if ($selectedCampusId) {
             $baseQuery->where('campus_id', $selectedCampusId);
         }
 
@@ -260,7 +264,6 @@ class SchoolEventProposalController extends Controller
         foreach ($campuses as $cmp) {
             $campusCounts[$cmp->id] = SchoolEventProposal::where('campus_id', $cmp->id)->count();
         }
-        $campusCounts['all'] = SchoolEventProposal::count();
 
         $stats = [
             'total' => (clone $baseQuery)->count(),
@@ -372,8 +375,12 @@ class SchoolEventProposalController extends Controller
     public function reportsIndex(Request $request): View
     {
         $activeCampus = \App\Services\AppContextService::getActiveCampus();
-        $campuses = \App\Models\Campus::orderBy('id')->get();
-        $selectedCampusId = $request->query('campus_id', $activeCampus?->id ?? 'all');
+        $campuses = \App\Models\Campus::where('is_active', true)->orderBy('id')->get();
+        
+        $selectedCampusId = $request->query('campus_id');
+        if (!$selectedCampusId || $selectedCampusId === 'all') {
+            $selectedCampusId = $activeCampus?->id ?? $campuses->first()?->id;
+        }
 
         // Hanya tampilkan event yang sudah disetujui untuk kampus yang dipilih
         $query = SchoolEventProposal::where('status', SchoolEventProposal::STATUS_DISETUJUI)
@@ -381,7 +388,7 @@ class SchoolEventProposalController extends Controller
             ->withCount('studentLeads')
             ->orderBy('event_date', 'desc');
 
-        if ($selectedCampusId && $selectedCampusId !== 'all') {
+        if ($selectedCampusId) {
             $query->where('campus_id', $selectedCampusId);
         }
 
@@ -403,7 +410,7 @@ class SchoolEventProposalController extends Controller
         $events = $query->paginate(12)->withQueryString();
 
         $baseStatsQuery = SchoolEventProposal::where('status', SchoolEventProposal::STATUS_DISETUJUI);
-        if ($selectedCampusId && $selectedCampusId !== 'all') {
+        if ($selectedCampusId) {
             $baseStatsQuery->where('campus_id', $selectedCampusId);
         }
 
@@ -411,7 +418,6 @@ class SchoolEventProposalController extends Controller
         foreach ($campuses as $cmp) {
             $campusCounts[$cmp->id] = SchoolEventProposal::where('status', SchoolEventProposal::STATUS_DISETUJUI)->where('campus_id', $cmp->id)->count();
         }
-        $campusCounts['all'] = SchoolEventProposal::where('status', SchoolEventProposal::STATUS_DISETUJUI)->count();
 
         $stats = [
             'total_disetujui' => (clone $baseStatsQuery)->count(),
