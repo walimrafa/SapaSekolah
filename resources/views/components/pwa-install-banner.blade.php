@@ -1,3 +1,7 @@
+@php
+    $appSettings = \App\Services\AppSettingService::all();
+    $pwaLogoUrl = !empty($appSettings['app_logo_url']) ? asset($appSettings['app_logo_url']) : asset('pwa-icon-192.png');
+@endphp
 <div x-data="pwaInstallManager()" x-show="showBanner" x-cloak
     x-transition:enter="transition ease-out duration-300"
     x-transition:enter-start="opacity-0 translate-y-8 scale-95"
@@ -14,7 +18,7 @@
 
         <div class="relative z-10 flex items-start gap-3.5">
             <div class="w-12 h-12 rounded-xl bg-slate-800/80 border border-slate-700 p-1.5 shrink-0 flex items-center justify-center shadow-md">
-                <img src="{{ asset('pwa-icon-192.png') }}" alt="Logo" class="w-full h-full object-contain" onerror="this.src='{{ asset('favicon.png') }}'">
+                <img src="{{ $pwaLogoUrl }}" alt="Logo" class="w-full h-full object-contain" onerror="this.src='{{ asset('pwa-icon-192.png') }}'">
             </div>
 
             <div class="flex-1 min-w-0 pr-6">

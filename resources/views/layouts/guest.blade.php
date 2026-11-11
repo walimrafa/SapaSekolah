@@ -10,6 +10,7 @@
     <title>{{ $title ?? 'Login' }} - {{ $appSettings['app_name'] ?? 'SAPA Sekolah' }}</title>
 
     <!-- Favicon / Logo Title SAPA Sekolah -->
+    <link rel="icon" type="image/png" href="{{ !empty($appSettings['app_logo_url']) ? asset($appSettings['app_logo_url']) : asset('favicon-32x32.png') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
     <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">
     <link rel="shortcut icon" href="{{ !empty($appSettings['app_logo_url']) ? asset($appSettings['app_logo_url']) : asset('favicon.ico') }}">
