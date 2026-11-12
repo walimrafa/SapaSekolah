@@ -104,21 +104,23 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/student-follow-ups/import-template', [StudentFollowUpController::class, 'downloadImportTemplate'])->name('student-follow-ups.import-template');
     Route::post('/student-follow-ups/import', [StudentFollowUpController::class, 'import'])->name('student-follow-ups.import');
     Route::get('/student-follow-ups', [StudentFollowUpController::class, 'index'])->name('student-follow-ups.index');
+
+    // Ploting & Pembagian Jumlah Data Follow Up (Pimpinan, Koordinator Marketing, & Admin)
+    Route::get('/student-follow-ups/distribute', [StudentFollowUpController::class, 'distributePage'])->name('student-follow-ups.distribute.page');
+    Route::post('/student-follow-ups/distribute', [StudentFollowUpController::class, 'distribute'])->name('student-follow-ups.distribute');
+    Route::post('/student-follow-ups/bulk-assign', [StudentFollowUpController::class, 'bulkAssign'])->name('student-follow-ups.bulk-assign');
     Route::post('/student-follow-ups/bulk-destroy', [StudentFollowUpController::class, 'bulkDestroy'])->name('student-follow-ups.bulk-destroy');
-    Route::post('/student-follow-ups/{studentQuestionnaire}', [StudentFollowUpController::class, 'store'])->name('student-follow-ups.store');
-    Route::get('/student-follow-ups/{studentQuestionnaire}/history', [StudentFollowUpController::class, 'history'])->name('student-follow-ups.history');
-    Route::get('/student-follow-ups/{studentQuestionnaire}/edit-data', [StudentFollowUpController::class, 'getStudentData'])->name('student-follow-ups.get-student');
-    Route::put('/student-follow-ups/{studentQuestionnaire}/update-student', [StudentFollowUpController::class, 'updateStudent'])->name('student-follow-ups.update-student');
-    Route::delete('/student-follow-ups/{studentQuestionnaire}/destroy-student', [StudentFollowUpController::class, 'destroyStudent'])->name('student-follow-ups.destroy-student');
+
+    Route::post('/student-follow-ups/{studentQuestionnaire}/assign', [StudentFollowUpController::class, 'assignSingle'])->whereNumber('studentQuestionnaire')->name('student-follow-ups.assign-single');
+    Route::post('/student-follow-ups/{studentQuestionnaire}', [StudentFollowUpController::class, 'store'])->whereNumber('studentQuestionnaire')->name('student-follow-ups.store');
+    Route::get('/student-follow-ups/{studentQuestionnaire}/history', [StudentFollowUpController::class, 'history'])->whereNumber('studentQuestionnaire')->name('student-follow-ups.history');
+    Route::get('/student-follow-ups/{studentQuestionnaire}/edit-data', [StudentFollowUpController::class, 'getStudentData'])->whereNumber('studentQuestionnaire')->name('student-follow-ups.get-student');
+    Route::put('/student-follow-ups/{studentQuestionnaire}/update-student', [StudentFollowUpController::class, 'updateStudent'])->whereNumber('studentQuestionnaire')->name('student-follow-ups.update-student');
+    Route::delete('/student-follow-ups/{studentQuestionnaire}/destroy-student', [StudentFollowUpController::class, 'destroyStudent'])->whereNumber('studentQuestionnaire')->name('student-follow-ups.destroy-student');
 
     // Update & Hapus Riwayat Interaksi Follow Up Siswa
     Route::put('/student-follow-ups/records/{studentFollowUp}', [StudentFollowUpController::class, 'updateFollowUp'])->name('student-follow-ups.record-update');
     Route::delete('/student-follow-ups/records/{studentFollowUp}', [StudentFollowUpController::class, 'destroyFollowUp'])->name('student-follow-ups.record-destroy');
-
-    // Ploting & Pembagian Jumlah Data Follow Up (Pimpinan, Koordinator Marketing, & Admin)
-    Route::post('/student-follow-ups/distribute', [StudentFollowUpController::class, 'distribute'])->name('student-follow-ups.distribute');
-    Route::post('/student-follow-ups/bulk-assign', [StudentFollowUpController::class, 'bulkAssign'])->name('student-follow-ups.bulk-assign');
-    Route::post('/student-follow-ups/{studentQuestionnaire}/assign', [StudentFollowUpController::class, 'assignSingle'])->name('student-follow-ups.assign-single');
 
     // Data Prospek / Lead CRM Routes
     Route::get('/prospects', [ProspectController::class, 'index'])->name('prospects.index');

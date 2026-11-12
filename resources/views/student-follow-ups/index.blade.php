@@ -14,7 +14,7 @@
         </div>
         <div class="flex flex-wrap items-center gap-2">
             @if($canPlot)
-                <button type="button" onclick="openPlotingModal()" class="px-3.5 py-2.5 bg-gradient-to-r from-brand-600 via-indigo-600 to-brand-700 hover:from-brand-700 hover:to-indigo-800 text-white font-black rounded-xl text-xs shadow-lg shadow-brand-600/25 flex items-center gap-2 transition duration-150 transform hover:-translate-y-0.5">
+                <a href="{{ route('student-follow-ups.distribute.page') }}" onclick="if(!event.ctrlKey && !event.metaKey && event.button === 0){ event.preventDefault(); openPlotingModal(); }" class="px-3.5 py-2.5 bg-gradient-to-r from-brand-600 via-indigo-600 to-brand-700 hover:from-brand-700 hover:to-indigo-800 text-white font-black rounded-xl text-xs shadow-lg shadow-brand-600/25 flex items-center gap-2 transition duration-150 transform hover:-translate-y-0.5">
                     <i data-lucide="split" class="w-4 h-4 text-amber-300"></i>
                     <span>Ploting & Pembagian Data</span>
                     @if(($plottingMetrics['total_unassigned'] ?? 0) > 0)
@@ -22,7 +22,7 @@
                             {{ number_format($plottingMetrics['total_unassigned']) }} Belum Terbagi
                         </span>
                     @endif
-                </button>
+                </a>
             @endif
             <button type="button" onclick="openImportModal()" class="px-3.5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-md shadow-blue-600/20 flex items-center gap-2 transition duration-150">
                 <i data-lucide="file-up" class="w-4 h-4"></i>
@@ -101,10 +101,10 @@
                             <span class="text-[10px] text-slate-400">Siswa Aktif</span>
                         </div>
                     </div>
-                    <button type="button" onclick="openPlotingModal()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black shadow-md flex items-center gap-2 transition transform hover:scale-105">
+                    <a href="{{ route('student-follow-ups.distribute.page') }}" onclick="if(!event.ctrlKey && !event.metaKey && event.button === 0){ event.preventDefault(); openPlotingModal(); }" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black shadow-md flex items-center gap-2 transition transform hover:scale-105">
                         <i data-lucide="shuffle" class="w-4 h-4"></i>
                         <span>Bagi Data Sekarang</span>
-                    </button>
+                    </a>
                 </div>
             </div>
         </div>
@@ -2368,6 +2368,12 @@
             if (master) master.checked = false;
             updateSelectedCount();
         }
+
+        @if(request('open_ploting'))
+            document.addEventListener('DOMContentLoaded', () => {
+                openPlotingModal();
+            });
+        @endif
     </script>
     @endpush
 </x-app-layout>

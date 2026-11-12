@@ -691,6 +691,79 @@ class StudentFollowUpController extends Controller
     }
 
     /**
+     * Tampilan Khusus Halaman Ploting & Pembagian Data Siswa (GET /student-follow-ups/distribute).
+     * Dapat diakses langsung oleh Pimpinan, Koordinator Marketing, dan Admin.
+     */
+    public function distributePage(Request $request): View
+    {
+        if (!auth()->user() || !auth()->user()->canPlotFollowUps()) {
+            abort(403, 'Akses ditolak. Pengaturan pembagian data follow up hanya dapat dilakukan oleh Pimpinan dan Koordinator Marketing.');
+        }
+
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $activePeriod = \App\Services\AppContextService::getActivePeriod();
+
+        $baseMetricQuery = StudentQuestionnaire::query();
+
+        if ($activeCampus) {
+            $baseMetricQuery->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)
+                    ->orWhereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id))
+                    ->orWhereHas('eventProposal', fn($ep) => $ep->where('campus_id', $activeCampus->id));
+            });
+        }
+
+        if ($activePeriod) {
+            $baseMetricQuery->where('academic_period_id', $activePeriod->id);
+        }
+
+        $totalUnassigned = (clone $baseMetricQuery)->whereNull('assigned_to')->count();
+        $totalAssigned = (clone $baseMetricQuery)->whereNotNull('assigned_to')->count();
+        $unassignedKuisioner = (clone $baseMetricQuery)->whereNull('assigned_to')->where('source', 'kuisioner')->count();
+        $unassignedSupportEvent = (clone $baseMetricQuery)->whereNull('assigned_to')
+            ->where(function ($q) {
+                $q->where('source', 'support_event')
+                    ->orWhereNotNull('school_event_proposal_id')
+                    ->orWhere('college_interest_notes', 'like', '%Support Event%');
+            })->count();
+
+        $assignableOfficersQuery = User::query()
+            ->whereHas('role', function ($q) {
+                $q->whereIn('name', ['Marketing', 'Customer Service', 'Koordinator Marketing']);
+            })
+            ->active();
+
+        if ($activeCampus) {
+            $assignableOfficersQuery->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)->orWhereNull('campus_id');
+            });
+        }
+
+        $assignableOfficers = $assignableOfficersQuery->orderBy('name')
+            ->withCount([
+                'assignedStudentQuestionnaires as total_assigned_count',
+                'assignedStudentQuestionnaires as pending_count' => function ($q) {
+                    $q->where('followup_status', StudentQuestionnaire::STATUS_BELUM_DIHUBUNGI);
+                }
+            ])
+            ->get(['id', 'name', 'email', 'role_id']);
+
+        $plottingMetrics = [
+            'total_unassigned' => $totalUnassigned,
+            'total_assigned' => $totalAssigned,
+            'unassigned_kuisioner' => $unassignedKuisioner,
+            'unassigned_event' => $unassignedSupportEvent,
+        ];
+
+        return view('student-follow-ups.distribute', compact(
+            'plottingMetrics',
+            'assignableOfficers',
+            'activeCampus',
+            'activePeriod'
+        ));
+    }
+
+    /**
      * Distribusi / Ploting Jumlah Data Follow Up Siswa secara Massal.
      * Hanya berwenang dilakukan oleh Pimpinan, Koordinator Marketing, dan Admin.
      */
@@ -714,6 +787,15 @@ class StudentFollowUpController extends Controller
         ]);
 
         $query = StudentQuestionnaire::query()->whereNull('assigned_to');
+
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        if ($activeCampus) {
+            $query->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)
+                    ->orWhereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id))
+                    ->orWhereHas('eventProposal', fn($ep) => $ep->where('campus_id', $activeCampus->id));
+            });
+        }
 
         if ($validated['source_filter'] === 'kuisioner') {
             $query->where('source', 'kuisioner');
@@ -807,7 +889,7 @@ class StudentFollowUpController extends Controller
             ])->with('warning', 'Tidak ada data siswa yang memenuhi kriteria untuk di-ploting.');
         }
 
-        return back()->with('toast', [
+        return redirect()->route('student-follow-ups.index')->with('toast', [
             'type' => 'success',
             'message' => "Berhasil memploting {$assignedTotal} data follow up siswa ke tim marketing/CS.",
         ])->with('success', "Berhasil memploting {$assignedTotal} data follow up siswa ke tim marketing/CS.");
