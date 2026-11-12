@@ -185,6 +185,10 @@ class StudentFollowUpController extends Controller
                     ->orWhereNotNull('school_event_proposal_id')
                     ->orWhere('college_interest_notes', 'like', '%Support Event%');
             })->count();
+        $unassignedScholarshipYes = (clone $baseMetricQuery)->whereNull('assigned_to')->where('scholarship_interest', 'ya')->count();
+        $unassignedScholarshipNo = (clone $baseMetricQuery)->whereNull('assigned_to')->where(function ($q) {
+            $q->where('scholarship_interest', '!=', 'ya')->orWhereNull('scholarship_interest');
+        })->count();
 
         $assignableOfficersQuery = User::query()
             ->whereHas('role', function ($q) {
@@ -235,6 +239,8 @@ class StudentFollowUpController extends Controller
                 'total_assigned' => $totalAssigned,
                 'unassigned_kuisioner' => $unassignedKuisioner,
                 'unassigned_event' => $unassignedSupportEvent,
+                'unassigned_scholarship_yes' => $unassignedScholarshipYes,
+                'unassigned_scholarship_no' => $unassignedScholarshipNo,
             ],
             'metrics' => [
                 'total' => $allTotal,

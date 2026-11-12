@@ -1300,11 +1300,53 @@
                         </div>
                     </div>
 
+                    <!-- Pilihan Target Minat Beasiswa (Prioritas Utama) -->
+                    <div class="bg-amber-50/70 p-4 rounded-2xl border border-amber-300/80">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-xs font-bold text-amber-950 uppercase tracking-wider flex items-center gap-1.5">
+                                <i data-lucide="award" class="w-4 h-4 text-amber-600"></i>
+                                <span>2. Target Minat Beasiswa (Prioritas Utama)</span>
+                            </label>
+                            <span class="inline-flex items-center text-[10px] font-extrabold text-amber-900 bg-amber-300/80 px-2 py-0.5 rounded-full border border-amber-400">
+                                ★ Diutamakan Minat Beasiswa
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-amber-900/80 mb-2.5">
+                            Sistem secara otomatis memprioritaskan siswa yang berminat beasiswa pada urutan teratas pembagian.
+                        </p>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                            <label class="flex items-center gap-2.5 p-3 rounded-xl border border-amber-200 bg-white cursor-pointer hover:border-amber-500 transition shadow-xs">
+                                <input type="radio" name="scholarship_filter" value="all" checked onchange="updatePlotingQueueInfo()" class="text-amber-600 focus:ring-amber-500">
+                                <div>
+                                    <span class="text-xs font-bold text-slate-900 block">Semua Data</span>
+                                    <span class="text-[10px] text-slate-500">Utamakan Minat Beasiswa</span>
+                                </div>
+                            </label>
+                            <label class="flex items-center gap-2.5 p-3 rounded-xl border border-amber-300 bg-white cursor-pointer hover:border-amber-500 transition shadow-xs">
+                                <input type="radio" name="scholarship_filter" value="ya" onchange="updatePlotingQueueInfo()" class="text-amber-600 focus:ring-amber-500">
+                                <div>
+                                    <span class="text-xs font-bold text-amber-900 block flex items-center gap-1">
+                                        <span>Minat Beasiswa</span>
+                                        <span class="px-1 py-0.2 rounded text-[9px] font-black bg-amber-100 text-amber-800">★</span>
+                                    </span>
+                                    <span class="text-[10px] text-slate-500"><strong class="text-amber-700">{{ $plottingMetrics['unassigned_scholarship_yes'] ?? 0 }}</strong> Data Belum Di-plot</span>
+                                </div>
+                            </label>
+                            <label class="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-amber-500 transition shadow-xs">
+                                <input type="radio" name="scholarship_filter" value="tidak" onchange="updatePlotingQueueInfo()" class="text-amber-600 focus:ring-amber-500">
+                                <div>
+                                    <span class="text-xs font-bold text-slate-900 block">Tidak Minat Beasiswa</span>
+                                    <span class="text-[10px] text-slate-500"><strong class="text-slate-600">{{ $plottingMetrics['unassigned_scholarship_no'] ?? 0 }}</strong> Data Belum Di-plot</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
                     <!-- Panel Mode 1: Bagi Rata Otomatis -->
                     <div id="panelPlotingEqual" class="space-y-4">
                         <!-- Opsi Batasan Jumlah -->
                         <div>
-                            <label class="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">2. Jumlah Data yang Dibagikan</label>
+                            <label class="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">3. Jumlah Data yang Dibagikan</label>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <label class="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 bg-slate-50/50 cursor-pointer">
                                     <input type="radio" name="equal_limit_choice" value="all" checked onchange="toggleEqualLimitInput(false)" class="text-brand-600 focus:ring-brand-500">
@@ -1321,7 +1363,7 @@
                         <!-- Pilih Petugas Penerima Ploting -->
                         <div>
                             <div class="flex items-center justify-between mb-2">
-                                <label class="block text-xs font-bold text-slate-800 uppercase tracking-wider">3. Pilih Petugas Tim Marketing & CS</label>
+                                <label class="block text-xs font-bold text-slate-800 uppercase tracking-wider">4. Pilih Petugas Tim Marketing & CS</label>
                                 <button type="button" onclick="toggleAllOfficersCheckboxes()" class="text-xs text-brand-600 font-bold hover:underline">Pilih / Hapus Semua</button>
                             </div>
                             <div class="space-y-2 max-h-56 overflow-y-auto p-1">
@@ -1367,7 +1409,7 @@
                     <!-- Panel Mode 2: Atur Kuota Kustom Per Petugas -->
                     <div id="panelPlotingCustom" class="space-y-4 hidden">
                         <div>
-                            <label class="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-1">2. Tentukan Alokasi Jumlah Siswa Per Petugas</label>
+                            <label class="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-1">3. Tentukan Alokasi Jumlah Siswa Per Petugas</label>
                             <p class="text-xs text-slate-400 mb-3">Tentukan berapa data siswa yang ingin diberikan secara spesifik ke masing-masing staf.</p>
                             <div class="space-y-2.5 max-h-72 overflow-y-auto p-1">
                                 @forelse($assignableOfficers as $officer)
@@ -2185,7 +2227,9 @@
         const queueMetrics = {
             all: {{ $plottingMetrics['total_unassigned'] ?? 0 }},
             kuisioner: {{ $plottingMetrics['unassigned_kuisioner'] ?? 0 }},
-            support_event: {{ $plottingMetrics['unassigned_event'] ?? 0 }}
+            support_event: {{ $plottingMetrics['unassigned_event'] ?? 0 }},
+            scholarship_yes: {{ $plottingMetrics['unassigned_scholarship_yes'] ?? 0 }},
+            scholarship_no: {{ $plottingMetrics['unassigned_scholarship_no'] ?? 0 }}
         };
 
         function openPlotingModal() {
@@ -2255,7 +2299,15 @@
         function calculatePlotingEstimate() {
             const sourceRadio = document.querySelector('input[name="source_filter"]:checked');
             const source = sourceRadio ? sourceRadio.value : 'all';
-            const availableQueue = queueMetrics[source] || 0;
+            const scholarshipRadio = document.querySelector('input[name="scholarship_filter"]:checked');
+            const scholarship = scholarshipRadio ? scholarshipRadio.value : 'all';
+
+            let availableQueue = queueMetrics[source] || 0;
+            if (scholarship === 'ya') {
+                availableQueue = queueMetrics.scholarship_yes || 0;
+            } else if (scholarship === 'tidak') {
+                availableQueue = queueMetrics.scholarship_no || 0;
+            }
 
             const limitChoice = document.querySelector('input[name="equal_limit_choice"]:checked');
             let dataToDistribute = availableQueue;
