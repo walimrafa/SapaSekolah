@@ -91,9 +91,9 @@
         <div class="bg-gradient-to-r from-slate-900 via-slate-900 to-brand-950 text-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6">
             <div class="flex items-center space-x-4">
                 @if(!empty($appSettings['app_logo_url']))
-                    <img src="{{ $appSettings['app_logo_url'] }}" alt="Logo" class="w-14 h-14 object-contain rounded-2xl bg-white p-1.5 shadow-md">
+                    <img src="{{ $appSettings['app_logo_url'] }}" alt="Logo" class="w-14 h-14 object-contain rounded-full bg-white p-1 shadow-md">
                 @else
-                    <img src="{{ asset('logo-sapa-sekolah.png') }}" alt="Logo" class="w-14 h-14 object-contain rounded-2xl bg-white p-1.5 shadow-md">
+                    <img src="{{ asset('logo-sapa-sekolah.png') }}" alt="Logo" class="w-14 h-14 object-contain rounded-full bg-white p-1 shadow-md">
                 @endif
                 <div>
                     <div class="flex items-center space-x-2">

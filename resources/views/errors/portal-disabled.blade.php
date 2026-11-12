@@ -22,9 +22,9 @@
         <!-- Logo -->
         <div class="flex justify-center">
             @if(!empty($appSettings['app_logo_url']))
-                <img src="{{ $appSettings['app_logo_url'] }}" alt="Logo" class="w-16 h-16 object-contain rounded-2xl bg-white p-2 shadow-lg">
+                <img src="{{ $appSettings['app_logo_url'] }}" alt="Logo" class="w-16 h-16 object-contain rounded-full bg-white p-1 shadow-lg">
             @else
-                <img src="{{ asset('logo-sapa-sekolah.png') }}" alt="Logo" class="w-16 h-16 object-contain rounded-2xl bg-white p-2 shadow-lg">
+                <img src="{{ asset('logo-sapa-sekolah.png') }}" alt="Logo" class="w-16 h-16 object-contain rounded-full bg-white p-1 shadow-lg">
             @endif
         </div>
 

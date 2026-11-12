@@ -19,13 +19,9 @@
             <!-- Top Logo -->
             <div class="relative z-10 flex items-center space-x-3">
                 @if(!empty($appSettings['app_logo_url']))
-                    <img src="{{ $appSettings['app_logo_url'] }}" alt="Logo" class="w-11 h-11 object-contain rounded-2xl bg-white p-1 shadow-lg shadow-brand-500/20">
+                    <img src="{{ $appSettings['app_logo_url'] }}" alt="Logo" class="w-12 h-12 object-contain rounded-full bg-white p-0.5 shadow-lg shadow-brand-500/20">
                 @else
-                    <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-brand-500 to-amber-400 p-0.5 shadow-lg shadow-brand-500/20">
-                        <div class="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center">
-                            <i data-lucide="map-pin" class="w-5 h-5 text-amber-400"></i>
-                        </div>
-                    </div>
+                    <img src="{{ asset('logo-sapa-sekolah.png') }}" alt="Logo" class="w-12 h-12 object-contain rounded-full bg-white p-0.5 shadow-lg shadow-brand-500/20">
                 @endif
                 <div>
                     <h1 class="text-xl font-extrabold tracking-tight text-white">{{ $appSettings['app_name'] ?? 'SAPA Sekolah' }}</h1>
@@ -99,9 +95,9 @@
                 <!-- Mobile Brand Header (Tampil hanya di layar kecil) -->
                 <div class="lg:hidden flex items-center space-x-3 mb-6 pb-4 border-b border-slate-100">
                     @if(!empty($appSettings['app_logo_url']))
-                        <img src="{{ $appSettings['app_logo_url'] }}" alt="Logo" class="w-10 h-10 object-contain rounded-xl bg-slate-900 p-1 shadow-md">
+                        <img src="{{ $appSettings['app_logo_url'] }}" alt="Logo" class="w-10 h-10 object-contain rounded-full bg-white p-0.5 shadow-md border border-slate-100">
                     @else
-                        <img src="{{ asset('logo-sapa-sekolah.png') }}" alt="Logo" class="w-10 h-10 object-contain rounded-xl bg-slate-900 p-1 shadow-md">
+                        <img src="{{ asset('logo-sapa-sekolah.png') }}" alt="Logo" class="w-10 h-10 object-contain rounded-full bg-white p-0.5 shadow-md border border-slate-100">
                     @endif
                     <div>
                         <h1 class="text-lg font-extrabold text-slate-900 tracking-tight">{{ $appSettings['app_name'] ?? 'SAPA Sekolah' }}</h1>

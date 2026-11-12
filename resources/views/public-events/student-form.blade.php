@@ -41,9 +41,9 @@
         <header class="bg-slate-900 text-white rounded-3xl p-6 shadow-xl border border-slate-800 flex items-center justify-between gap-4">
             <div class="flex items-center space-x-4">
                 @if(!empty($appSettings['app_logo_url']))
-                    <img src="{{ $appSettings['app_logo_url'] }}" alt="Logo" class="w-12 h-12 object-contain rounded-2xl bg-white p-1 shadow-md">
+                    <img src="{{ $appSettings['app_logo_url'] }}" alt="Logo" class="w-12 h-12 object-contain rounded-full bg-white p-0.5 shadow-md">
                 @else
-                    <img src="{{ asset('logo-sapa-sekolah.png') }}" alt="Logo" class="w-12 h-12 object-contain rounded-2xl bg-white p-1 shadow-md">
+                    <img src="{{ asset('logo-sapa-sekolah.png') }}" alt="Logo" class="w-12 h-12 object-contain rounded-full bg-white p-0.5 shadow-md">
                 @endif
                 <div>
                     <h1 class="text-xl font-extrabold tracking-tight">{{ $appSettings['app_name'] }}</h1>

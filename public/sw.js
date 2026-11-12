@@ -4,13 +4,21 @@
  * Version: v2.0
  */
 
-const CACHE_NAME = 'sapasekolah-pwa-v2';
+const CACHE_NAME = 'sapasekolah-pwa-v3';
 
 const PRECACHE_ASSETS = [
   '/',
   '/offline.html',
   '/manifest.json',
+  '/logo-sapa-sekolah.png',
+  '/pwa-icon-72.png',
+  '/pwa-icon-96.png',
+  '/pwa-icon-128.png',
+  '/pwa-icon-144.png',
+  '/pwa-icon-152.png',
   '/pwa-icon-192.png',
+  '/pwa-maskable-192.png',
+  '/pwa-icon-384.png',
   '/pwa-icon-512.png',
   '/pwa-maskable-512.png',
   '/apple-touch-icon.png',

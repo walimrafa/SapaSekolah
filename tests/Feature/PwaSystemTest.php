@@ -43,7 +43,7 @@ class PwaSystemTest extends TestCase
         $swPath = public_path('sw.js');
         $this->assertFileExists($swPath);
         $swContent = file_get_contents($swPath);
-        $this->assertStringContainsString('sapasekolah-pwa-v2', $swContent);
+        $this->assertStringContainsString('sapasekolah-pwa-', $swContent);
         $this->assertStringContainsString('offline.html', $swContent);
         $this->assertStringContainsString('addEventListener(\'install\'', $swContent);
         $this->assertStringContainsString('addEventListener(\'activate\'', $swContent);
