@@ -9,7 +9,7 @@
     // Check active states for auto-expanding current menu
     $isSchoolActive = request()->routeIs('map.*', 'schools.*', 'priorities.*');
     $isFieldActive = request()->routeIs('visit-plans.*', 'visits.*', 'follow-ups.*', 'socializations.completed.*', 'marketing-routes.*', 'activities.*');
-    $isCrmActive = request()->routeIs('prospects.*', 'new-students.*', 'student-questionnaires.*', 'student-follow-ups.*', 'study-programs.*', 'kol-recommendations.*', 'master-questionnaires.*');
+    $isCrmActive = request()->routeIs('prospects.*', 'new-students.*', 'student-questionnaires.*', 'student-follow-ups.*', 'study-programs.*', 'kol-recommendations.*');
     $isEventActive = request()->routeIs('event-proposals.*', 'school-events.*', 'event-students.*');
     $isReportActive = request()->routeIs('reports.*', 'comprehensive-reports.*', 'event-reports.*');
     $isPmbActive = request()->routeIs('pmb.*', 'e-brochures.*');
@@ -271,14 +271,6 @@
                     <i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i>
                     <span>{{ $lbl('submenu_questionnaires', 'Kuisioner') }}</span>
                 </a>
-
-                @if(auth()->user()->isAdmin() || auth()->user()->hasRole('Pimpinan') || auth()->user()->hasRole('Koordinator Marketing'))
-                <a href="{{ route('master-questionnaires.index') }}"
-                    class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('master-questionnaires.*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30 font-bold' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                    <i data-lucide="clipboard-edit" class="w-3.5 h-3.5 text-indigo-400"></i>
-                    <span>{{ $lbl('submenu_master_questionnaires', 'Master Kuisioner') }}</span>
-                </a>
-                @endif
 
                 <a href="{{ route('student-follow-ups.index') }}"
                     class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('student-follow-ups.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">

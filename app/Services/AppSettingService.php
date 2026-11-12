@@ -99,7 +99,6 @@ class AppSettingService
             'submenu_prospects' => 'Prospek',
             'submenu_new_students' => 'Mahasiswa Baru',
             'submenu_questionnaires' => 'Kuisioner',
-            'submenu_master_questionnaires' => 'Master Kuisioner',
             'submenu_student_followups' => 'Follow Up',
             'submenu_kol_recommendations' => 'Rekomendasi KOL',
             'submenu_study_programs' => 'Prodi',
@@ -132,6 +131,7 @@ class AppSettingService
             // 8. Sistem & Master
             'menu_master' => 'Master & Sistem',
             'submenu_master_data' => 'Wilayah',
+            'submenu_master_questionnaires' => 'Master Kuisioner',
             'submenu_users' => 'User',
             'submenu_qr_codes' => 'QR Code',
             'submenu_whatsapp' => 'WhatsApp',
