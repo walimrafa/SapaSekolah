@@ -72,12 +72,16 @@ class StudentFollowUpDistributeTest extends TestCase
 
     public function test_distribute_post_divides_leads_equally(): void
     {
+        // Pastikan tidak ada data unassigned sebelumnya yang mengganggu perhitungan test
+        StudentQuestionnaire::whereNull('assigned_to')->update(['assigned_to' => $this->admin->id]);
+
         // Buat 4 leads siswa unassigned
+        $createdIds = [];
         for ($i = 1; $i <= 4; $i++) {
-            StudentQuestionnaire::create([
+            $student = StudentQuestionnaire::create([
                 'student_name' => "Siswa Antrean {$i}",
                 'student_phone' => "08123450000{$i}",
-                'student_email' => "antrean{$i}@gmail.com",
+                'student_email' => "antrean{$i}_" . uniqid() . "@gmail.com",
                 'school_name' => 'SMAN 1 Karawang',
                 'campus_id' => $this->campusKarawang->id,
                 'student_class' => 'XII',
@@ -85,12 +89,14 @@ class StudentFollowUpDistributeTest extends TestCase
                 'scholarship_interest' => 'ya',
                 'assigned_to' => null,
             ]);
+            $createdIds[] = $student->id;
         }
 
         $officer1 = $this->marketing;
         $officer2 = User::factory()->create([
             'role_id' => Role::where('name', 'Marketing')->first()->id,
             'campus_id' => $this->campusKarawang->id,
+            'email' => 'mkt_' . uniqid() . '@example.com',
         ]);
 
         $response = $this->actingAs($this->admin)->post(route('student-follow-ups.distribute'), [
@@ -101,9 +107,9 @@ class StudentFollowUpDistributeTest extends TestCase
 
         $response->assertRedirect(route('student-follow-ups.index'));
 
-        // Cek bahwa semua siswa terbagi rata (masing-masing 2)
-        $assignedOfficer1 = StudentQuestionnaire::where('assigned_to', $officer1->id)->count();
-        $assignedOfficer2 = StudentQuestionnaire::where('assigned_to', $officer2->id)->count();
+        // Cek bahwa 4 siswa yang baru di-distribusikan terbagi rata (masing-masing 2)
+        $assignedOfficer1 = StudentQuestionnaire::whereIn('id', $createdIds)->where('assigned_to', $officer1->id)->count();
+        $assignedOfficer2 = StudentQuestionnaire::whereIn('id', $createdIds)->where('assigned_to', $officer2->id)->count();
 
         $this->assertEquals(2, $assignedOfficer1);
         $this->assertEquals(2, $assignedOfficer2);

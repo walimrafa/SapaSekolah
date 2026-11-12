@@ -210,7 +210,7 @@
                         </label>
                         <input id="instagram_followers" name="instagram_followers" type="number" min="0" value="{{ old('instagram_followers') }}" placeholder="Contoh: 2500" class="w-full px-3.5 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500">
                         <p class="mt-1 text-[11px] text-pink-600 font-semibold flex items-center gap-1">
-                            <span>✨</span> Follower ≥ 2.000 otomatis direkomendasikan jadi Brand Ambassador / KOL Kampus!
+                            <span>✨</span> Follower ≥ 1.500 otomatis direkomendasikan jadi Brand Ambassador / KOL Kampus!
                         </p>
                     </div>
                     <div>

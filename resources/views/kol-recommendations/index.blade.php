@@ -13,7 +13,7 @@
                             <i data-lucide="sparkles" class="w-3.5 h-3.5 mr-1.5 text-pink-400"></i> Rekomendasi KOL Siswa
                         </span>
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                            <i data-lucide="zap" class="w-3.5 h-3.5 mr-1.5 text-emerald-400"></i> Otomatis &ge; 2.000 Followers
+                            <i data-lucide="zap" class="w-3.5 h-3.5 mr-1.5 text-emerald-400"></i> Otomatis &ge; 1.500 Followers
                         </span>
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-800/80 text-slate-300 border border-slate-700">
                             <i data-lucide="shield-check" class="w-3 h-3 mr-1 text-amber-400"></i> Administrator, Pimpinan &amp; Koordinator
@@ -24,7 +24,7 @@
                         Rekomendasi KOL &amp; Student Influencer
                     </h1>
                     <p class="text-sm md:text-base text-slate-300 max-w-3xl leading-relaxed">
-                        Data siswa yang memiliki akun Instagram dengan minimal <strong>2.000 followers</strong> secara otomatis tersaring dari Kuisioner Sosialisasi dan Pendaftaran Siswa Support Event. Cocok untuk direkrut menjadi Brand Ambassador dan Duta Kampus UBSI.
+                        Data siswa yang memiliki akun Instagram dengan minimal <strong>1.500 followers</strong> secara otomatis tersaring dari Kuisioner Sosialisasi dan Pendaftaran Siswa Support Event. Cocok untuk direkrut menjadi Brand Ambassador dan Duta Kampus UBSI.
                     </p>
                 </div>
 
@@ -50,7 +50,7 @@
                     </span>
                 </div>
                 <p class="text-2xl sm:text-3xl font-black text-slate-900 mt-1">{{ number_format($stats['total_kandidat']) }}</p>
-                <span class="text-[11px] text-pink-600 font-semibold">&ge; 2.000 Followers</span>
+                <span class="text-[11px] text-pink-600 font-semibold">&ge; 1.500 Followers</span>
             </div>
 
             <!-- Dari Kuisioner Sosialisasi -->
@@ -149,7 +149,8 @@
                 <!-- Filter Minimum Followers -->
                 <div class="lg:col-span-2">
                     <select name="min_followers" class="w-full px-3 py-2.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-slate-700">
-                        <option value="2000" {{ request('min_followers', '2000') == '2000' ? 'selected' : '' }}>Min &ge; 2.000 Follower</option>
+                        <option value="1500" {{ request('min_followers', '1500') == '1500' ? 'selected' : '' }}>Min &ge; 1.500 Follower</option>
+                        <option value="2000" {{ request('min_followers') == '2000' ? 'selected' : '' }}>Min &ge; 2.000 Follower</option>
                         <option value="5000" {{ request('min_followers') == '5000' ? 'selected' : '' }}>Min &ge; 5.000 Follower</option>
                         <option value="10000" {{ request('min_followers') == '10000' ? 'selected' : '' }}>Min &ge; 10.000 (10K+)</option>
                         <option value="0" {{ request('min_followers') === '0' ? 'selected' : '' }}>Tampilkan Semua (Semua Follower)</option>
@@ -377,7 +378,7 @@
                                             Belum Ada Calon KOL yang Memenuhi Kriteria
                                         </h3>
                                         <p class="text-xs text-slate-500 leading-relaxed">
-                                            Siswa yang mengisi kuisioner sosialisasi atau formulir pendaftaran event dengan followers Instagram &ge; 2.000 akan otomatis masuk ke daftar ini.
+                                            Siswa yang mengisi kuisioner sosialisasi atau formulir pendaftaran event dengan followers Instagram &ge; 1.500 akan otomatis masuk ke daftar ini.
                                         </p>
                                     </div>
                                 </td>

@@ -36,22 +36,23 @@ class KolRecommendationTest extends TestCase
         $this->campusKarawang = Campus::firstOrCreate(['code' => 'KRW'], ['name' => 'UBSI Karawang', 'is_active' => true, 'is_default' => true]);
         $this->campusCikampek = Campus::firstOrCreate(['code' => 'CKP'], ['name' => 'UBSI Kampus Cikampek', 'is_active' => true, 'is_default' => false]);
 
-        $this->admin = User::factory()->create(['role_id' => $adminRole->id, 'campus_id' => $this->campusKarawang->id]);
-        $this->pimpinan = User::factory()->create(['role_id' => $pimpinanRole->id, 'campus_id' => $this->campusKarawang->id]);
-        $this->koordinator = User::factory()->create(['role_id' => $koordinatorRole->id, 'campus_id' => $this->campusKarawang->id]);
-        $this->marketing = User::factory()->create(['role_id' => $marketingRole->id, 'campus_id' => $this->campusKarawang->id]);
-        $this->cs = User::factory()->create(['role_id' => $csRole->id, 'campus_id' => $this->campusKarawang->id]);
+        $uid = uniqid();
+        $this->admin = User::factory()->create(['email' => "admin_{$uid}@example.com", 'role_id' => $adminRole->id, 'campus_id' => $this->campusKarawang->id]);
+        $this->pimpinan = User::factory()->create(['email' => "pimpinan_{$uid}@example.com", 'role_id' => $pimpinanRole->id, 'campus_id' => $this->campusKarawang->id]);
+        $this->koordinator = User::factory()->create(['email' => "koordinator_{$uid}@example.com", 'role_id' => $koordinatorRole->id, 'campus_id' => $this->campusKarawang->id]);
+        $this->marketing = User::factory()->create(['email' => "marketing_{$uid}@example.com", 'role_id' => $marketingRole->id, 'campus_id' => $this->campusKarawang->id]);
+        $this->cs = User::factory()->create(['email' => "cs_{$uid}@example.com", 'role_id' => $csRole->id, 'campus_id' => $this->campusKarawang->id]);
     }
 
-    public function test_automatic_kol_flagging_when_instagram_followers_ge_2000(): void
+    public function test_automatic_kol_flagging_when_instagram_followers_ge_1500(): void
     {
-        // 1. Siswa dengan follower >= 2000 otomatis menjadi KOL
+        // 1. Siswa dengan follower >= 1500 otomatis menjadi KOL
         $kolStudent = StudentQuestionnaire::create([
             'student_name' => 'Influencer Siswa',
             'student_phone' => '081234567890',
             'student_email' => 'influencer@gmail.com',
             'instagram_handle' => 'influencer_siswa',
-            'instagram_followers' => 2500,
+            'instagram_followers' => 1500,
             'school_name' => 'SMAN 1 Karawang',
             'campus_id' => $this->campusKarawang->id,
             'student_class' => 'XII MIPA 1',
@@ -64,13 +65,13 @@ class KolRecommendationTest extends TestCase
         $this->assertEquals('influencer_siswa', $kolStudent->clean_instagram_handle);
         $this->assertEquals('https://instagram.com/influencer_siswa', $kolStudent->instagram_url);
 
-        // 2. Siswa dengan follower < 2000 tidak di-flag sebagai KOL
+        // 2. Siswa dengan follower < 1500 tidak di-flag sebagai KOL
         $regularStudent = StudentQuestionnaire::create([
             'student_name' => 'Siswa Biasa',
             'student_phone' => '081234567891',
             'student_email' => 'biasa@gmail.com',
             'instagram_handle' => 'siswa_biasa',
-            'instagram_followers' => 450,
+            'instagram_followers' => 1400,
             'school_name' => 'SMAN 1 Karawang',
             'campus_id' => $this->campusKarawang->id,
             'student_class' => 'XII MIPA 2',

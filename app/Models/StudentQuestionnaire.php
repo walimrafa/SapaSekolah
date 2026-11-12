@@ -23,7 +23,7 @@ class StudentQuestionnaire extends Model
     public const KOL_STATUS_DITOLAK = 'ditolak';
     public const KOL_STATUS_AKTIF = 'aktif';
 
-    public const KOL_MIN_FOLLOWERS = 2000;
+    public const KOL_MIN_FOLLOWERS = 1500;
 
     protected $fillable = [
         'school_id',
@@ -119,7 +119,7 @@ class StudentQuestionnaire extends Model
             $igFollowers = (int) ($student->instagram_followers ?? 0);
             $tiktokFollowers = (int) ($student->tiktok_followers ?? 0);
 
-            // Jika followers instagram >= 2000 atau tiktok >= 2000, otomatis kandidat KOL
+            // Jika followers instagram >= 1500 atau tiktok >= 1500, otomatis kandidat KOL
             if ($igFollowers >= self::KOL_MIN_FOLLOWERS || $tiktokFollowers >= self::KOL_MIN_FOLLOWERS) {
                 $student->is_kol = true;
                 if (empty($student->kol_status)) {
@@ -140,7 +140,7 @@ class StudentQuestionnaire extends Model
     }
 
     /**
-     * Scope: Hanya ambil kandidat KOL (berdasarkan flag is_kol atau follower >= 2000)
+     * Scope: Hanya ambil kandidat KOL (berdasarkan flag is_kol atau follower >= 1500)
      */
     public function scopeKolCandidates($query)
     {

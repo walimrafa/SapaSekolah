@@ -41,7 +41,7 @@ class KolRecommendationController extends Controller
         $activeCampus = AppContextService::getActiveCampus();
         $campuses = Campus::where('is_active', true)->get();
 
-        // Base Query Kandidat KOL (Followers >= 2000 atau di-flag is_kol)
+        // Base Query Kandidat KOL (Followers >= 1500 atau di-flag is_kol)
         $baseQuery = StudentQuestionnaire::query()
             ->kolCandidates()
             ->with(['school', 'campus', 'eventProposal', 'assignedUser']);
