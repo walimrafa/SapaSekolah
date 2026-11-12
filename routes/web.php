@@ -136,11 +136,19 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/new-students/export', [\App\Http\Controllers\NewStudentController::class, 'export'])->name('new-students.export');
     Route::post('/new-students/{prospect}/unvalidate', [\App\Http\Controllers\NewStudentController::class, 'unvalidate'])->name('new-students.unvalidate');
 
-    // Rekomendasi KOL / Student Influencer (Khusus Admin, Pimpinan, dan Koordinator Marketing)
+    // Rekomendasi KOL & Master Kuisioner (Khusus Admin, Pimpinan, dan Koordinator Marketing)
     Route::middleware('role:Admin,Pimpinan,Koordinator Marketing')->group(function () {
         Route::get('/kol-recommendations', [\App\Http\Controllers\KolRecommendationController::class, 'index'])->name('kol-recommendations.index');
         Route::put('/kol-recommendations/{studentQuestionnaire}/status', [\App\Http\Controllers\KolRecommendationController::class, 'updateStatus'])->name('kol-recommendations.update-status');
         Route::get('/kol-recommendations/export', [\App\Http\Controllers\KolRecommendationController::class, 'exportExcel'])->name('kol-recommendations.export');
+        Route::post('/kol-recommendations/settings', [\App\Http\Controllers\KolRecommendationController::class, 'updateSettings'])->name('kol-recommendations.settings.update');
+
+        // Master Kuisioner Siswa
+        Route::get('/master-kuisioner', [\App\Http\Controllers\MasterQuestionnaireController::class, 'index'])->name('master-questionnaires.index');
+        Route::post('/master-kuisioner', [\App\Http\Controllers\MasterQuestionnaireController::class, 'store'])->name('master-questionnaires.store');
+        Route::put('/master-kuisioner/{questionnaireQuestion}', [\App\Http\Controllers\MasterQuestionnaireController::class, 'update'])->name('master-questionnaires.update');
+        Route::delete('/master-kuisioner/{questionnaireQuestion}', [\App\Http\Controllers\MasterQuestionnaireController::class, 'destroy'])->name('master-questionnaires.destroy');
+        Route::post('/master-kuisioner/reset-defaults', [\App\Http\Controllers\MasterQuestionnaireController::class, 'resetDefaults'])->name('master-questionnaires.reset-defaults');
     });
 
     // Follow Up Routes (Sekolah)

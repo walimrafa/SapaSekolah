@@ -17,34 +17,15 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class StudentQuestionnaireController extends Controller
 {
-    private const QUESTION_SECTIONS = [
-        'A. Motivasi' => [
-            'motivation_job' => 'Saya ingin kuliah untuk meningkatkan peluang memperoleh pekerjaan yang baik.',
-            'motivation_interest' => 'Saya ingin memilih program studi yang sesuai dengan minat dan bakat saya.',
-            'motivation_parent' => 'Harapan orang tua menjadi alasan penting bagi saya untuk kuliah.',
-        ],
-        'B. Pencarian informasi' => [
-            'information_social_media' => 'Saya mencari informasi kampus melalui media sosial sebelum menentukan pilihan.',
-            'information_testimonials' => 'Testimoni mahasiswa atau alumni memengaruhi ketertarikan saya terhadap kampus.',
-            'information_comparison' => 'Saya membandingkan informasi dari beberapa kampus sebelum mengambil keputusan.',
-        ],
-        'C. Pengaruh sosial' => [
-            'social_parent' => 'Pendapat orang tua sangat memengaruhi pilihan kampus saya.',
-            'social_friends' => 'Pilihan teman memengaruhi pertimbangan saya dalam memilih kampus.',
-            'social_teacher' => 'Rekomendasi guru atau alumni meningkatkan kepercayaan saya terhadap kampus.',
-        ],
-        'D. Preferensi kampus' => [
-            'campus_cost' => 'Biaya kuliah yang terjangkau merupakan faktor utama bagi saya.',
-            'campus_reputation' => 'Akreditasi dan reputasi kampus sangat penting dalam keputusan saya.',
-            'campus_career' => 'Peluang kerja, magang, dan keterampilan praktis menjadi pertimbangan utama saya.',
-            'campus_location' => 'Lokasi kampus dan kemudahan transportasi memengaruhi pilihan saya.',
-        ],
-        'E. Niat dan hambatan' => [
-            'intention_ubsi' => 'Saya mempertimbangkan UBSI sebagai salah satu pilihan kuliah.',
-            'intention_information' => 'Saya berniat mencari informasi PMB UBSI lebih lanjut.',
-            'barrier_cost' => 'Kendala biaya dapat membuat saya menunda atau membatalkan rencana kuliah.',
-        ],
-    ];
+    public static function questionSections(): array
+    {
+        return \App\Models\QuestionnaireQuestion::getActiveSections();
+    }
+
+    public static function allQuestions(): array
+    {
+        return \App\Models\QuestionnaireQuestion::allQuestions();
+    }
 
     public function create(Request $request): View
     {
@@ -71,7 +52,7 @@ class StudentQuestionnaireController extends Controller
         $selectedSchoolId = $request->query('school_id') ?? ($selectedEvent ? $selectedEvent->school_id : null);
 
         return view('student-questionnaires.create', [
-            'questionSections' => self::QUESTION_SECTIONS,
+            'questionSections' => self::questionSections(),
             'campuses' => $campuses,
             'activeCampus' => $activeCampus,
             'schools' => $schools,
@@ -253,7 +234,7 @@ class StudentQuestionnaireController extends Controller
 
         return view('student-questionnaires.index', [
             'questionnaires' => $query->latest()->paginate(15)->withQueryString(),
-            'questionSections' => self::QUESTION_SECTIONS,
+            'questionSections' => self::questionSections(),
             'scaleLabels' => [
                 1 => 'Sangat tidak setuju',
                 2 => 'Tidak setuju',
@@ -464,7 +445,7 @@ class StudentQuestionnaireController extends Controller
     private function buildSectionStatistics(array $questions): array
     {
         $sections = [];
-        foreach (self::QUESTION_SECTIONS as $title => $sectionQuestions) {
+        foreach (self::questionSections() as $title => $sectionQuestions) {
             $scores = array_filter(array_map(
                 fn (string $key) => $questions[$key]['average'],
                 array_keys($sectionQuestions)
@@ -475,16 +456,6 @@ class StudentQuestionnaireController extends Controller
         }
 
         return $sections;
-    }
-
-    private static function allQuestions(): array
-    {
-        $questions = [];
-        foreach (self::QUESTION_SECTIONS as $section) {
-            $questions = array_merge($questions, $section);
-        }
-
-        return $questions;
     }
 
     /**

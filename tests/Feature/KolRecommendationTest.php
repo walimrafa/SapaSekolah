@@ -157,6 +157,21 @@ class KolRecommendationTest extends TestCase
         $response->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     }
 
+    public function test_update_kol_min_followers_settings(): void
+    {
+        $response = $this->actingAs($this->admin)->post(route('kol-recommendations.settings.update'), [
+            'kol_min_followers' => 2500,
+            'sync_existing' => 1,
+        ]);
+
+        $response->assertRedirect(route('kol-recommendations.index'));
+        $this->assertEquals(2500, \App\Services\AppSettingService::get('kol_min_followers'));
+        $this->assertEquals(2500, StudentQuestionnaire::getKolMinFollowers());
+
+        // Kembalikan ke default untuk isolasi test
+        \App\Services\AppSettingService::set('kol_min_followers', 1500);
+    }
+
     public function test_event_form_submission_creates_kol_candidate(): void
     {
         $school = School::firstOrCreate([

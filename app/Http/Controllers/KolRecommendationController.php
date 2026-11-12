@@ -6,6 +6,7 @@ use App\Models\Campus;
 use App\Models\StudentQuestionnaire;
 use App\Services\ActivityLogService;
 use App\Services\AppContextService;
+use App\Services\AppSettingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -345,6 +346,45 @@ class KolRecommendationController extends Controller
             'Pragma' => 'no-cache',
             'Expires' => '0',
         ]);
+    }
+
+    /**
+     * Update Master Pengaturan Syarat Minimal Follower Rekomendasi KOL.
+     */
+    public function updateSettings(Request $request): RedirectResponse
+    {
+        $this->authorizeAccess();
+
+        $validated = $request->validate([
+            'kol_min_followers' => ['required', 'integer', 'min:1', 'max:10000000'],
+            'sync_existing' => ['nullable'],
+        ]);
+
+        $newMin = (int) $validated['kol_min_followers'];
+        AppSettingService::set('kol_min_followers', $newMin);
+
+        $syncedCount = 0;
+        if ($request->boolean('sync_existing')) {
+            $syncedCount = StudentQuestionnaire::where(function ($q) use ($newMin) {
+                $q->where('instagram_followers', '>=', $newMin)
+                    ->orWhere('tiktok_followers', '>=', $newMin);
+            })->where('is_kol', false)->update([
+                'is_kol' => true,
+                'kol_status' => StudentQuestionnaire::KOL_STATUS_KANDIDAT,
+            ]);
+        }
+
+        $formattedMin = number_format($newMin, 0, ',', '.');
+        $message = "Syarat minimal follower KOL berhasil diperbarui menjadi {$formattedMin} followers!";
+        if ($syncedCount > 0) {
+            $message .= " Sebanyak {$syncedCount} siswa baru otomatis di-flag sebagai kandidat KOL.";
+        }
+
+        return redirect()->route('kol-recommendations.index')
+            ->with('toast', [
+                'type' => 'success',
+                'message' => $message,
+            ]);
     }
 }
 

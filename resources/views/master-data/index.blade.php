@@ -53,6 +53,12 @@
             <i data-lucide="sliders" class="w-4 h-4 text-rose-400"></i>
             <span>Scoring</span>
         </a>
+
+        <a href="{{ route('master-questionnaires.index') }}"
+            class="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 sm:space-x-2 shrink-0 whitespace-nowrap text-indigo-700 bg-indigo-50 hover:bg-indigo-100 hover:text-indigo-900 border border-indigo-200">
+            <i data-lucide="clipboard-edit" class="w-4 h-4 text-indigo-600"></i>
+            <span>Master Kuisioner</span>
+        </a>
     </div>
 
     <!-- Tab: Master Kampus -->

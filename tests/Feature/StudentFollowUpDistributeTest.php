@@ -114,5 +114,56 @@ class StudentFollowUpDistributeTest extends TestCase
         $this->assertEquals(2, $assignedOfficer1);
         $this->assertEquals(2, $assignedOfficer2);
     }
+
+    public function test_distribute_prioritizes_and_filters_scholarship_interest(): void
+    {
+        // Bersihkan unassigned sebelumnya
+        StudentQuestionnaire::whereNull('assigned_to')->update(['assigned_to' => $this->admin->id]);
+
+        // Buat 1 siswa tidak minat, dan 1 siswa minat beasiswa
+        $noScholarship = StudentQuestionnaire::create([
+            'student_name' => 'Siswa Tidak Minat Beasiswa',
+            'student_phone' => '081234500010',
+            'student_email' => 'nominat_' . uniqid() . '@gmail.com',
+            'school_name' => 'SMAN 1 Karawang',
+            'campus_id' => $this->campusKarawang->id,
+            'student_class' => 'XII',
+            'student_major' => 'IPS',
+            'scholarship_interest' => 'tidak',
+            'assigned_to' => null,
+        ]);
+
+        $yesScholarship = StudentQuestionnaire::create([
+            'student_name' => 'Siswa Minat Beasiswa',
+            'student_phone' => '081234500011',
+            'student_email' => 'yesminat_' . uniqid() . '@gmail.com',
+            'school_name' => 'SMAN 1 Karawang',
+            'campus_id' => $this->campusKarawang->id,
+            'student_class' => 'XII',
+            'student_major' => 'IPA',
+            'scholarship_interest' => 'ya',
+            'assigned_to' => null,
+        ]);
+
+        $officer = $this->marketing;
+
+        // Ploting hanya 1 data dengan mode 'all' -> harus mengutamakan siswa yang minat beasiswa!
+        $response = $this->actingAs($this->admin)->post(route('student-follow-ups.distribute'), [
+            'distribution_type' => 'equal',
+            'source_filter' => 'all',
+            'scholarship_filter' => 'all',
+            'total_limit' => 1,
+            'officer_ids' => [$officer->id],
+        ]);
+
+        $response->assertRedirect(route('student-follow-ups.index'));
+
+        // Pastikan yang terambil pertama kali adalah yang minat beasiswa
+        $yesScholarship->refresh();
+        $noScholarship->refresh();
+
+        $this->assertEquals($officer->id, $yesScholarship->assigned_to);
+        $this->assertNull($noScholarship->assigned_to);
+    }
 }
 

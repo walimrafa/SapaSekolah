@@ -25,6 +25,14 @@ class StudentQuestionnaire extends Model
 
     public const KOL_MIN_FOLLOWERS = 1500;
 
+    /**
+     * Dapatkan syarat minimal follower media sosial (Instagram/TikTok) dari Master Pengaturan Sistem.
+     */
+    public static function getKolMinFollowers(): int
+    {
+        return (int) \App\Services\AppSettingService::get('kol_min_followers', self::KOL_MIN_FOLLOWERS);
+    }
+
     protected $fillable = [
         'school_id',
         'campus_id',
@@ -118,9 +126,10 @@ class StudentQuestionnaire extends Model
         static::saving(function (StudentQuestionnaire $student) {
             $igFollowers = (int) ($student->instagram_followers ?? 0);
             $tiktokFollowers = (int) ($student->tiktok_followers ?? 0);
+            $minFollowers = self::getKolMinFollowers();
 
-            // Jika followers instagram >= 1500 atau tiktok >= 1500, otomatis kandidat KOL
-            if ($igFollowers >= self::KOL_MIN_FOLLOWERS || $tiktokFollowers >= self::KOL_MIN_FOLLOWERS) {
+            // Jika followers instagram >= minFollowers atau tiktok >= minFollowers, otomatis kandidat KOL
+            if ($igFollowers >= $minFollowers || $tiktokFollowers >= $minFollowers) {
                 $student->is_kol = true;
                 if (empty($student->kol_status)) {
                     $student->kol_status = self::KOL_STATUS_KANDIDAT;
@@ -140,14 +149,16 @@ class StudentQuestionnaire extends Model
     }
 
     /**
-     * Scope: Hanya ambil kandidat KOL (berdasarkan flag is_kol atau follower >= 1500)
+     * Scope: Hanya ambil kandidat KOL (berdasarkan flag is_kol atau follower >= syarat minimal)
      */
     public function scopeKolCandidates($query)
     {
-        return $query->where(function ($q) {
+        $minFollowers = self::getKolMinFollowers();
+
+        return $query->where(function ($q) use ($minFollowers) {
             $q->where('is_kol', true)
-              ->orWhere('instagram_followers', '>=', self::KOL_MIN_FOLLOWERS)
-              ->orWhere('tiktok_followers', '>=', self::KOL_MIN_FOLLOWERS);
+              ->orWhere('instagram_followers', '>=', $minFollowers)
+              ->orWhere('tiktok_followers', '>=', $minFollowers);
         });
     }
 

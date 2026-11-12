@@ -1,3 +1,7 @@
+@php
+    $kolMinFollowers = \App\Models\StudentQuestionnaire::getKolMinFollowers();
+    $formattedMinFollowers = number_format($kolMinFollowers, 0, ',', '.');
+@endphp
 <x-app-layout title="Rekomendasi KOL Siswa - SAPA Sekolah">
     <div x-data="kolManager()" class="space-y-6">
 
@@ -13,7 +17,7 @@
                             <i data-lucide="sparkles" class="w-3.5 h-3.5 mr-1.5 text-pink-400"></i> Rekomendasi KOL Siswa
                         </span>
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                            <i data-lucide="zap" class="w-3.5 h-3.5 mr-1.5 text-emerald-400"></i> Otomatis &ge; 1.500 Followers
+                            <i data-lucide="zap" class="w-3.5 h-3.5 mr-1.5 text-emerald-400"></i> Otomatis &ge; {{ $formattedMinFollowers }} Followers
                         </span>
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-800/80 text-slate-300 border border-slate-700">
                             <i data-lucide="shield-check" class="w-3 h-3 mr-1 text-amber-400"></i> Administrator, Pimpinan &amp; Koordinator
@@ -24,11 +28,18 @@
                         Rekomendasi KOL &amp; Student Influencer
                     </h1>
                     <p class="text-sm md:text-base text-slate-300 max-w-3xl leading-relaxed">
-                        Data siswa yang memiliki akun Instagram dengan minimal <strong>1.500 followers</strong> secara otomatis tersaring dari Kuisioner Sosialisasi dan Pendaftaran Siswa Support Event. Cocok untuk direkrut menjadi Brand Ambassador dan Duta Kampus UBSI.
+                        Data siswa yang memiliki akun Instagram dengan minimal <strong>{{ $formattedMinFollowers }} followers</strong> secara otomatis tersaring dari Kuisioner Sosialisasi dan Pendaftaran Siswa Support Event. Cocok untuk direkrut menjadi Brand Ambassador dan Duta Kampus UBSI.
                     </p>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2.5 shrink-0">
+                    <button type="button" @click="openSettingModal = true"
+                        class="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-white border border-white/20 shadow-lg backdrop-blur-sm transition hover:scale-105"
+                        title="Atur Syarat Minimal Follower Instagram untuk Rekomendasi KOL">
+                        <i data-lucide="sliders" class="w-4 h-4 text-pink-300"></i>
+                        <span>Master Syarat Follower (&ge; {{ $formattedMinFollowers }})</span>
+                    </button>
+
                     <a href="{{ route('kol-recommendations.export', request()->query()) }}"
                         class="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 transition hover:scale-105"
                         title="Download Rekap Calon KOL dalam format Microsoft Excel">
@@ -50,7 +61,7 @@
                     </span>
                 </div>
                 <p class="text-2xl sm:text-3xl font-black text-slate-900 mt-1">{{ number_format($stats['total_kandidat']) }}</p>
-                <span class="text-[11px] text-pink-600 font-semibold">&ge; 1.500 Followers</span>
+                <span class="text-[11px] text-pink-600 font-semibold">&ge; {{ $formattedMinFollowers }} Followers</span>
             </div>
 
             <!-- Dari Kuisioner Sosialisasi -->
@@ -149,8 +160,10 @@
                 <!-- Filter Minimum Followers -->
                 <div class="lg:col-span-2">
                     <select name="min_followers" class="w-full px-3 py-2.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-slate-700">
-                        <option value="1500" {{ request('min_followers', '1500') == '1500' ? 'selected' : '' }}>Min &ge; 1.500 Follower</option>
-                        <option value="2000" {{ request('min_followers') == '2000' ? 'selected' : '' }}>Min &ge; 2.000 Follower</option>
+                        <option value="{{ $kolMinFollowers }}" {{ request('min_followers', (string) $kolMinFollowers) == (string) $kolMinFollowers ? 'selected' : '' }}>Min &ge; {{ $formattedMinFollowers }} Follower (Standar)</option>
+                        @if($kolMinFollowers != 2000)
+                            <option value="2000" {{ request('min_followers') == '2000' ? 'selected' : '' }}>Min &ge; 2.000 Follower</option>
+                        @endif
                         <option value="5000" {{ request('min_followers') == '5000' ? 'selected' : '' }}>Min &ge; 5.000 Follower</option>
                         <option value="10000" {{ request('min_followers') == '10000' ? 'selected' : '' }}>Min &ge; 10.000 (10K+)</option>
                         <option value="0" {{ request('min_followers') === '0' ? 'selected' : '' }}>Tampilkan Semua (Semua Follower)</option>
@@ -378,7 +391,7 @@
                                             Belum Ada Calon KOL yang Memenuhi Kriteria
                                         </h3>
                                         <p class="text-xs text-slate-500 leading-relaxed">
-                                            Siswa yang mengisi kuisioner sosialisasi atau formulir pendaftaran event dengan followers Instagram &ge; 1.500 akan otomatis masuk ke daftar ini.
+                                            Siswa yang mengisi kuisioner sosialisasi atau formulir pendaftaran event dengan followers Instagram &ge; {{ $formattedMinFollowers }} akan otomatis masuk ke daftar ini.
                                         </p>
                                     </div>
                                 </td>
@@ -393,6 +406,79 @@
                     {{ $candidates->links() }}
                 </div>
             @endif
+        </div>
+
+        <!-- Modal Master Pengaturan Syarat Minimal Follower KOL -->
+        <div x-show="openSettingModal" x-cloak
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4"
+            style="display: none;">
+            
+            <div @click.outside="openSettingModal = false"
+                class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 overflow-hidden transform transition-all">
+                
+                <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-2xl bg-pink-100 text-pink-600 flex items-center justify-center shadow-inner">
+                            <i data-lucide="sliders" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-extrabold text-slate-900">Master Syarat Minimal Follower</h3>
+                            <p class="text-xs text-slate-500">Konfigurasi batas minimal kualifikasi KOL</p>
+                        </div>
+                    </div>
+                    <button type="button" @click="openSettingModal = false" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <form method="POST" action="{{ route('kol-recommendations.settings.update') }}" class="mt-4 space-y-4">
+                    @csrf
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            Jumlah Minimal Follower Media Sosial
+                        </label>
+                        <div class="relative">
+                            <input type="number" name="kol_min_followers" min="1" max="10000000"
+                                value="{{ $kolMinFollowers }}" required
+                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-bold text-sm text-slate-900 focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500">
+                            <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400">Followers</span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-1">
+                            Siswa baru yang mengisi kuisioner / mendaftar event dengan follower &ge; batas ini akan otomatis masuk ke daftar Rekomendasi KOL.
+                        </p>
+                    </div>
+
+                    <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
+                        <label class="flex items-start gap-2.5 cursor-pointer">
+                            <input type="checkbox" name="sync_existing" value="1" checked
+                                class="mt-0.5 rounded text-pink-600 focus:ring-pink-500">
+                            <div class="text-xs">
+                                <span class="font-bold text-slate-800">Sinkronkan data siswa yang sudah ada</span>
+                                <p class="text-[11px] text-slate-500 mt-0.5">
+                                    Otomatis perbarui siswa di database yang memiliki followers &ge; batas baru ini menjadi kandidat KOL.
+                                </p>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
+                        <button type="button" @click="openSettingModal = false"
+                            class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
+                            Batal
+                        </button>
+                        <button type="submit"
+                            class="px-5 py-2.5 rounded-xl text-xs font-bold bg-pink-600 hover:bg-pink-500 text-white shadow-md shadow-pink-600/30 transition">
+                            Simpan Batas Follower
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
 
         <!-- Modal Edit Status Rekrutmen KOL -->
@@ -486,6 +572,7 @@
         function kolManager() {
             return {
                 showModal: false,
+                openSettingModal: false,
                 form: {
                     id: null,
                     name: '',

@@ -53,6 +53,7 @@ class SettingsController extends Controller
             'theme_color_accent' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'theme_color_secondary' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'theme_color_bg' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'kol_min_followers' => ['nullable', 'integer', 'min:1', 'max:10000000'],
             'sidebar_labels' => ['nullable', 'array'],
             'sidebar_labels.*' => ['nullable', 'string', 'max:100'],
         ]);

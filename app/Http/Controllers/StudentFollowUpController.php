@@ -26,35 +26,6 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class StudentFollowUpController extends Controller
 {
-    private const QUESTION_SECTIONS = [
-        'A. Motivasi' => [
-            'motivation_job' => 'Saya ingin kuliah untuk meningkatkan peluang memperoleh pekerjaan yang baik.',
-            'motivation_interest' => 'Saya ingin memilih program studi yang sesuai dengan minat dan bakat saya.',
-            'motivation_parent' => 'Harapan orang tua menjadi alasan penting bagi saya untuk kuliah.',
-        ],
-        'B. Pencarian informasi' => [
-            'information_social_media' => 'Saya mencari informasi kampus melalui media sosial sebelum menentukan pilihan.',
-            'information_testimonials' => 'Testimoni mahasiswa atau alumni memengaruhi ketertarikan saya terhadap kampus.',
-            'information_comparison' => 'Saya membandingkan informasi dari beberapa kampus sebelum mengambil keputusan.',
-        ],
-        'C. Pengaruh sosial' => [
-            'social_parent' => 'Pendapat orang tua sangat memengaruhi pilihan kampus saya.',
-            'social_friends' => 'Pilihan teman memengaruhi pertimbangan saya dalam memilih kampus.',
-            'social_teacher' => 'Rekomendasi guru atau alumni meningkatkan kepercayaan saya terhadap kampus.',
-        ],
-        'D. Preferensi kampus' => [
-            'campus_cost' => 'Biaya kuliah yang terjangkau merupakan faktor utama bagi saya.',
-            'campus_reputation' => 'Akreditasi dan reputasi kampus sangat penting dalam keputusan saya.',
-            'campus_career' => 'Peluang kerja, magang, dan keterampilan praktis menjadi pertimbangan utama saya.',
-            'campus_location' => 'Lokasi kampus dan kemudahan transportasi memengaruhi pilihan saya.',
-        ],
-        'E. Niat dan hambatan' => [
-            'intention_ubsi' => 'Saya mempertimbangkan UBSI sebagai salah satu pilihan kuliah.',
-            'intention_information' => 'Saya berniat mencari informasi PMB UBSI lebih lanjut.',
-            'barrier_cost' => 'Kendala biaya dapat membuat saya menunda atau membatalkan rencana kuliah.',
-        ],
-    ];
-
     public function index(Request $request): View
     {
         $user = auth()->user();
@@ -381,7 +352,7 @@ class StudentFollowUpController extends Controller
         $studentQuestionnaire->load(['followUps.user', 'lastFollowedUpBy']);
 
         $questions = [];
-        foreach (self::QUESTION_SECTIONS as $section => $qList) {
+        foreach (\App\Models\QuestionnaireQuestion::getActiveSections() as $section => $qList) {
             foreach ($qList as $key => $text) {
                 $questions[$key] = [
                     'section' => $section,
@@ -727,6 +698,12 @@ class StudentFollowUpController extends Controller
                     ->orWhere('college_interest_notes', 'like', '%Support Event%');
             })->count();
 
+        // Metrik antrean berdasarkan minat beasiswa
+        $unassignedScholarshipYes = (clone $baseMetricQuery)->whereNull('assigned_to')->where('scholarship_interest', 'ya')->count();
+        $unassignedScholarshipNo = (clone $baseMetricQuery)->whereNull('assigned_to')->where(function ($q) {
+            $q->where('scholarship_interest', '!=', 'ya')->orWhereNull('scholarship_interest');
+        })->count();
+
         $assignableOfficersQuery = User::query()
             ->whereHas('role', function ($q) {
                 $q->whereIn('name', ['Marketing', 'Customer Service', 'Koordinator Marketing']);
@@ -753,6 +730,8 @@ class StudentFollowUpController extends Controller
             'total_assigned' => $totalAssigned,
             'unassigned_kuisioner' => $unassignedKuisioner,
             'unassigned_event' => $unassignedSupportEvent,
+            'unassigned_scholarship_yes' => $unassignedScholarshipYes,
+            'unassigned_scholarship_no' => $unassignedScholarshipNo,
         ];
 
         return view('student-follow-ups.distribute', compact(
@@ -776,6 +755,7 @@ class StudentFollowUpController extends Controller
         $validated = $request->validate([
             'distribution_type' => ['required', 'in:equal,custom'],
             'source_filter' => ['required', 'in:all,kuisioner,support_event'],
+            'scholarship_filter' => ['nullable', 'in:all,ya,tidak'],
             'total_limit' => ['nullable', 'integer', 'min:1'],
             'officer_ids' => ['required_if:distribution_type,equal', 'array'],
             'officer_ids.*' => ['exists:users,id'],
@@ -807,8 +787,20 @@ class StudentFollowUpController extends Controller
             });
         }
 
-        // Prioritaskan yang belum dihubungi
-        $query->orderByRaw("CASE WHEN followup_status = ? THEN 0 ELSE 1 END", [StudentQuestionnaire::STATUS_BELUM_DIHUBUNGI])
+        // Filter kategori minat beasiswa jika dipilih spesifik
+        $scholarshipFilter = $validated['scholarship_filter'] ?? 'all';
+        if ($scholarshipFilter === 'ya') {
+            $query->where('scholarship_interest', 'ya');
+        } elseif ($scholarshipFilter === 'tidak') {
+            $query->where(function ($q) {
+                $q->where('scholarship_interest', '!=', 'ya')
+                    ->orWhereNull('scholarship_interest');
+            });
+        }
+
+        // Prioritaskan yang minat beasiswa terlebih dahulu, lalu yang belum dihubungi
+        $query->orderByRaw("CASE WHEN scholarship_interest = 'ya' THEN 0 ELSE 1 END")
+            ->orderByRaw("CASE WHEN followup_status = ? THEN 0 ELSE 1 END", [StudentQuestionnaire::STATUS_BELUM_DIHUBUNGI])
             ->orderBy('id', 'asc');
 
         $distributionType = $validated['distribution_type'];

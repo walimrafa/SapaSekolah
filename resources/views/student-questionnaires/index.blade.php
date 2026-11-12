@@ -9,6 +9,12 @@
                 <i data-lucide="plus-circle" class="w-4 h-4"></i>
                 <span>+ Input Kuisioner Siswa</span>
             </button>
+            @if(auth()->user()->isAdmin() || auth()->user()->hasRole('Pimpinan') || auth()->user()->hasRole('Koordinator Marketing'))
+            <a href="{{ route('master-questionnaires.index') }}" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md flex items-center gap-2" title="Kelola struktur bagian dan butir pertanyaan kuisioner">
+                <i data-lucide="clipboard-edit" class="w-4 h-4 text-amber-300"></i>
+                Master Edit Kuisioner
+            </a>
+            @endif
             <button type="button" onclick="openImportModal()" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-md flex items-center gap-2">
                 <i data-lucide="file-up" class="w-4 h-4"></i>
                 Import Data Manual
