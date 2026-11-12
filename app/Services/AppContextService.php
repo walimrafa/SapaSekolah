@@ -17,7 +17,12 @@ class AppContextService
 
     /**
      * Tentukan apakah user memiliki hak akses untuk berpindah kampus (multi-kampus).
-     * Sesuai ketentuan: HANYA Administrator dan Koordinator Marketing.
+     * Sesuai ketentuan:
+     * - Administrator Pusat (Admin dengan campus_id null)
+     * - Pimpinan Pusat (Pimpinan dengan campus_id null atau jabatan Pusat)
+     * - Koordinator Pusat (Koordinator dengan campus_id null atau jabatan Pusat)
+     * Pimpinan & Koordinator kampus cabang (misal UBSI Cikampek atau UBSI Karawang)
+     * TIDAK BOLEH mengakses lintas kampus, hanya boleh mengakses seputar kampusnya sendiri.
      */
     public static function canSwitchCampus(?\App\Models\User $user = null): bool
     {
@@ -26,7 +31,7 @@ class AppContextService
             return false;
         }
 
-        return $user->isAdmin() || $user->isKoordinator() || $user->hasRole('Koordinator Marketing');
+        return $user->canAccessAllCampuses();
     }
 
     /**
@@ -36,8 +41,8 @@ class AppContextService
     {
         $user = auth()->user();
 
-        // JIKA BUKAN ADMINISTRATOR & BUKAN KOORDINATOR MARKETING:
-        // Kunci secara mutlak ke kampus penugasan user (isolasi per kampus)!
+        // KUNCI SECARA MUTLAK KE KAMPUS PENUGASAN USER JIKA BUKAN PUSAT:
+        // Pimpinan & Koordinator kampus cabang (Karawang / Cikampek) terkunci 100% pada kampusnya sendiri.
         if ($user && $user->campus_id && !self::canSwitchCampus($user)) {
             return Campus::find($user->campus_id) ?? Campus::getDefault();
         }

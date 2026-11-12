@@ -33,6 +33,22 @@ class KolRecommendationController extends Controller
     }
 
     /**
+     * Pastikan pengguna memiliki hak akses terhadap data siswa berdasarkan isolasi kampus.
+     * Pengguna kampus cabang (misal UBSI Karawang / UBSI Cikampek) tidak boleh mengakses data kampus lain.
+     */
+    protected function authorizeCampusAccess(StudentQuestionnaire $sq): void
+    {
+        $user = auth()->user();
+        if ($user && !\App\Services\AppContextService::canSwitchCampus($user)) {
+            $userCampusId = $user->campus_id ?? \App\Services\AppContextService::getActiveCampus()?->id;
+            $sqCampusId = $sq->campus_id ?: ($sq->school?->campus_id);
+            if ($sqCampusId && $userCampusId && (int)$sqCampusId !== (int)$userCampusId) {
+                abort(403, 'Akses ditolak. Rekomendasi KOL ini berada di luar wilayah kampus penugasan Anda.');
+            }
+        }
+    }
+
+    /**
      * Tampilan Utama Rekomendasi KOL (Student Influencer / Duta Kampus)
      */
     public function index(Request $request): View
@@ -145,6 +161,7 @@ class KolRecommendationController extends Controller
     public function updateStatus(Request $request, StudentQuestionnaire $studentQuestionnaire): RedirectResponse|JsonResponse
     {
         $this->authorizeAccess();
+        $this->authorizeCampusAccess($studentQuestionnaire);
 
         $validated = $request->validate([
             'kol_status' => 'required|string|in:' . implode(',', array_keys(StudentQuestionnaire::kolStatusOptions())),

@@ -33,7 +33,7 @@ class ComprehensiveReportController extends Controller
     public function index(Request $request): View
     {
         $currentUser = auth()->user();
-        if ($currentUser && !$currentUser->isAdmin()) {
+        if ($currentUser && !AppContextService::canSwitchCampus($currentUser)) {
             $campusId = $currentUser->campus_id ?? AppContextService::getActiveCampus()?->id;
             $campuses = Campus::where('id', $campusId)->get();
         } else {
@@ -85,7 +85,7 @@ class ComprehensiveReportController extends Controller
         $startDate = $request->get('start_date');
         $endDate = $request->get('end_date');
 
-        if ($currentUser && !$currentUser->isAdmin()) {
+        if ($currentUser && !AppContextService::canSwitchCampus($currentUser)) {
             $campusId = $currentUser->campus_id ?? AppContextService::getActiveCampus()?->id;
         } else {
             $campusId = $request->get('campus_id');

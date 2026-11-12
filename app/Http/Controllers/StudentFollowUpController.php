@@ -257,8 +257,26 @@ class StudentFollowUpController extends Controller
         ]);
     }
 
+    /**
+     * Pastikan pengguna memiliki hak akses terhadap data siswa berdasarkan isolasi kampus.
+     * Pengguna kampus cabang (misal UBSI Karawang / UBSI Cikampek) tidak boleh mengakses data kampus lain.
+     */
+    protected function authorizeCampusAccess(StudentQuestionnaire $sq): void
+    {
+        $user = auth()->user();
+        if ($user && !\App\Services\AppContextService::canSwitchCampus($user)) {
+            $userCampusId = $user->campus_id ?? \App\Services\AppContextService::getActiveCampus()?->id;
+            $sqCampusId = $sq->campus_id ?: ($sq->school?->campus_id);
+            if ($sqCampusId && $userCampusId && (int)$sqCampusId !== (int)$userCampusId) {
+                abort(403, 'Akses ditolak. Data siswa ini berada di luar wilayah kampus penugasan Anda.');
+            }
+        }
+    }
+
     public function store(Request $request, StudentQuestionnaire $studentQuestionnaire): JsonResponse|RedirectResponse
     {
+        $this->authorizeCampusAccess($studentQuestionnaire);
+
         $validated = $request->validate([
             'status' => ['required', 'in:no_respon,respon,berminat,daftar_aplikasi,closing,belum_dihubungi'],
             'contact_method' => ['required', 'in:wa,telepon,email,tatap_muka,lainnya'],
@@ -355,6 +373,8 @@ class StudentFollowUpController extends Controller
 
     public function history(StudentQuestionnaire $studentQuestionnaire): JsonResponse
     {
+        $this->authorizeCampusAccess($studentQuestionnaire);
+
         $studentQuestionnaire->load(['followUps.user', 'lastFollowedUpBy']);
 
         $questions = [];
@@ -931,6 +951,8 @@ class StudentFollowUpController extends Controller
      */
     public function assignSingle(Request $request, StudentQuestionnaire $studentQuestionnaire): JsonResponse|RedirectResponse
     {
+        $this->authorizeCampusAccess($studentQuestionnaire);
+
         if (!auth()->user() || !auth()->user()->canPlotFollowUps()) {
             if ($request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => 'Akses ditolak.'], 403);
@@ -972,6 +994,8 @@ class StudentFollowUpController extends Controller
      */
     public function getStudentData(StudentQuestionnaire $studentQuestionnaire): JsonResponse
     {
+        $this->authorizeCampusAccess($studentQuestionnaire);
+
         return response()->json([
             'success' => true,
             'student' => [
@@ -1005,6 +1029,8 @@ class StudentFollowUpController extends Controller
      */
     public function updateStudent(Request $request, StudentQuestionnaire $studentQuestionnaire): JsonResponse|RedirectResponse
     {
+        $this->authorizeCampusAccess($studentQuestionnaire);
+
         $user = auth()->user();
         if ($user && $user->isMarketing() && !$user->canPlotFollowUps() && $studentQuestionnaire->assigned_to !== $user->id) {
             if ($request->wantsJson()) {
@@ -1108,6 +1134,8 @@ class StudentFollowUpController extends Controller
      */
     public function destroyStudent(Request $request, StudentQuestionnaire $studentQuestionnaire): JsonResponse|RedirectResponse
     {
+        $this->authorizeCampusAccess($studentQuestionnaire);
+
         $user = auth()->user();
         if (!$user || !$user->canPlotFollowUps()) {
             if ($request->wantsJson()) {

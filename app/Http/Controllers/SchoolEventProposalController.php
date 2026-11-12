@@ -266,10 +266,28 @@ class SchoolEventProposalController extends Controller
     }
 
     /**
+     * Pastikan pengguna memiliki hak akses terhadap proposal event berdasarkan isolasi kampus.
+     * Pengguna kampus cabang (misal UBSI Karawang / UBSI Cikampek) tidak boleh mengakses proposal kampus lain.
+     */
+    protected function authorizeCampusAccess(SchoolEventProposal $proposal): void
+    {
+        $user = auth()->user();
+        if ($user && !\App\Services\AppContextService::canSwitchCampus($user)) {
+            $userCampusId = $user->campus_id ?? \App\Services\AppContextService::getActiveCampus()?->id;
+            $proposalCampusId = $proposal->campus_id ?: ($proposal->school?->campus_id);
+            if ($proposalCampusId && $userCampusId && (int)$proposalCampusId !== (int)$userCampusId) {
+                abort(403, 'Akses ditolak. Berkas atau proposal event ini berada di luar wilayah kampus penugasan Anda.');
+            }
+        }
+    }
+
+    /**
      * Download Berkas Proposal Kegiatan.
      */
     public function downloadProposal(SchoolEventProposal $proposal): StreamedResponse|RedirectResponse
     {
+        $this->authorizeCampusAccess($proposal);
+
         if (!Storage::disk('public')->exists($proposal->proposal_file_path)) {
             return back()->with('error', 'File berkas proposal tidak ditemukan di penyimpanan server.');
         }
@@ -282,6 +300,8 @@ class SchoolEventProposalController extends Controller
      */
     public function updateStatus(Request $request, SchoolEventProposal $proposal): RedirectResponse
     {
+        $this->authorizeCampusAccess($proposal);
+
         $user = auth()->user();
         if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator())) {
             abort(403, 'Akses ditolak. Hanya Admin, Pimpinan, dan Koordinator Marketing yang berwenang meninjau proposal event.');
@@ -338,6 +358,8 @@ class SchoolEventProposalController extends Controller
      */
     public function destroy(SchoolEventProposal $proposal): RedirectResponse
     {
+        $this->authorizeCampusAccess($proposal);
+
         $user = auth()->user();
         if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator())) {
             abort(403, 'Akses ditolak. Penghapusan proposal kegiatan hanya dapat dilakukan oleh Admin, Pimpinan, dan Koordinator Marketing.');
@@ -412,6 +434,8 @@ class SchoolEventProposalController extends Controller
      */
     public function updateReport(Request $request, SchoolEventProposal $proposal): RedirectResponse
     {
+        $this->authorizeCampusAccess($proposal);
+
         // Pastikan proposal berstatus disetujui
         if ($proposal->status !== SchoolEventProposal::STATUS_DISETUJUI) {
             return back()->with('error', 'Hanya kegiatan yang telah disetujui yang dapat diisi laporan pelaksanaannya.');

@@ -459,10 +459,27 @@ class StudentQuestionnaireController extends Controller
     }
 
     /**
+     * Pastikan pengguna memiliki hak akses terhadap data siswa berdasarkan isolasi kampus.
+     * Pengguna kampus cabang (misal UBSI Karawang / UBSI Cikampek) tidak boleh mengakses data kampus lain.
+     */
+    protected function authorizeCampusAccess(StudentQuestionnaire $sq): void
+    {
+        $user = auth()->user();
+        if ($user && !\App\Services\AppContextService::canSwitchCampus($user)) {
+            $userCampusId = $user->campus_id ?? \App\Services\AppContextService::getActiveCampus()?->id;
+            $sqCampusId = $sq->campus_id ?: ($sq->school?->campus_id);
+            if ($sqCampusId && $userCampusId && (int)$sqCampusId !== (int)$userCampusId) {
+                abort(403, 'Akses ditolak. Data kuisioner siswa ini berada di luar wilayah kampus penugasan Anda.');
+            }
+        }
+    }
+
+    /**
      * Update student questionnaire from Hasil Kuisioner index.
      */
     public function update(Request $request, StudentQuestionnaire $studentQuestionnaire): RedirectResponse|JsonResponse
     {
+        $this->authorizeCampusAccess($studentQuestionnaire);
         $validated = $request->validate([
             'student_name' => ['required', 'string', 'max:150'],
             'gender' => ['nullable', 'string', 'in:L,P,laki-laki,perempuan,Laki-laki,Perempuan'],
@@ -717,6 +734,8 @@ class StudentQuestionnaireController extends Controller
      */
     public function destroy(Request $request, StudentQuestionnaire $studentQuestionnaire)
     {
+        $this->authorizeCampusAccess($studentQuestionnaire);
+
         $user = auth()->user();
         if (!$user || !$user->canPlotFollowUps()) {
             if ($request->expectsJson() || $request->ajax()) {

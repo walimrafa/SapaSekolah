@@ -175,10 +175,27 @@ class SchoolController extends Controller
     }
 
     /**
+     * Pastikan pengguna memiliki hak akses terhadap data sekolah berdasarkan isolasi kampus.
+     * Pengguna kampus cabang (misal UBSI Karawang / UBSI Cikampek) tidak boleh mengakses sekolah kampus lain.
+     */
+    protected function authorizeCampusAccess(School $school): void
+    {
+        $user = auth()->user();
+        if ($user && !\App\Services\AppContextService::canSwitchCampus($user)) {
+            $userCampusId = $user->campus_id ?? \App\Services\AppContextService::getActiveCampus()?->id;
+            if ($school->campus_id && $userCampusId && (int)$school->campus_id !== (int)$userCampusId) {
+                abort(403, 'Akses ditolak. Sekolah ini berada di luar wilayah kampus penugasan Anda.');
+            }
+        }
+    }
+
+    /**
      * Display detailed profile of a school.
      */
     public function show(School $school): View
     {
+        $this->authorizeCampusAccess($school);
+
         $school->load([
             'schoolType', 'accreditation', 'province', 'regency', 'district', 'village',
             'contacts.position', 'potentials', 'scores.criterion',
@@ -195,6 +212,8 @@ class SchoolController extends Controller
      */
     public function edit(School $school): View
     {
+        $this->authorizeCampusAccess($school);
+
         $schoolTypes = SchoolType::all();
         $accreditations = Accreditation::all();
         $provinces = Province::all();
@@ -210,6 +229,8 @@ class SchoolController extends Controller
      */
     public function update(Request $request, School $school): RedirectResponse
     {
+        $this->authorizeCampusAccess($school);
+
         $validated = $request->validate([
             'npsn' => ['required', 'string', 'max:20', 'unique:schools,npsn,' . $school->id],
             'name' => ['required', 'string', 'max:200'],
@@ -255,6 +276,8 @@ class SchoolController extends Controller
      */
     public function updateCoordinates(Request $request, School $school): RedirectResponse
     {
+        $this->authorizeCampusAccess($school);
+
         $validated = $request->validate([
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
@@ -280,6 +303,8 @@ class SchoolController extends Controller
      */
     public function destroy(School $school): RedirectResponse
     {
+        $this->authorizeCampusAccess($school);
+
         $user = auth()->user();
         if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator())) {
             abort(403, 'Akses ditolak. Penghapusan data sekolah hanya dapat dilakukan oleh Admin, Pimpinan, dan Koordinator Marketing.');

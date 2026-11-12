@@ -236,10 +236,28 @@ class SchoolVisitController extends Controller
     }
 
     /**
+     * Pastikan pengguna memiliki hak akses terhadap kunjungan sekolah berdasarkan isolasi kampus.
+     * Pengguna kampus cabang (misal UBSI Karawang / UBSI Cikampek) tidak boleh mengakses kunjungan kampus lain.
+     */
+    protected function authorizeCampusAccess(SchoolVisit $visit): void
+    {
+        $user = auth()->user();
+        if ($user && !\App\Services\AppContextService::canSwitchCampus($user)) {
+            $userCampusId = $user->campus_id ?? \App\Services\AppContextService::getActiveCampus()?->id;
+            $visitCampusId = $visit->campus_id ?: ($visit->school?->campus_id);
+            if ($visitCampusId && $userCampusId && (int)$visitCampusId !== (int)$userCampusId) {
+                abort(403, 'Akses ditolak. Data kunjungan ini berada di luar wilayah kampus penugasan Anda.');
+            }
+        }
+    }
+
+    /**
      * Show form page for editing an existing field visit.
      */
     public function edit(SchoolVisit $visit): View
     {
+        $this->authorizeCampusAccess($visit);
+
         $visit->load(['school.district', 'user']);
 
         $districts = \App\Models\District::has('schools')
@@ -264,6 +282,8 @@ class SchoolVisitController extends Controller
      */
     public function update(Request $request, SchoolVisit $visit): RedirectResponse
     {
+        $this->authorizeCampusAccess($visit);
+
         $validated = $request->validate([
             'school_id' => ['required', 'exists:schools,id'],
             'user_id' => ['required', 'exists:users,id'],
@@ -489,6 +509,8 @@ class SchoolVisitController extends Controller
      */
     public function destroy(SchoolVisit $visit): RedirectResponse
     {
+        $this->authorizeCampusAccess($visit);
+
         $user = auth()->user();
         if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator() && $visit->user_id !== $user->id)) {
             abort(403, 'Akses ditolak. Anda tidak memiliki wewenang untuk menghapus rekaman kunjungan ini.');

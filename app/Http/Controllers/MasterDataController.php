@@ -112,8 +112,8 @@ class MasterDataController extends Controller
             'total_villages' => Village::whereHas('district', fn($q) => $q->activeDistricts())->count(),
         ];
 
-        // Master Kampus: Admin dapat melihat semua, non-admin hanya melihat kampusnya sendiri
-        if ($currentUser && !$currentUser->isAdmin()) {
+        // Master Kampus: Admin/Pusat dapat melihat semua, user kampus cabang hanya melihat kampusnya sendiri
+        if ($currentUser && !AppContextService::canSwitchCampus($currentUser)) {
             $campuses = Campus::where('id', $currentUser->campus_id)->withCount(['schools', 'prospects', 'schoolVisits'])->get();
         } else {
             $campuses = Campus::withCount(['schools', 'prospects', 'schoolVisits'])->orderBy('name')->get();
@@ -267,7 +267,7 @@ class MasterDataController extends Controller
     public function updateCampus(Request $request, Campus $campus): RedirectResponse
     {
         $currentUser = auth()->user();
-        if (!$currentUser->isAdmin()) {
+        if (!AppContextService::canSwitchCampus($currentUser)) {
             if ($campus->id !== $currentUser->campus_id) {
                 abort(403, 'Akses ditolak. Anda hanya dapat mengelola data profil kampus Anda sendiri.');
             }
@@ -319,8 +319,8 @@ class MasterDataController extends Controller
      */
     public function destroyCampus(Campus $campus): RedirectResponse
     {
-        if (!auth()->user()->isAdmin()) {
-            abort(403, 'Akses ditolak. Hanya Administrator yang memiliki wewenang untuk menghapus kampus.');
+        if (!auth()->user()->isAdmin() && !auth()->user()->isPusat()) {
+            abort(403, 'Akses ditolak. Hanya Administrator atau Pimpinan Pusat yang memiliki wewenang untuk menghapus kampus.');
         }
 
         if ($campus->schools()->count() > 0 || $campus->prospects()->count() > 0) {

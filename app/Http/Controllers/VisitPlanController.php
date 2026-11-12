@@ -214,10 +214,28 @@ class VisitPlanController extends Controller
     }
 
     /**
+     * Pastikan pengguna memiliki hak akses terhadap rencana kunjungan berdasarkan isolasi kampus.
+     * Pengguna kampus cabang (misal UBSI Karawang / UBSI Cikampek) tidak boleh mengakses rencana kunjungan kampus lain.
+     */
+    protected function authorizeCampusAccess(VisitPlan $visitPlan): void
+    {
+        $user = auth()->user();
+        if ($user && !\App\Services\AppContextService::canSwitchCampus($user)) {
+            $userCampusId = $user->campus_id ?? \App\Services\AppContextService::getActiveCampus()?->id;
+            $planCampusId = $visitPlan->campus_id ?: ($visitPlan->school?->campus_id);
+            if ($planCampusId && $userCampusId && (int)$planCampusId !== (int)$userCampusId) {
+                abort(403, 'Akses ditolak. Rencana kunjungan ini berada di luar wilayah kampus penugasan Anda.');
+            }
+        }
+    }
+
+    /**
      * Show form page for editing an existing visit plan.
      */
     public function edit(VisitPlan $visitPlan): View
     {
+        $this->authorizeCampusAccess($visitPlan);
+
         $activeCampus = \App\Services\AppContextService::getActiveCampus();
 
         $districts = \App\Models\District::whereHas('schools', function($q) use ($activeCampus) {
@@ -258,6 +276,8 @@ class VisitPlanController extends Controller
      */
     public function update(Request $request, VisitPlan $visitPlan): RedirectResponse
     {
+        $this->authorizeCampusAccess($visitPlan);
+
         $validated = $request->validate([
             'school_id' => ['required', 'exists:schools,id'],
             'user_id' => ['required', 'exists:users,id'],
@@ -282,6 +302,8 @@ class VisitPlanController extends Controller
      */
     public function destroy(VisitPlan $visitPlan): RedirectResponse
     {
+        $this->authorizeCampusAccess($visitPlan);
+
         $user = auth()->user();
         if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator() && $visitPlan->user_id !== $user->id)) {
             abort(403, 'Akses ditolak. Anda tidak berhak menghapus rencana kunjungan ini.');
@@ -320,8 +342,18 @@ class VisitPlanController extends Controller
             ]);
         }
 
-        $count = VisitPlan::whereIn('id', $ids)->count();
-        VisitPlan::whereIn('id', $ids)->delete();
+        $query = VisitPlan::whereIn('id', $ids);
+        $user = auth()->user();
+        if ($user && !\App\Services\AppContextService::canSwitchCampus($user)) {
+            $userCampusId = $user->campus_id ?? \App\Services\AppContextService::getActiveCampus()?->id;
+            $query->where(function ($q) use ($userCampusId) {
+                $q->where('campus_id', $userCampusId)
+                  ->orWhereHas('school', fn($sq) => $sq->where('campus_id', $userCampusId));
+            });
+        }
+
+        $count = $query->count();
+        $query->delete();
 
         return redirect()->route('visit-plans.index')
             ->with('toast', [

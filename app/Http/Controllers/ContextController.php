@@ -29,11 +29,16 @@ class ContextController extends Controller
         $activeCampusName = 'Semua Kampus';
         if ($request->has('campus_id')) {
             $user = Auth::user();
-            if ($user && $user->campus_id && !AppContextService::canSwitchCampus($user)) {
-                if ($validated['campus_id'] !== 'ALL' && (int)$validated['campus_id'] !== (int)$user->campus_id) {
+            if ($user && !AppContextService::canSwitchCampus($user)) {
+                $userCampusId = $user->campus_id;
+                $targetCampusId = $validated['campus_id'] ?? null;
+
+                if ($targetCampusId === 'ALL' || (int)$targetCampusId !== (int)$userCampusId) {
+                    $campusName = $user->campus?->name ?? 'kampus penugasan Anda';
+                    $roleName = $user->role?->name ?? 'Pengguna';
                     return back()->with('toast', [
                         'type' => 'warning',
-                        'message' => 'Akun Anda ditugaskan khusus untuk ' . ($user->campus?->name ?? 'kampus tertentu') . ' dan tidak memiliki hak akses lintas kampus.',
+                        'message' => "Akun Anda terdaftar sebagai {$roleName} untuk {$campusName} dan tidak memiliki izin akses lintas kampus.",
                     ]);
                 }
             }
@@ -99,8 +104,8 @@ class ContextController extends Controller
         $isActive = (bool) $validated['is_active'];
         $campusId = !empty($validated['campus_id']) ? (int) $validated['campus_id'] : null;
 
-        // Jika user adalah pimpinan kampus, kunci hanya pada kampusnya sendiri
-        if ($user->isPimpinan() && $user->campus_id) {
+        // Jika user bukan staf pusat (terikat kampus cabang), kunci hanya pada kampusnya sendiri
+        if (!AppContextService::canSwitchCampus($user) && $user->campus_id) {
             $campusId = $user->campus_id;
         }
 

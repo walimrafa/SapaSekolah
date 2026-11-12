@@ -17,8 +17,8 @@ class UserController extends Controller
         $currentUser = auth()->user();
         $query = User::with(['role', 'campus'])->withCount(['schoolVisits', 'followUps', 'prospects']);
 
-        // Isolasi Ketat: Pengguna non-admin (misal Pimpinan Kampus) HANYA melihat user kampusnya sendiri
-        if (!$currentUser->isAdmin()) {
+        // Isolasi Ketat: Pengguna kampus cabang (Pimpinan/Koordinator Kampus) HANYA melihat user kampusnya sendiri
+        if (!$currentUser->isAdmin() || !AppContextService::canSwitchCampus($currentUser)) {
             $campusId = $currentUser->campus_id ?? \App\Services\AppContextService::getActiveCampus()?->id;
             $query->where('campus_id', $campusId);
         } elseif ($request->filled('campus_id')) {
@@ -54,7 +54,7 @@ class UserController extends Controller
         $roles = $rolesQuery->get();
 
         // Kampus yang tersedia
-        if (!$currentUser->isAdmin()) {
+        if (!$currentUser->isAdmin() || !AppContextService::canSwitchCampus($currentUser)) {
             $campuses = Campus::where('id', $currentUser->campus_id)->get();
         } else {
             $campuses = Campus::where('is_active', true)->orderBy('name')->get();
@@ -77,7 +77,7 @@ class UserController extends Controller
             'status' => ['required', 'in:active,inactive'],
         ]);
 
-        if (!$currentUser->isAdmin()) {
+        if (!$currentUser->isAdmin() || !AppContextService::canSwitchCampus($currentUser)) {
             // Otomatis kunci ke kampus akun yang sedang menginput
             $validated['campus_id'] = $currentUser->campus_id ?? \App\Services\AppContextService::getActiveCampus()?->id;
 
@@ -112,7 +112,7 @@ class UserController extends Controller
             'status' => ['required', 'in:active,inactive'],
         ]);
 
-        if (!$currentUser->isAdmin()) {
+        if (!$currentUser->isAdmin() || !AppContextService::canSwitchCampus($currentUser)) {
             if ($user->campus_id !== $currentUser->campus_id) {
                 abort(403, 'Akses ditolak. Anda hanya dapat mengelola staf dari kampus Anda sendiri.');
             }

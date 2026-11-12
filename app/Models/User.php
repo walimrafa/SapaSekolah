@@ -187,6 +187,62 @@ class User extends Authenticatable
     }
 
     /**
+     * Cek apakah user adalah staf/pejabat tingkat Pusat (multi-kampus).
+     * Yaitu user yang tidak terikat ke salah satu cabang kampus tertentu (campus_id is null)
+     * atau memiliki nama/role yang mengandung kata 'Pusat'.
+     */
+    public function isPusat(): bool
+    {
+        if (empty($this->campus_id)) {
+            return true;
+        }
+
+        $nameAndRole = strtolower($this->name . ' ' . ($this->role?->name ?? ''));
+        return str_contains($nameAndRole, 'pusat');
+    }
+
+    /**
+     * Cek apakah user adalah Pimpinan Pusat.
+     */
+    public function isPimpinanPusat(): bool
+    {
+        return $this->isPimpinan() && $this->isPusat();
+    }
+
+    /**
+     * Cek apakah user adalah Koordinator Pusat.
+     */
+    public function isKoordinatorPusat(): bool
+    {
+        return $this->isKoordinator() && $this->isPusat();
+    }
+
+    /**
+     * Cek apakah user berwenang mengakses multi-kampus (lintas kampus).
+     * Sesuai ketentuan:
+     * - Administrator Pusat (Admin dengan campus_id null)
+     * - Pimpinan Pusat (Pimpinan dengan campus_id null atau jabatan Pusat)
+     * - Koordinator Pusat (Koordinator dengan campus_id null atau jabatan Pusat)
+     * Pimpinan & Koordinator kampus cabang (misal UBSI Karawang atau UBSI Cikampek)
+     * TIDAK BOLEH mengakses lintas kampus, hanya boleh mengakses seputar kampusnya sendiri.
+     */
+    public function canAccessAllCampuses(): bool
+    {
+        // Administrator sistem memiliki hak akses penuh ke seluruh kampus
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        // Pimpinan & Koordinator kampus cabang (misal UBSI Karawang atau UBSI Cikampek)
+        // terikat ke cabang kampusnya sendiri dan TIDAK BOLEH mengakses lintas kampus
+        if (!empty($this->campus_id) && !$this->isPusat()) {
+            return false;
+        }
+
+        return $this->isPimpinan() || $this->isKoordinator() || $this->hasRole('Koordinator Marketing');
+    }
+
+    /**
      * Cek apakah user berwenang melakukan ploting / pembagian data follow up.
      * Ploting data siswa (kuisioner & hasil support event) dikelola oleh Pimpinan dan Koordinator Marketing.
      */

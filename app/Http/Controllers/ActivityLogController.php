@@ -49,7 +49,7 @@ class ActivityLogController extends Controller
         }
 
         $currentUser = auth()->user();
-        if ($currentUser && !$currentUser->isAdmin()) {
+        if ($currentUser && !AppContextService::canSwitchCampus($currentUser)) {
             $campusId = $currentUser->campus_id ?? AppContextService::getActiveCampus()?->id;
             $query->where('campus_id', $campusId);
             $users = User::where('campus_id', $campusId)->orderBy('name')->get(['id', 'name', 'email', 'role_id']);
