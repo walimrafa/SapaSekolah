@@ -143,6 +143,24 @@ class DatabaseBackupAndExportIsolationTest extends TestCase
     }
 
     /**
+     * Memastikan halaman index database backups dapat dimuat sempurna tanpa error rendering.
+     */
+    public function test_database_backups_index_page_loads_successfully(): void
+    {
+        $superAdmin = User::factory()->create([
+            'name' => 'Super Administrator',
+            'role_id' => $this->adminRole->id,
+            'campus_id' => null,
+        ]);
+
+        $this->actingAs($superAdmin);
+        $response = $this->get(route('database-backups.index'));
+        $response->assertStatus(200);
+        $response->assertSee('Cadangan Database & Google Drive');
+        $response->assertSee('Riwayat Berkas Cadangan');
+    }
+
+    /**
      * Memastikan perintah Artisan db:backup berjalan mulus.
      */
     public function test_artisan_db_backup_command(): void

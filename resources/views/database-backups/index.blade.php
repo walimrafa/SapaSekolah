@@ -323,11 +323,23 @@
                                 @endif
                             </td>
                             <td class="py-3 px-4 whitespace-nowrap">
-                                {!! $item->status_badge !!}
+                                @if(is_string($item->status_badge))
+                                    {!! $item->status_badge !!}
+                                @else
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-100 text-slate-700">
+                                        {{ $item->status }}
+                                    </span>
+                                @endif
                             </td>
                             <td class="py-3 px-4 whitespace-nowrap">
                                 <div class="flex items-center gap-1.5">
-                                    {!! $item->gdrive_status_badge !!}
+                                    @if(is_string($item->gdrive_status_badge))
+                                        {!! $item->gdrive_status_badge !!}
+                                    @else
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-100 text-slate-700">
+                                            {{ $item->gdrive_status }}
+                                        </span>
+                                    @endif
                                     @if($item->gdrive_file_url)
                                         <a href="{{ $item->gdrive_file_url }}" target="_blank" rel="noopener noreferrer" title="Buka di Google Drive" class="p-1 rounded text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition">
                                             <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
@@ -602,3 +614,4 @@
 
     </div>
 </x-app-layout>
+
