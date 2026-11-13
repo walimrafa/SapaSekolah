@@ -82,6 +82,18 @@ class DatabaseBackupController extends Controller
         $campuses = Campus::where('is_active', true)->orderBy('name')->get();
         $isGdriveConfigured = $this->googleDriveService->isConfigured();
 
+        // Ambil email service account jika sudah pernah disimpan
+        $serviceAccountJson = AppSettingService::get('gdrive_service_account_json', '');
+        $serviceAccountFile = storage_path('app/google-service-account.json');
+        if (empty($serviceAccountJson) && file_exists($serviceAccountFile)) {
+            $serviceAccountJson = @file_get_contents($serviceAccountFile);
+        }
+        $serviceAccountEmail = null;
+        if (!empty($serviceAccountJson)) {
+            $parsed = json_decode($serviceAccountJson, true);
+            $serviceAccountEmail = $parsed['client_email'] ?? null;
+        }
+
         return view('database-backups.index', compact(
             'backups',
             'totalBackups',
@@ -95,7 +107,8 @@ class DatabaseBackupController extends Controller
             'karawangFolderId',
             'cikampekFolderUrl',
             'karawangFolderUrl',
-            'isGdriveConfigured'
+            'isGdriveConfigured',
+            'serviceAccountEmail'
         ));
     }
 
@@ -287,15 +300,42 @@ class DatabaseBackupController extends Controller
             'gdrive_client_secret' => 'nullable|string',
             'gdrive_refresh_token' => 'nullable|string',
             'gdrive_service_account_json' => 'nullable|string',
+            'gdrive_service_account_file' => 'nullable|file|max:2048',
         ]);
 
+        $botEmail = null;
+
+        // Opsi 1A: Jika user mengunggah langsung file .json Service Account
+        if ($request->hasFile('gdrive_service_account_file')) {
+            $uploadedContent = file_get_contents($request->file('gdrive_service_account_file')->getRealPath());
+            $jsonDecoded = json_decode($uploadedContent, true);
+            if (is_array($jsonDecoded) && isset($jsonDecoded['client_email'], $jsonDecoded['private_key'])) {
+                $validated['gdrive_service_account_json'] = $uploadedContent;
+                $botEmail = $jsonDecoded['client_email'];
+                @file_put_contents(storage_path('app/google-service-account.json'), $uploadedContent);
+            } else {
+                return redirect()->back()->with('error', 'Berkas JSON yang diunggah bukan kredensial Service Account Google yang valid (harus memuat client_email dan private_key).');
+            }
+        } elseif (!empty($validated['gdrive_service_account_json'])) {
+            $jsonDecoded = json_decode($validated['gdrive_service_account_json'], true);
+            if (is_array($jsonDecoded) && isset($jsonDecoded['client_email'])) {
+                $botEmail = $jsonDecoded['client_email'];
+                @file_put_contents(storage_path('app/google-service-account.json'), $validated['gdrive_service_account_json']);
+            }
+        }
+
         foreach ($validated as $key => $val) {
-            if ($val !== null) {
+            if ($key !== 'gdrive_service_account_file' && $val !== null) {
                 AppSettingService::set($key, trim($val));
             }
         }
 
-        return redirect()->route('database-backups.index')->with('success', 'Pengaturan integrasi Google Drive berhasil disimpan.');
+        $msg = 'Pengaturan integrasi Google Drive berhasil disimpan.';
+        if ($botEmail) {
+            $msg .= " Email Robot Service Account terdeteksi: {$botEmail}. Pastikan folder Google Drive Cikampek & Karawang telah dibagikan (Share) dengan hak akses Editor ke email tersebut.";
+        }
+
+        return redirect()->route('database-backups.index')->with('success', $msg);
     }
 }
 

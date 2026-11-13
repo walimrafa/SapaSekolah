@@ -544,15 +544,15 @@
         <!-- MODAL: Pengaturan Kredensial Google Drive (Admin Only) -->
         @if(auth()->user()->isAdmin())
         <div x-show="settingsModal" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div @click.away="settingsModal = false" class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200">
-                <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+            <div @click.away="settingsModal = false" class="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] flex flex-col">
+                <div class="flex items-center justify-between pb-4 border-b border-slate-100 shrink-0">
                     <div class="flex items-center gap-2.5">
                         <div class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700">
                             <i data-lucide="sliders" class="w-5 h-5"></i>
                         </div>
                         <div>
-                            <h3 class="text-sm font-extrabold text-slate-900">Pengaturan Kredensial Google Drive</h3>
-                            <p class="text-xs text-slate-400">Konfigurasi Service Account atau OAuth2 Refresh Token</p>
+                            <h3 class="text-sm font-extrabold text-slate-900">Pengaturan Kredensial & Integrasi Google Drive</h3>
+                            <p class="text-xs text-slate-400">Konfigurasi Folder & Google Service Account untuk sinkronisasi otomatis</p>
                         </div>
                     </div>
                     <button type="button" @click="settingsModal = false" class="text-slate-400 hover:text-slate-600">
@@ -560,54 +560,151 @@
                     </button>
                 </div>
 
-                <form method="POST" action="{{ route('database-backups.settings') }}" class="mt-5 space-y-4">
-                    @csrf
-
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Google Drive Folder ID (UBSI Cikampek)</label>
-                        <input type="text" name="gdrive_cikampek_folder_id" value="{{ $cikampekFolderId }}" required class="w-full text-xs font-mono rounded-xl border-slate-300 focus:border-brand-500 focus:ring-brand-500 py-2">
-                        <p class="text-[10px] text-slate-400 mt-1">Default resmi: <code>1YCNXg6CoeiFdPOoDWUNXGB5L1Nc765aT</code></p>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Google Drive Folder ID (UBSI Karawang)</label>
-                        <input type="text" name="gdrive_karawang_folder_id" value="{{ $karawangFolderId }}" required class="w-full text-xs font-mono rounded-xl border-slate-300 focus:border-brand-500 focus:ring-brand-500 py-2">
-                        <p class="text-[10px] text-slate-400 mt-1">Default resmi: <code>1i_84WHAo5nlk8bwDg0vXdEffyX1SLf28</code></p>
-                    </div>
-
-                    <div class="pt-2 border-t border-slate-100">
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Google Service Account JSON (Opsi 1 - Direkomendasikan)</label>
-                        <textarea name="gdrive_service_account_json" rows="4" placeholder='{"type": "service_account", "project_id": "...", ...}' class="w-full text-[11px] font-mono rounded-xl border-slate-300 focus:border-brand-500 focus:ring-brand-500 p-2.5">{{ \App\Services\AppSettingService::get('gdrive_service_account_json', '') }}</textarea>
-                        <p class="text-[10px] text-slate-400 mt-1">Tempelkan seluruh isi file JSON Service Account dari Google Cloud Console. Bagikan kedua folder Drive di atas ke email service account tersebut.</p>
-                    </div>
-
-                    <div class="pt-2 border-t border-slate-100 space-y-2">
-                        <p class="text-xs font-bold text-slate-700">OAuth2 Refresh Token (Opsi 2 - Alternatif)</p>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-500">Client ID</label>
-                                <input type="text" name="gdrive_client_id" value="{{ \App\Services\AppSettingService::get('gdrive_client_id', '') }}" class="w-full text-xs rounded-xl border-slate-300 py-1.5 font-mono">
+                <div class="overflow-y-auto flex-1 pr-1 space-y-4 my-4">
+                    <!-- Penjelasan & Panduan Langkah demi Langkah -->
+                    <div x-data="{ openGuide: true }" class="rounded-2xl border border-blue-200 bg-blue-50/60 p-4">
+                        <div class="flex items-center justify-between cursor-pointer" @click="openGuide = !openGuide">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="help-circle" class="w-4 h-4 text-blue-600"></i>
+                                <h4 class="text-xs font-black text-blue-950">Panduan: Apa itu Google Service Account & Cara Mendapatkannya (Gratis 3 Menit)</h4>
                             </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-500">Client Secret</label>
-                                <input type="password" name="gdrive_client_secret" value="{{ \App\Services\AppSettingService::get('gdrive_client_secret', '') }}" class="w-full text-xs rounded-xl border-slate-300 py-1.5 font-mono">
+                            <button type="button" class="text-blue-600 hover:text-blue-800 text-xs font-bold flex items-center gap-1">
+                                <span x-text="openGuide ? 'Tutup Panduan' : 'Lihat Panduan'"></span>
+                                <i data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform" :class="{ 'rotate-180': openGuide }"></i>
+                            </button>
+                        </div>
+
+                        <div x-show="openGuide" class="mt-3 pt-3 border-t border-blue-200/60 text-xs text-blue-900 space-y-2">
+                            <p class="leading-relaxed">
+                                <strong>Apa itu Service Account?</strong> Service Account adalah <em>akun robot khusus</em> dari Google Cloud yang bertindak atas nama server SAPA Sekolah untuk mengunggah file cadangan database secara berkala ke Google Drive tanpa perlu login browser manual.
+                            </p>
+                            <div class="bg-white/80 p-3 rounded-xl border border-blue-200/80 space-y-2 text-[11px]">
+                                <p class="font-extrabold text-blue-950 uppercase tracking-wider text-[10px]">5 Langkah Mudah Mendapatkan JSON Service Account:</p>
+                                <ol class="list-decimal list-inside space-y-1.5 text-slate-700">
+                                    <li>
+                                        Buka <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer" class="font-bold text-blue-600 underline">Google Cloud Console</a> lalu buat Project baru (nama bebas, misal: <code class="bg-slate-100 px-1 py-0.5 rounded text-slate-800">SapaSekolah-Backup</code>).
+                                    </li>
+                                    <li>
+                                        Di kotak pencarian atas, ketik <strong>"Google Drive API"</strong> lalu klik tombol <strong>Enable / Aktifkan</strong>.
+                                    </li>
+                                    <li>
+                                        Buka menu kiri: <strong>IAM & Admin > Service Accounts</strong>, lalu klik <strong>+ Create Service Account</strong> (isi nama bebas, misal: <code class="bg-slate-100 px-1 py-0.5 rounded text-slate-800">backup-bot</code>), klik Done.
+                                    </li>
+                                    <li>
+                                        Klik nama Service Account yang baru dibuat tersebut -> tab <strong>Keys (Kunci)</strong> -> klik <strong>Add Key > Create new key</strong> -> pilih format <strong>JSON</strong> -> klik Create. Berkas <code class="bg-slate-100 px-1 py-0.5 rounded text-slate-800">.json</code> akan otomatis terunduh ke komputer Anda.
+                                    </li>
+                                    <li class="text-amber-900 font-bold bg-amber-50/80 p-2 rounded-lg border border-amber-300">
+                                        ★ LANGKAH WAJIB: Salin email robot tersebut (berakhiran <code class="font-mono text-slate-800">@...iam.gserviceaccount.com</code>), lalu buka folder Google Drive UBSI Cikampek dan UBSI Karawang di bawah, klik kanan <strong>Bagikan (Share)</strong>, masukkan email robot tersebut dan berikan izin <strong>"Editor"</strong>.
+                                    </li>
+                                </ol>
                             </div>
                         </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500">Refresh Token</label>
-                            <input type="password" name="gdrive_refresh_token" value="{{ \App\Services\AppSettingService::get('gdrive_refresh_token', '') }}" class="w-full text-xs rounded-xl border-slate-300 py-1.5 font-mono">
-                        </div>
                     </div>
 
-                    <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
-                        <button type="button" @click="settingsModal = false" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition">
-                            Batal
-                        </button>
-                        <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white transition shadow-sm">
-                            Simpan Pengaturan
+                    <!-- Indikator Service Account yang Aktif saat ini -->
+                    @if(!empty($serviceAccountEmail))
+                    <div class="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-300 flex items-center justify-between text-xs">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-xl bg-emerald-600/10 flex items-center justify-center text-emerald-600 shrink-0">
+                                <i data-lucide="bot" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Email Robot Service Account Aktif:</p>
+                                <p class="font-mono font-bold text-emerald-950 select-all break-all">{{ $serviceAccountEmail }}</p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="navigator.clipboard.writeText('{{ $serviceAccountEmail }}'); alert('Email Service Account disalin ke clipboard!');" class="shrink-0 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] transition shadow-xs">
+                            Salin Email Robot
                         </button>
                     </div>
-                </form>
+                    @endif
+
+                    <form id="gdriveSettingsForm" method="POST" action="{{ route('database-backups.settings') }}" enctype="multipart/form-data" class="space-y-4">
+                        @csrf
+
+                        <!-- Folder Target -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Google Drive Folder ID (UBSI Cikampek)</label>
+                                <input type="text" name="gdrive_cikampek_folder_id" value="{{ $cikampekFolderId }}" required class="w-full text-xs font-mono rounded-xl border-slate-300 focus:border-brand-500 focus:ring-brand-500 py-2">
+                                <p class="text-[10px] text-slate-400 mt-1">Default resmi: <code>1YCNXg6CoeiFdPOoDWUNXGB5L1Nc765aT</code></p>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Google Drive Folder ID (UBSI Karawang)</label>
+                                <input type="text" name="gdrive_karawang_folder_id" value="{{ $karawangFolderId }}" required class="w-full text-xs font-mono rounded-xl border-slate-300 focus:border-brand-500 focus:ring-brand-500 py-2">
+                                <p class="text-[10px] text-slate-400 mt-1">Default resmi: <code>1i_84WHAo5nlk8bwDg0vXdEffyX1SLf28</code></p>
+                            </div>
+                        </div>
+
+                        <!-- OPSI 1: Service Account JSON (Utama) -->
+                        <div class="pt-3 border-t border-slate-200">
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="block text-xs font-extrabold text-slate-900 flex items-center gap-1.5">
+                                    <span class="w-5 h-5 rounded-full bg-brand-600 text-white flex items-center justify-center text-[10px] font-black">1</span>
+                                    <span>Google Service Account JSON (Direkomendasikan)</span>
+                                </label>
+                                <span class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">Otomatis & Stabil</span>
+                            </div>
+
+                            <!-- Opsi Unggah File Langsung -->
+                            <div class="mb-3 p-3 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">Cara A: Unggah Berkas .json Service Account (Paling Cepat)</label>
+                                <input type="file" name="gdrive_service_account_file" accept=".json,application/json,text/plain" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 cursor-pointer">
+                                <p class="text-[10px] text-slate-400 mt-1">Pilih berkas JSON yang diunduh dari Google Cloud Console.</p>
+                            </div>
+
+                            <!-- Opsi Tempel Teks JSON -->
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">Cara B: Atau Tempel Isi Teks JSON</label>
+                                <textarea name="gdrive_service_account_json" rows="4" placeholder='{"type": "service_account", "project_id": "...", "private_key": "...", "client_email": "...", ...}' class="w-full text-[11px] font-mono rounded-xl border-slate-300 focus:border-brand-500 focus:ring-brand-500 p-2.5">{{ \App\Services\AppSettingService::get('gdrive_service_account_json', '') }}</textarea>
+                                <p class="text-[10px] text-slate-400 mt-1">Buka file JSON dengan Notepad, salin seluruh kodenya dan tempel di sini.</p>
+                            </div>
+                        </div>
+
+                        <!-- OPSI 2: OAuth2 Refresh Token (Alternatif) -->
+                        <div class="pt-3 border-t border-slate-200">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label class="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                                    <span class="w-5 h-5 rounded-full bg-slate-400 text-white flex items-center justify-center text-[10px] font-black">2</span>
+                                    <span>OAuth2 Refresh Token (Opsi Alternatif)</span>
+                                </label>
+                                <span class="text-[10px] font-bold text-slate-500">Opsional</span>
+                            </div>
+                            
+                            <div class="p-2.5 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-900 mb-2.5">
+                                <strong>⚠️ Catatan Penting:</strong> Kolom Client ID OAuth2 <u>BUKAN</u> alamat email pribadi (seperti <code class="font-mono bg-white px-1 py-0.2 rounded">walim.wam@bsi.ac.id</code>), melainkan kode Client ID aplikasi Google OAuth berformat <code class="font-mono bg-white px-1 py-0.2 rounded">xxxx.apps.googleusercontent.com</code>. Jika tidak memilikinya, <strong>cukup gunakan Opsi 1 (Service Account)</strong> di atas.
+                            </div>
+
+                            <div class="space-y-2 opacity-90">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-500">Client ID (OAuth)</label>
+                                        <input type="text" name="gdrive_client_id" value="{{ \App\Services\AppSettingService::get('gdrive_client_id', '') }}" placeholder="xxxx.apps.googleusercontent.com" class="w-full text-xs rounded-xl border-slate-300 py-1.5 font-mono">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-500">Client Secret</label>
+                                        <input type="password" name="gdrive_client_secret" value="{{ \App\Services\AppSettingService::get('gdrive_client_secret', '') }}" class="w-full text-xs rounded-xl border-slate-300 py-1.5 font-mono">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500">Refresh Token</label>
+                                    <input type="password" name="gdrive_refresh_token" value="{{ \App\Services\AppSettingService::get('gdrive_refresh_token', '') }}" placeholder="1//0xxxx..." class="w-full text-xs rounded-xl border-slate-300 py-1.5 font-mono">
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5 shrink-0">
+                    <button type="button" @click="settingsModal = false" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition">
+                        Batal
+                    </button>
+                    <button type="button" onclick="document.getElementById('gdriveSettingsForm').submit();" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white transition shadow-sm flex items-center gap-1.5">
+                        <i data-lucide="save" class="w-3.5 h-3.5"></i>
+                        <span>Simpan Pengaturan</span>
+                    </button>
+                </div>
             </div>
         </div>
         @endif
