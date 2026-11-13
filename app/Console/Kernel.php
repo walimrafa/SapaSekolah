@@ -12,9 +12,14 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
-        // $schedule->command('articles:process')->everyMinute()->withoutOverlapping();
+        // Pengingat follow-up harian via WhatsApp
         $schedule->command('wa:send-reminders')->dailyAt('07:30');
+
+        // Backup database otomatis setiap minggu ke Google Drive masing-masing kampus (UBSI Cikampek & UBSI Karawang)
+        $schedule->command('db:backup --upload-gdrive --campus=ALL --type=scheduled')
+            ->weekly()
+            ->sundays()
+            ->at('02:00');
     }
 
     /**

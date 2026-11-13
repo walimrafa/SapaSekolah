@@ -91,7 +91,18 @@ class SchoolImportController extends Controller
      */
     public function exportData(Request $request): StreamedResponse
     {
-        $filename = 'data_master_sekolah_sapa_sekolah_' . date('Y-m-d_H-i-s') . '.xls';
+        $user = auth()->user();
+        if ($user && !\App\Services\AppContextService::canSwitchCampus($user)) {
+            $campusId = $user->campus_id ?? \App\Services\AppContextService::getActiveCampus()?->id;
+        } else {
+            $campusId = $request->filled('campus_id') && $request->campus_id !== 'ALL'
+                ? $request->campus_id
+                : \App\Services\AppContextService::getActiveCampus()?->id;
+        }
+
+        $campus = ($campusId && $campusId !== 'ALL') ? \App\Models\Campus::find($campusId) : null;
+        $campusSuffix = $campus ? '_' . str()->slug($campus->name) : '';
+        $filename = 'data_master_sekolah_sapa_sekolah' . $campusSuffix . '_' . date('Y-m-d_H-i-s') . '.xls';
 
         $headers = [
             'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
@@ -100,6 +111,10 @@ class SchoolImportController extends Controller
         ];
 
         $query = \App\Models\School::with(['schoolType', 'accreditation', 'district', 'village', 'primaryContact']);
+
+        if ($campusId && $campusId !== 'ALL') {
+            $query->where('campus_id', $campusId);
+        }
 
         // Apply filters if passed from front-end
         if ($request->filled('search')) {

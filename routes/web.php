@@ -304,6 +304,17 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/period-closing/{periodClosingRequest}/respond', [\App\Http\Controllers\PeriodClosingController::class, 'respond'])->name('period-closing.respond');
     });
 
+    // 8. Manajemen Cadangan Database & Sinkronisasi Google Drive (Admin, Pimpinan, Koordinator Marketing)
+    Route::middleware('role:Admin,Pimpinan,Koordinator Marketing')->group(function () {
+        Route::get('/database-backups', [\App\Http\Controllers\DatabaseBackupController::class, 'index'])->name('database-backups.index');
+        Route::post('/database-backups/create', [\App\Http\Controllers\DatabaseBackupController::class, 'createManual'])->name('database-backups.create');
+        Route::get('/database-backups/{backup}/download', [\App\Http\Controllers\DatabaseBackupController::class, 'download'])->name('database-backups.download');
+        Route::post('/database-backups/{backup}/upload-gdrive', [\App\Http\Controllers\DatabaseBackupController::class, 'uploadGdrive'])->name('database-backups.upload-gdrive');
+        Route::delete('/database-backups/{backup}', [\App\Http\Controllers\DatabaseBackupController::class, 'destroy'])->name('database-backups.destroy');
+        Route::post('/database-backups/test-connection', [\App\Http\Controllers\DatabaseBackupController::class, 'testConnection'])->name('database-backups.test-connection');
+        Route::post('/database-backups/settings', [\App\Http\Controllers\DatabaseBackupController::class, 'updateSettings'])->name('database-backups.settings');
+    });
+
     // 7. WordCraft AI — Sistem Otomatisasi Artikel (Dinonaktifkan)
     // Route::prefix('articles')->name('articles.')->group(function () {
     //     Route::get('/', [ArticleController::class, 'index'])->name('index');

@@ -25,12 +25,26 @@ class EventReportExportService
     public const COLOR_WHITE_HEX = 'FFFFFF';
     public const COLOR_DARK_HEX = '0F172A';
 
+    protected function resolveActiveCampus(Request $request): ?Campus
+    {
+        $user = auth()->user();
+        if ($user && !AppContextService::canSwitchCampus($user)) {
+            $campusId = $user->campus_id ?? AppContextService::getActiveCampus()?->id;
+        } else {
+            $campusId = $request->filled('campus_id') && $request->campus_id !== 'ALL'
+                ? $request->campus_id
+                : AppContextService::getActiveCampus()?->id;
+        }
+
+        return ($campusId && $campusId !== 'ALL') ? Campus::find($campusId) : null;
+    }
+
     /**
      * Query filtered events based on request.
      */
     public function getFilteredEvents(Request $request)
     {
-        $activeCampus = AppContextService::getActiveCampus();
+        $activeCampus = $this->resolveActiveCampus($request);
 
         $query = SchoolEventProposal::where('status', SchoolEventProposal::STATUS_DISETUJUI)
             ->with(['school.district', 'reviewer', 'reporter', 'campus'])
@@ -38,7 +52,10 @@ class EventReportExportService
             ->orderBy('event_date', 'desc');
 
         if ($activeCampus) {
-            $query->where('campus_id', $activeCampus->id);
+            $query->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)
+                  ->orWhereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id));
+            });
         }
 
         if ($request->filled('execution_status')) {
@@ -65,7 +82,7 @@ class EventReportExportService
     public function exportExcel(Request $request): StreamedResponse
     {
         $events = $this->getFilteredEvents($request);
-        $activeCampus = AppContextService::getActiveCampus();
+        $activeCampus = $this->resolveActiveCampus($request);
         $campusName = $activeCampus ? $activeCampus->name : AppSettingService::get('campus_name', 'Universitas Bina Sarana Informatika');
         $fileName = 'Laporan_Dokumentasi_Support_Event_' . date('Ymd_His') . '.xlsx';
 
@@ -166,7 +183,7 @@ class EventReportExportService
     public function exportPdf(Request $request): View
     {
         $events = $this->getFilteredEvents($request);
-        $activeCampus = AppContextService::getActiveCampus();
+        $activeCampus = $this->resolveActiveCampus($request);
         $campusName = $activeCampus ? $activeCampus->name : AppSettingService::get('campus_name', 'Universitas Bina Sarana Informatika (UBSI)');
         $exportDate = Carbon::now()->translatedFormat('d F Y, H:i') . ' WIB';
 
@@ -191,7 +208,7 @@ class EventReportExportService
     public function exportPptx(Request $request): StreamedResponse
     {
         $events = $this->getFilteredEvents($request);
-        $activeCampus = AppContextService::getActiveCampus();
+        $activeCampus = $this->resolveActiveCampus($request);
         $campusName = $activeCampus ? $activeCampus->name : AppSettingService::get('campus_name', 'Universitas Bina Sarana Informatika');
         $periodName = AppContextService::getActivePeriod()?->name ?? (date('Y') . '/' . (date('Y') + 1));
         $exportDate = Carbon::now()->translatedFormat('d F Y, H:i') . ' WIB';

@@ -249,17 +249,28 @@ class StudentQuestionnaireController extends Controller
         ]);
     }
 
-    public function downloadExcel(): StreamedResponse
+    public function downloadExcel(?Request $request = null): StreamedResponse
     {
-        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $request = $request ?? request();
+        $user = auth()->user();
+        if ($user && !\App\Services\AppContextService::canSwitchCampus($user)) {
+            $campusId = $user->campus_id ?? \App\Services\AppContextService::getActiveCampus()?->id;
+        } else {
+            $campusId = $request->filled('campus_id') && $request->campus_id !== 'ALL'
+                ? $request->campus_id
+                : \App\Services\AppContextService::getActiveCampus()?->id;
+        }
+
+        $activeCampus = ($campusId && $campusId !== 'ALL') ? \App\Models\Campus::find($campusId) : null;
         $activePeriod = \App\Services\AppContextService::getActivePeriod();
 
         $questions = self::allQuestions();
         $excelQuery = StudentQuestionnaire::with('school')->latest();
 
         if ($activeCampus) {
-            $excelQuery->whereHas('school', function ($sq) use ($activeCampus) {
-                $sq->where('campus_id', $activeCampus->id);
+            $excelQuery->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)
+                  ->orWhereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id));
             });
         }
 

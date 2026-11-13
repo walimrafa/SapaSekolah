@@ -88,7 +88,9 @@ class ComprehensiveReportController extends Controller
         if ($currentUser && !AppContextService::canSwitchCampus($currentUser)) {
             $campusId = $currentUser->campus_id ?? AppContextService::getActiveCampus()?->id;
         } else {
-            $campusId = $request->get('campus_id');
+            $campusId = $request->filled('campus_id') && $request->campus_id !== 'ALL'
+                ? $request->campus_id
+                : AppContextService::getActiveCampus()?->id;
         }
 
         $periodId = $request->get('academic_period_id');
@@ -154,8 +156,11 @@ class ComprehensiveReportController extends Controller
     {
         if ($campusId && $campusId !== 'ALL') {
             $query->where(function($q) use ($campusId) {
-                $q->where('campus_id', $campusId)
-                  ->orWhereNull('campus_id');
+                $q->where('campus_id', $campusId);
+                $model = $q->getModel();
+                if (method_exists($model, 'school')) {
+                    $q->orWhereHas('school', fn($sq) => $sq->where('campus_id', $campusId));
+                }
             });
         }
 
@@ -228,7 +233,8 @@ class ComprehensiveReportController extends Controller
             $sheet->setCellValue("C{$row}", $r[2]);
             $sheet->setCellValue("D{$row}", $r[3]);
             $sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle("C{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT)->getFont()->setBold(true);
+            $sheet->getStyle("C{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $sheet->getStyle("C{$row}")->getFont()->setBold(true);
             $row++;
         }
 

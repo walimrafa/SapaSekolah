@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Campus;
 use App\Models\District;
 use App\Models\FollowUp;
 use App\Models\MarketingActivity;
@@ -543,12 +544,26 @@ class ReportController extends Controller
         return $exportService->export($request);
     }
 
+    protected function resolveActiveCampus(Request $request): ?Campus
+    {
+        $user = auth()->user();
+        if ($user && !AppContextService::canSwitchCampus($user)) {
+            $campusId = $user->campus_id ?? AppContextService::getActiveCampus()?->id;
+        } else {
+            $campusId = $request->filled('campus_id') && $request->campus_id !== 'ALL'
+                ? $request->campus_id
+                : AppContextService::getActiveCampus()?->id;
+        }
+
+        return ($campusId && $campusId !== 'ALL') ? Campus::find($campusId) : null;
+    }
+
     /**
      * Export Executive Presentation to PowerPoint (.pptx).
      */
     public function exportPptx(Request $request, ReportPptxExportService $pptxService): StreamedResponse
     {
-        $activeCampus = AppContextService::getActiveCampus();
+        $activeCampus = $this->resolveActiveCampus($request);
         $activePeriod = AppContextService::getActivePeriod();
 
         $campusName = $activeCampus ? $activeCampus->name : AppSettingService::get('campus_name', 'Universitas Bina Sarana Informatika (UBSI)');
@@ -626,7 +641,7 @@ class ReportController extends Controller
      */
     public function exportPdf(Request $request): View
     {
-        $activeCampus = AppContextService::getActiveCampus();
+        $activeCampus = $this->resolveActiveCampus($request);
         $activePeriod = AppContextService::getActivePeriod();
 
         $campusName = $activeCampus ? $activeCampus->name : AppSettingService::get('campus_name', 'Universitas Bina Sarana Informatika (UBSI)');

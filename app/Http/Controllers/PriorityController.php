@@ -126,7 +126,9 @@ class PriorityController extends Controller
 
     public function downloadStudentIntakeTemplate(): StreamedResponse
     {
-        return response()->streamDownload(function () {
+        $campusId = request()->get('campus_id');
+
+        return response()->streamDownload(function () use ($campusId) {
             $spreadsheet = new Spreadsheet();
             $sheet = $spreadsheet->getActiveSheet();
             $sheet->fromArray([[
@@ -135,7 +137,7 @@ class PriorityController extends Controller
                 'Periode PMB',
                 'Jumlah Mahasiswa Baru',
             ]]);
-            $schools = School::orderBy('name')->get(['npsn', 'name']);
+            $schools = School::when($campusId, fn($q) => $q->where('campus_id', $campusId))->orderBy('name')->get(['npsn', 'name']);
             $rows = $schools->map(fn (School $school) => [
                 (string) $school->npsn,
                 $school->name,

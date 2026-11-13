@@ -661,6 +661,15 @@
                     <i data-lucide="activity" class="w-3.5 h-3.5 text-cyan-400"></i>
                     <span>{{ $lbl('submenu_activity_logs', 'Log Aktivitas') }}</span>
                 </a>
+
+                <a href="{{ route('database-backups.index') }}"
+                    class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('database-backups.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <div class="flex items-center space-x-2.5">
+                        <i data-lucide="database" class="w-3.5 h-3.5 text-blue-400"></i>
+                        <span>Backup Database</span>
+                    </div>
+                    <span class="px-1.5 py-0.2 text-[9px] font-bold bg-blue-500/20 text-blue-300 rounded border border-blue-500/30">GDrive</span>
+                </a>
                 @endif
 
                 @if($canAccessPeriodClosing)

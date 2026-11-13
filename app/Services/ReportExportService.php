@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Campus;
 use App\Models\District;
 use App\Models\FollowUp;
 use App\Models\MarketingActivity;
@@ -24,6 +25,20 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportExportService
 {
+    public function resolveActiveCampus(Request $request): ?Campus
+    {
+        $user = auth()->user();
+        if ($user && !AppContextService::canSwitchCampus($user)) {
+            $campusId = $user->campus_id ?? AppContextService::getActiveCampus()?->id;
+        } else {
+            $campusId = $request->filled('campus_id') && $request->campus_id !== 'ALL'
+                ? $request->campus_id
+                : AppContextService::getActiveCampus()?->id;
+        }
+
+        return ($campusId && $campusId !== 'ALL') ? Campus::find($campusId) : null;
+    }
+
     /**
      * Export report data to Excel (.xlsx) based on active tab and filters.
      */
@@ -32,7 +47,7 @@ class ReportExportService
         $tab = $request->get('tab', 'overview');
         $spreadsheet = new Spreadsheet();
         
-        $activeCampus = AppContextService::getActiveCampus();
+        $activeCampus = $this->resolveActiveCampus($request);
         $campusName = $activeCampus ? $activeCampus->name : AppSettingService::get('campus_name', 'Universitas Bina Sarana Informatika (UBSI)');
         $exportDate = Carbon::now()->translatedFormat('d F Y, H:i') . ' WIB';
 
@@ -104,12 +119,16 @@ class ReportExportService
         $sheet->getStyle('A3')->getFont()->setSize(9)->getColor()->setRGB('94A3B8');
 
         // Ringkasan KPI Global
-        $totalSchools = School::count();
-        $visitedSchools = School::has('visits')->count();
-        $totalVisits = SchoolVisit::count();
-        $totalFollowUps = FollowUp::count();
-        $totalProspects = Prospect::count();
-        $totalMahasiswa = Prospect::where('status', 'mahasiswa')->count();
+        $activeCampus = $this->resolveActiveCampus($request);
+
+        $schoolsBase = School::when($activeCampus, fn($q) => $q->where('campus_id', $activeCampus->id));
+        $totalSchools = (clone $schoolsBase)->count();
+        $visitedSchools = (clone $schoolsBase)->has('visits')->count();
+        $totalVisits = SchoolVisit::when($activeCampus, fn($q) => $q->where(fn($sub) => $sub->where('campus_id', $activeCampus->id)->orWhereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id))))->count();
+        $totalFollowUps = FollowUp::when($activeCampus, fn($q) => $q->whereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id)))->count();
+        $totalProspects = Prospect::when($activeCampus, fn($q) => $q->where(fn($sub) => $sub->where('campus_id', $activeCampus->id)->orWhereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id))))->count();
+        $totalMahasiswa = Prospect::where('status', 'mahasiswa')->when($activeCampus, fn($q) => $q->where(fn($sub) => $sub->where('campus_id', $activeCampus->id)->orWhereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id))))->count();
+        $totalGrade12 = (clone $schoolsBase)->sum('grade_12_count');
         $conversionRate = $totalProspects > 0 ? round(($totalMahasiswa / $totalProspects) * 100, 1) : 0;
 
         $sheet->setCellValue('A5', 'RINGKASAN KPI UTAMA');
@@ -120,7 +139,7 @@ class ReportExportService
             ['Total Sekolah Terdata', $totalSchools, 'Total Kunjungan Lapangan', $totalVisits],
             ['Sekolah Sudah Dikunjungi', $visitedSchools . ' (' . ($totalSchools > 0 ? round(($visitedSchools / $totalSchools) * 100, 1) : 0) . '%)', 'Total Follow Up Sekolah', $totalFollowUps],
             ['Total Prospek Siswa', $totalProspects, 'Mahasiswa Fix Baru (Closing)', $totalMahasiswa],
-            ['Rasio Konversi PMB', $conversionRate . '%', 'Total Siswa Kls XII Terdata', number_format(School::sum('grade_12_count'))],
+            ['Rasio Konversi PMB', $conversionRate . '%', 'Total Siswa Kls XII Terdata', number_format($totalGrade12)],
         ];
 
         $kpiRow = 6;
@@ -165,7 +184,12 @@ class ReportExportService
             DB::raw('SUM(CASE WHEN schools.priority_level = "C" THEN 1 ELSE 0 END) as priority_c'),
             DB::raw('SUM(schools.grade_12_count) as total_grade_12')
         )
-        ->leftJoin('schools', 'districts.id', '=', 'schools.district_id')
+        ->leftJoin('schools', function ($join) use ($activeCampus) {
+            $join->on('districts.id', '=', 'schools.district_id');
+            if ($activeCampus) {
+                $join->where('schools.campus_id', '=', $activeCampus->id);
+            }
+        })
         ->groupBy('districts.id', 'districts.name')
         ->having('total_schools', '>', 0)
         ->orderBy('total_schools', 'desc')
@@ -174,10 +198,33 @@ class ReportExportService
         $dataRow = $headerRow + 1;
         $num = 1;
         foreach ($districtsSummary as $dist) {
-            $visitedCount = SchoolVisit::whereHas('school', fn($q) => $q->where('district_id', $dist->id))->distinct('school_id')->count('school_id');
-            $followupCount = FollowUp::whereHas('school', fn($q) => $q->where('district_id', $dist->id))->count();
-            $prospectCount = Prospect::whereHas('school', fn($q) => $q->where('district_id', $dist->id))->count();
-            $mhsCount = Prospect::whereHas('school', fn($q) => $q->where('district_id', $dist->id))->where('status', 'mahasiswa')->count();
+            $visitedCount = SchoolVisit::whereHas('school', function ($q) use ($dist, $activeCampus) {
+                $q->where('district_id', $dist->id);
+                if ($activeCampus) {
+                    $q->where('campus_id', $activeCampus->id);
+                }
+            })->distinct('school_id')->count('school_id');
+
+            $followupCount = FollowUp::whereHas('school', function ($q) use ($dist, $activeCampus) {
+                $q->where('district_id', $dist->id);
+                if ($activeCampus) {
+                    $q->where('campus_id', $activeCampus->id);
+                }
+            })->count();
+
+            $prospectCount = Prospect::whereHas('school', function ($q) use ($dist, $activeCampus) {
+                $q->where('district_id', $dist->id);
+                if ($activeCampus) {
+                    $q->where('campus_id', $activeCampus->id);
+                }
+            })->count();
+
+            $mhsCount = Prospect::whereHas('school', function ($q) use ($dist, $activeCampus) {
+                $q->where('district_id', $dist->id);
+                if ($activeCampus) {
+                    $q->where('campus_id', $activeCampus->id);
+                }
+            })->where('status', 'mahasiswa')->count();
 
             $sheet->setCellValue("A{$dataRow}", $num++);
             $sheet->setCellValue("B{$dataRow}", $dist->name);
@@ -642,6 +689,11 @@ class ReportExportService
             ->orderBy('priority_level')
             ->orderBy('name');
 
+        $activeCampus = $this->resolveActiveCampus($request);
+        if ($activeCampus) {
+            $query->where('campus_id', $activeCampus->id);
+        }
+
         if ($request->filled('district_id')) {
             $query->where('district_id', $request->district_id);
         }
@@ -701,6 +753,21 @@ class ReportExportService
      */
     protected function applyCommonFilters($query, Request $request, string $dateColumn): void
     {
+        $activeCampus = $this->resolveActiveCampus($request);
+        if ($activeCampus) {
+            $model = $query->getModel();
+            if ($model instanceof \App\Models\School) {
+                $query->where('campus_id', $activeCampus->id);
+            } elseif (method_exists($model, 'school')) {
+                $query->where(function ($q) use ($activeCampus) {
+                    $q->where('campus_id', $activeCampus->id)
+                      ->orWhereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id));
+                });
+            } elseif (\Illuminate\Support\Facades\Schema::hasColumn($model->getTable(), 'campus_id')) {
+                $query->where('campus_id', $activeCampus->id);
+            }
+        }
+
         if ($request->filled('start_date')) {
             $query->whereDate($dateColumn, '>=', $request->start_date);
         }

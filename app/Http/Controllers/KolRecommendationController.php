@@ -205,7 +205,16 @@ class KolRecommendationController extends Controller
     {
         $this->authorizeAccess();
 
-        $activeCampus = AppContextService::getActiveCampus();
+        $user = auth()->user();
+        if ($user && !AppContextService::canSwitchCampus($user)) {
+            $campusId = $user->campus_id ?? AppContextService::getActiveCampus()?->id;
+        } else {
+            $campusId = $request->filled('campus_id') && $request->campus_id !== 'ALL'
+                ? $request->campus_id
+                : AppContextService::getActiveCampus()?->id;
+        }
+
+        $activeCampus = ($campusId && $campusId !== 'ALL') ? \App\Models\Campus::find($campusId) : null;
 
         $query = StudentQuestionnaire::query()
             ->kolCandidates()

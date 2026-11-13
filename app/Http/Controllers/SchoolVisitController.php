@@ -382,7 +382,25 @@ class SchoolVisitController extends Controller
      */
     public function export(Request $request): StreamedResponse
     {
+        $user = auth()->user();
+        if ($user && !\App\Services\AppContextService::canSwitchCampus($user)) {
+            $campusId = $user->campus_id ?? \App\Services\AppContextService::getActiveCampus()?->id;
+        } else {
+            $campusId = $request->filled('campus_id') && $request->campus_id !== 'ALL'
+                ? $request->campus_id
+                : \App\Services\AppContextService::getActiveCampus()?->id;
+        }
+
+        $activeCampus = ($campusId && $campusId !== 'ALL') ? \App\Models\Campus::find($campusId) : null;
+
         $query = SchoolVisit::with(['school.district', 'school.schoolType', 'user']);
+
+        if ($activeCampus) {
+            $query->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)
+                  ->orWhereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id));
+            });
+        }
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);

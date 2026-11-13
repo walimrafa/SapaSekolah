@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Campus;
 use App\Models\School;
 use App\Models\SchoolEventProposal;
 use App\Models\StudentQuestionnaire;
@@ -375,6 +376,20 @@ class EventStudentExportImportService
         ];
     }
 
+    protected function resolveActiveCampus(Request $request): ?Campus
+    {
+        $user = auth()->user();
+        if ($user && !\App\Services\AppContextService::canSwitchCampus($user)) {
+            $campusId = $user->campus_id ?? \App\Services\AppContextService::getActiveCampus()?->id;
+        } else {
+            $campusId = $request->filled('campus_id') && $request->campus_id !== 'ALL'
+                ? $request->campus_id
+                : \App\Services\AppContextService::getActiveCampus()?->id;
+        }
+
+        return ($campusId && $campusId !== 'ALL') ? \App\Models\Campus::find($campusId) : null;
+    }
+
     /**
      * Export Hasil Support Event data to Excel (.xlsx).
      */
@@ -389,7 +404,7 @@ class EventStudentExportImportService
             ->with(['school.district', 'eventProposal', 'lastFollowedUpBy'])
             ->latest();
 
-        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $activeCampus = $this->resolveActiveCampus($request);
         if ($activeCampus) {
             $query->where(function ($q) use ($activeCampus) {
                 $q->where('campus_id', $activeCampus->id)
@@ -554,7 +569,7 @@ class EventStudentExportImportService
             ->with(['school.district', 'eventProposal', 'lastFollowedUpBy'])
             ->latest();
 
-        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $activeCampus = $this->resolveActiveCampus($request);
         if ($activeCampus) {
             $query->where(function ($q) use ($activeCampus) {
                 $q->where('campus_id', $activeCampus->id)
@@ -596,7 +611,7 @@ class EventStudentExportImportService
     public function exportPdf(Request $request): View
     {
         $students = $this->getFilteredStudents($request);
-        $activeCampus = AppContextService::getActiveCampus();
+        $activeCampus = $this->resolveActiveCampus($request);
         $campusName = $activeCampus ? $activeCampus->name : AppSettingService::get('campus_name', 'Universitas Bina Sarana Informatika (UBSI)');
         $exportDate = Carbon::now()->translatedFormat('d F Y, H:i') . ' WIB';
 
@@ -617,7 +632,7 @@ class EventStudentExportImportService
     public function exportPptx(Request $request): StreamedResponse
     {
         $students = $this->getFilteredStudents($request);
-        $activeCampus = AppContextService::getActiveCampus();
+        $activeCampus = $this->resolveActiveCampus($request);
         $campusName = $activeCampus ? $activeCampus->name : AppSettingService::get('campus_name', 'Universitas Bina Sarana Informatika');
         $periodName = AppContextService::getActivePeriod()?->name ?? (date('Y') . '/' . (date('Y') + 1));
         $exportDate = Carbon::now()->translatedFormat('d F Y, H:i') . ' WIB';
