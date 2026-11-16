@@ -241,12 +241,29 @@ class GoogleDriveService
     }
 
     /**
-     * Dapatkan Webhook URL Google Apps Script jika ada.
+     * Dapatkan Webhook URL Google Apps Script jika ada (bisa per kampus atau umum).
      */
-    public function getWebhookUrl(): ?string
+    public function getWebhookUrl(?Campus $campus = null): ?string
     {
-        $url = trim((string)(AppSettingService::get('gdrive_webhook_url') ?? env('GOOGLE_DRIVE_WEBHOOK_URL', '')));
-        return !empty($url) ? $url : null;
+        if ($campus) {
+            $isCkp = self::isCikampekCampus($campus);
+            $key = $isCkp ? 'gdrive_cikampek_webhook_url' : 'gdrive_karawang_webhook_url';
+            $campusWebhook = trim((string) AppSettingService::get($key, ''));
+            if (!empty($campusWebhook)) {
+                return $campusWebhook;
+            }
+        }
+
+        $generalWebhook = trim((string)(AppSettingService::get('gdrive_webhook_url') ?? env('GOOGLE_DRIVE_WEBHOOK_URL', '')));
+        if (!empty($generalWebhook)) {
+            return $generalWebhook;
+        }
+
+        // Jika salah satu dari webhook kampus terisi
+        $ckpWebhook = trim((string) AppSettingService::get('gdrive_cikampek_webhook_url', ''));
+        $krwWebhook = trim((string) AppSettingService::get('gdrive_karawang_webhook_url', ''));
+
+        return !empty($ckpWebhook) ? $ckpWebhook : (!empty($krwWebhook) ? $krwWebhook : null);
     }
 
     /**
@@ -290,7 +307,7 @@ class GoogleDriveService
         };
 
         // 1. OPSI A: Google Apps Script Webhook (Paling Praktis & Bebas Kuota Cloud)
-        $webhookUrl = $this->getWebhookUrl();
+        $webhookUrl = $this->getWebhookUrl($backup->campus);
         if (!empty($webhookUrl)) {
             try {
                 $response = Http::timeout(60)->post($webhookUrl, [
@@ -436,7 +453,7 @@ class GoogleDriveService
     /**
      * Uji koneksi dan akses ke folder Google Drive.
      */
-    public function testConnection(string $folderId): array
+    public function testConnection(string $folderId, ?string $target = null): array
     {
         if (!$this->isConfigured()) {
             return [
@@ -446,7 +463,14 @@ class GoogleDriveService
         }
 
         // Cek Webhook jika ada
-        $webhookUrl = $this->getWebhookUrl();
+        $targetCampus = null;
+        if ($target === 'cikampek') {
+            $targetCampus = Campus::where('code', 'CKP')->orWhere('name', 'like', '%cikampek%')->first();
+        } elseif ($target === 'karawang') {
+            $targetCampus = Campus::where('code', 'KRW')->orWhere('name', 'like', '%karawang%')->first();
+        }
+
+        $webhookUrl = $this->getWebhookUrl($targetCampus);
         if (!empty($webhookUrl)) {
             try {
                 $response = Http::timeout(15)->post($webhookUrl, [

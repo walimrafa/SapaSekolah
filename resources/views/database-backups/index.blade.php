@@ -794,10 +794,40 @@
                                 </div>
                             </div>
 
-                            <div>
-                                <label class="block text-[11px] font-bold text-slate-700 mb-1">URL Webhook Google Apps Script</label>
-                                <input type="url" name="gdrive_webhook_url" value="{{ $gdriveWebhookUrl }}" placeholder="https://script.google.com/macros/s/AKfycb.../exec" class="w-full text-xs font-mono rounded-xl border-slate-300 focus:border-brand-500 focus:ring-brand-500 py-2">
-                                <p class="text-[10px] text-slate-400 mt-1">Tempelkan URL Web App Google Apps Script di sini untuk sinkronisasi otomatis.</p>
+                            <div class="space-y-3 pt-2">
+                                <div class="p-2.5 rounded-xl bg-blue-50/80 border border-blue-200 text-[11px] text-blue-900">
+                                    <p class="font-bold">📁 Konfigurasi Akun Google Per Kampus:</p>
+                                    <ul class="list-disc list-inside mt-0.5 space-y-0.5 text-slate-700">
+                                        <li>UBSI Karawang: <code class="font-mono bg-white px-1 py-0.5 rounded text-blue-900 font-bold">karawangmarkom@gmail.com</code></li>
+                                        <li>UBSI Cikampek: <code class="font-mono bg-white px-1 py-0.5 rounded text-emerald-900 font-bold">markomubsicikampek@gmail.com</code></li>
+                                    </ul>
+                                </div>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                            <span>URL Webhook UBSI Cikampek</span>
+                                        </label>
+                                        <input type="url" name="gdrive_cikampek_webhook_url" value="{{ $gdriveCikampekWebhookUrl }}" placeholder="https://script.google.com/macros/s/.../exec" class="w-full text-xs font-mono rounded-xl border-slate-300 focus:border-brand-500 focus:ring-brand-500 py-2">
+                                        <p class="text-[10px] text-slate-400 mt-0.5">Dibuat dari login: <code>markomubsicikampek@gmail.com</code></p>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                                            <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                                            <span>URL Webhook UBSI Karawang</span>
+                                        </label>
+                                        <input type="url" name="gdrive_karawang_webhook_url" value="{{ $gdriveKarawangWebhookUrl }}" placeholder="https://script.google.com/macros/s/.../exec" class="w-full text-xs font-mono rounded-xl border-slate-300 focus:border-brand-500 focus:ring-brand-500 py-2">
+                                        <p class="text-[10px] text-slate-400 mt-0.5">Dibuat dari login: <code>karawangmarkom@gmail.com</code></p>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-500 mb-1">Atau URL Webhook Tunggal (Jika Folder Saling Dibagikan/Share)</label>
+                                    <input type="url" name="gdrive_webhook_url" value="{{ $gdriveWebhookUrl }}" placeholder="https://script.google.com/macros/s/.../exec" class="w-full text-xs font-mono rounded-xl border-slate-200 text-slate-600 focus:border-brand-500 focus:ring-brand-500 py-2">
+                                    <p class="text-[10px] text-slate-400 mt-0.5">Opsi alternatif jika satu akun Google sudah diberi izin akses Editor ke kedua folder.</p>
+                                </div>
                             </div>
                         </div>
 

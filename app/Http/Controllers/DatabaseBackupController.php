@@ -87,6 +87,8 @@ class DatabaseBackupController extends Controller
         $campuses = Campus::where('is_active', true)->orderBy('name')->get();
         $isGdriveConfigured = $this->googleDriveService->isConfigured();
         $gdriveWebhookUrl = AppSettingService::get('gdrive_webhook_url', env('GOOGLE_DRIVE_WEBHOOK_URL', ''));
+        $gdriveCikampekWebhookUrl = AppSettingService::get('gdrive_cikampek_webhook_url', '');
+        $gdriveKarawangWebhookUrl = AppSettingService::get('gdrive_karawang_webhook_url', '');
 
         // Ambil email service account jika sudah pernah disimpan
         $serviceAccountJson = AppSettingService::get('gdrive_service_account_json', '');
@@ -115,6 +117,8 @@ class DatabaseBackupController extends Controller
             'karawangFolderUrl',
             'isGdriveConfigured',
             'gdriveWebhookUrl',
+            'gdriveCikampekWebhookUrl',
+            'gdriveKarawangWebhookUrl',
             'serviceAccountEmail'
         ));
     }
@@ -330,7 +334,7 @@ class DatabaseBackupController extends Controller
             default => AppSettingService::get('gdrive_karawang_folder_id', env('GDRIVE_KARAWANG_FOLDER_ID', GoogleDriveService::DEFAULT_KARAWANG_FOLDER_ID)),
         };
 
-        $result = $this->googleDriveService->testConnection($folderId);
+        $result = $this->googleDriveService->testConnection($folderId, $target);
 
         if ($request->wantsJson()) {
             return response()->json($result);
@@ -355,6 +359,8 @@ class DatabaseBackupController extends Controller
 
         $validated = $request->validate([
             'gdrive_webhook_url' => 'nullable|string',
+            'gdrive_cikampek_webhook_url' => 'nullable|string',
+            'gdrive_karawang_webhook_url' => 'nullable|string',
             'gdrive_cikampek_folder_id' => 'required|string',
             'gdrive_karawang_folder_id' => 'required|string',
             'gdrive_client_id' => 'nullable|string',
