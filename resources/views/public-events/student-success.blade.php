@@ -10,10 +10,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pendaftaran Berhasil - {{ $appSettings['app_name'] }}</title>
 
+    @php $logoAppUrl = \App\Services\AppSettingService::getLogoUrl(); @endphp
     <!-- Favicon / Logo Title SAPA Sekolah -->
-    <link rel="icon" type="image/png" href="{{ !empty($appSettings['app_logo_url']) ? asset($appSettings['app_logo_url']) : asset('favicon.png') }}">
-    <link rel="shortcut icon" href="{{ !empty($appSettings['app_logo_url']) ? asset($appSettings['app_logo_url']) : asset('favicon.ico') }}">
-    <link rel="apple-touch-icon" href="{{ !empty($appSettings['app_logo_url']) ? asset($appSettings['app_logo_url']) : asset('favicon.png') }}">
+    <link rel="icon" type="image/png" href="{{ $logoAppUrl }}">
+    <link rel="shortcut icon" href="{{ $logoAppUrl }}">
+    <link rel="apple-touch-icon" href="{{ $logoAppUrl }}">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

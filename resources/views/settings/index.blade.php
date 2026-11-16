@@ -19,16 +19,16 @@
                     <!-- Logo Upload & Preview Section -->
                     <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col sm:flex-row items-center gap-4">
                         <div class="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center overflow-hidden shrink-0 shadow-md">
-                            @if(!empty($settings['app_logo_url']))
-                                <img src="{{ $settings['app_logo_url'] }}" alt="App Logo" class="w-full h-full object-contain p-1">
-                            @else
-                                <i data-lucide="map-pin" class="w-8 h-8 text-amber-400"></i>
-                            @endif
+                            <img src="{{ \App\Services\AppSettingService::getLogoUrl() }}" alt="App Logo" class="w-full h-full object-contain p-1">
                         </div>
-                        <div class="flex-1 space-y-2">
+                        <div class="flex-1 space-y-1.5">
                             <label class="block font-bold text-slate-700">Unggah Logo Aplikasi Baru (.png, .jpg, .svg)</label>
                             <input type="file" name="logo_file" accept="image/*"
                                 class="w-full text-xs text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-brand-600 file:text-white hover:file:bg-brand-700 cursor-pointer">
+                            <p class="text-[11px] text-emerald-700 font-medium flex items-center gap-1.5">
+                                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-600 shrink-0"></i>
+                                <span>Logo otomatis disinkronkan ke favicon tab browser, logo sidebar, mobile navbar, halaman login, dan icon PWA.</span>
+                            </p>
                             <p class="text-[10px] text-slate-400">Atau masukkan URL gambar logo langsung di bawah ini.</p>
                         </div>
                     </div>

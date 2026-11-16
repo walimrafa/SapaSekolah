@@ -9,12 +9,13 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Pengajuan Support & Sponsorship Event Sekolah - {{ $appSettings['app_name'] }}</title>
 
+    @php $logoAppUrl = \App\Services\AppSettingService::getLogoUrl(); @endphp
     <!-- Favicon / Logo Title SAPA Sekolah -->
-    <link rel="icon" type="image/png" href="{{ !empty($appSettings['app_logo_url']) ? asset($appSettings['app_logo_url']) : asset('favicon-32x32.png') }}">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">
-    <link rel="shortcut icon" href="{{ !empty($appSettings['app_logo_url']) ? asset($appSettings['app_logo_url']) : asset('favicon.ico') }}">
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" href="{{ $logoAppUrl }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ $logoAppUrl }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ $logoAppUrl }}">
+    <link rel="shortcut icon" href="{{ $logoAppUrl }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ $logoAppUrl }}">
 
     <!-- PWA Progressive Web App Meta Tags -->
     <link rel="manifest" href="{{ asset('manifest.json') }}">
@@ -90,11 +91,9 @@
         <!-- Header Branding Bar -->
         <div class="bg-gradient-to-r from-slate-900 via-slate-900 to-brand-950 text-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6">
             <div class="flex items-center space-x-4">
-                @if(!empty($appSettings['app_logo_url']))
-                    <img src="{{ $appSettings['app_logo_url'] }}" alt="Logo" class="w-14 h-14 object-contain rounded-full bg-white p-1 shadow-md">
-                @else
-                    <img src="{{ asset('logo-sapa-sekolah.png') }}" alt="Logo" class="w-14 h-14 object-contain rounded-full bg-white p-1 shadow-md">
-                @endif
+                <div class="w-14 h-14 rounded-2xl bg-white/10 p-1.5 border border-white/20 shadow-md shrink-0 flex items-center justify-center overflow-hidden">
+                    <img src="{{ \App\Services\AppSettingService::getLogoUrl() }}" alt="{{ $appSettings['app_name'] ?? 'Logo' }}" class="w-full h-full object-contain">
+                </div>
                 <div>
                     <div class="flex items-center space-x-2">
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/20 text-amber-300 border border-amber-400/30">

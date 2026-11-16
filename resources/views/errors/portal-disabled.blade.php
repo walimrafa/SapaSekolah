@@ -8,7 +8,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal Dinonaktifkan Sementara - {{ $appSettings['app_name'] }}</title>
-    <link rel="icon" type="image/png" href="{{ !empty($appSettings['app_logo_url']) ? asset($appSettings['app_logo_url']) : asset('favicon.png') }}">
+    <link rel="icon" type="image/png" href="{{ \App\Services\AppSettingService::getLogoUrl() }}">
+    <link rel="shortcut icon" href="{{ \App\Services\AppSettingService::getLogoUrl() }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -21,11 +22,9 @@
 
         <!-- Logo -->
         <div class="flex justify-center">
-            @if(!empty($appSettings['app_logo_url']))
-                <img src="{{ $appSettings['app_logo_url'] }}" alt="Logo" class="w-16 h-16 object-contain rounded-full bg-white p-1 shadow-lg">
-            @else
-                <img src="{{ asset('logo-sapa-sekolah.png') }}" alt="Logo" class="w-16 h-16 object-contain rounded-full bg-white p-1 shadow-lg">
-            @endif
+            <div class="w-16 h-16 rounded-2xl bg-white/10 p-1.5 border border-white/20 shadow-lg shrink-0 flex items-center justify-center overflow-hidden">
+                <img src="{{ \App\Services\AppSettingService::getLogoUrl() }}" alt="{{ $appSettings['app_name'] ?? 'Logo' }}" class="w-full h-full object-contain">
+            </div>
         </div>
 
         <div class="space-y-2">

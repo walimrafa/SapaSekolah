@@ -18,11 +18,9 @@
 
             <!-- Top Logo -->
             <div class="relative z-10 flex items-center space-x-3">
-                @if(!empty($appSettings['app_logo_url']))
-                    <img src="{{ $appSettings['app_logo_url'] }}" alt="Logo" class="w-12 h-12 object-contain rounded-full bg-white p-0.5 shadow-lg shadow-brand-500/20">
-                @else
-                    <img src="{{ asset('logo-sapa-sekolah.png') }}" alt="Logo" class="w-12 h-12 object-contain rounded-full bg-white p-0.5 shadow-lg shadow-brand-500/20">
-                @endif
+                <div class="w-12 h-12 rounded-2xl bg-white/10 p-1.5 backdrop-blur-xs border border-white/20 shadow-lg shadow-brand-500/20 shrink-0 flex items-center justify-center overflow-hidden">
+                    <img src="{{ \App\Services\AppSettingService::getLogoUrl() }}" alt="{{ $appSettings['app_name'] ?? 'Logo' }}" class="w-full h-full object-contain">
+                </div>
                 <div>
                     <h1 class="text-xl font-extrabold tracking-tight text-white">{{ $appSettings['app_name'] ?? 'SAPA Sekolah' }}</h1>
                     <p class="text-[11px] text-amber-400 font-semibold tracking-wide uppercase">{{ $appSettings['app_subtitle'] ?? 'Command Center' }}</p>
@@ -94,11 +92,9 @@
             <div class="max-w-md mx-auto w-full">
                 <!-- Mobile Brand Header (Tampil hanya di layar kecil) -->
                 <div class="lg:hidden flex items-center space-x-3 mb-6 pb-4 border-b border-slate-100">
-                    @if(!empty($appSettings['app_logo_url']))
-                        <img src="{{ $appSettings['app_logo_url'] }}" alt="Logo" class="w-10 h-10 object-contain rounded-full bg-white p-0.5 shadow-md border border-slate-100">
-                    @else
-                        <img src="{{ asset('logo-sapa-sekolah.png') }}" alt="Logo" class="w-10 h-10 object-contain rounded-full bg-white p-0.5 shadow-md border border-slate-100">
-                    @endif
+                    <div class="w-10 h-10 rounded-xl bg-slate-900/10 p-1 border border-slate-200/80 shadow-md shrink-0 flex items-center justify-center overflow-hidden">
+                        <img src="{{ \App\Services\AppSettingService::getLogoUrl() }}" alt="{{ $appSettings['app_name'] ?? 'Logo' }}" class="w-full h-full object-contain">
+                    </div>
                     <div>
                         <h1 class="text-lg font-extrabold text-slate-900 tracking-tight">{{ $appSettings['app_name'] ?? 'SAPA Sekolah' }}</h1>
                         <p class="text-[10px] text-brand-600 font-bold uppercase tracking-wider">{{ $appSettings['app_subtitle'] ?? 'Command Center' }}</p>

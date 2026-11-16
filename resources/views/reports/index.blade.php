@@ -63,13 +63,7 @@
     <div class="print-only mb-6 pb-4 border-b-2 border-slate-900">
         <div class="flex items-center justify-between">
             <div class="flex items-center space-x-4">
-                @if(!empty($appSettings['app_logo_url']))
-                    <img src="{{ $appSettings['app_logo_url'] }}" alt="Logo" class="w-16 h-16 object-contain">
-                @else
-                    <div class="w-14 h-14 bg-slate-900 text-amber-400 font-extrabold flex items-center justify-center rounded-xl text-xl border border-slate-700">
-                        UBSI
-                    </div>
-                @endif
+                <img src="{{ \App\Services\AppSettingService::getLogoUrl() }}" alt="Logo" class="w-16 h-16 object-contain">
                 <div>
                     <h2 class="text-base font-extrabold text-slate-900 uppercase tracking-tight">{{ $campusName }}</h2>
                     <p class="text-xs text-slate-600 mt-0.5">{{ $campusAddress }}</p>

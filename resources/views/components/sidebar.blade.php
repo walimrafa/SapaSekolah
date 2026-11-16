@@ -54,11 +54,9 @@
     <!-- Sidebar Header -->
     <div class="h-16 flex items-center justify-between px-5 theme-sidebar-header bg-slate-950/60 border-b border-slate-800 shrink-0">
         <a href="{{ route('dashboard') }}" class="flex items-center space-x-3 group">
-            @if(!empty($appSettings['app_logo_url']))
-                <img src="{{ $appSettings['app_logo_url'] }}" alt="Logo" class="w-9 h-9 object-contain rounded-full bg-white p-0.5 shadow-md">
-            @else
-                <img src="{{ asset('logo-sapa-sekolah.png') }}" alt="Logo" class="w-9 h-9 object-contain rounded-full bg-white p-0.5 shadow-md">
-            @endif
+            <div class="w-9 h-9 rounded-xl bg-white/10 p-1 backdrop-blur-xs border border-white/15 shadow-md shrink-0 flex items-center justify-center overflow-hidden transition-transform group-hover:scale-105">
+                <img src="{{ \App\Services\AppSettingService::getLogoUrl() }}" alt="{{ $appSettings['app_name'] ?? 'Logo' }}" class="w-full h-full object-contain">
+            </div>
             <div>
                 <span class="text-base font-extrabold tracking-tight text-white block leading-none">{{ $appSettings['app_name'] }}</span>
                 <span class="text-[10px] text-amber-400 font-semibold uppercase tracking-wider block mt-0.5">{{ $appSettings['app_subtitle'] }}</span>

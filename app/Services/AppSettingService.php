@@ -13,6 +13,11 @@ class AppSettingService
         return storage_path('app/app_settings.json');
     }
 
+    public static function clearCache(): void
+    {
+        static::$cache = null;
+    }
+
     /**
      * Get all app settings.
      */
@@ -204,5 +209,150 @@ class AppSettingService
 
         file_put_contents(static::getFilePath(), json_encode($updated, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
         static::$cache = $updated;
+    }
+
+    /**
+     * Dapatkan URL resmi logo aplikasi yang terpasang di sistem.
+     * Dilengkapi cache-busting otomatis (?v=timestamp) agar perubahan logo langsung tampak seketika di browser.
+     */
+    public static function getLogoUrl(bool $withCacheBuster = true): string
+    {
+        $logo = static::get('app_logo_url');
+        if (empty($logo)) {
+            $logo = '/logo-sapa-sekolah.png';
+        }
+
+        // Jika URL eksternal (http:// atau https://), kembalikan langsung
+        if (str_starts_with($logo, 'http://') || str_starts_with($logo, 'https://')) {
+            return $logo;
+        }
+
+        $relativePath = ltrim($logo, '/');
+        $resolvedUrl = asset($relativePath);
+
+        if (!$withCacheBuster) {
+            return $resolvedUrl;
+        }
+
+        // Dapatkan path fisik file di server untuk mengecek timestamp modifikasi (filemtime)
+        $localPath = static::resolveLocalPath($logo);
+        $v = ($localPath && file_exists($localPath)) ? filemtime($localPath) : substr(md5($logo), 0, 8);
+
+        return $resolvedUrl . '?v=' . $v;
+    }
+
+    /**
+     * Cari lokasi file fisik di server berdasarkan URL path logo/gambar.
+     */
+    public static function resolveLocalPath(?string $url): ?string
+    {
+        if (empty($url)) {
+            return null;
+        }
+
+        if (str_starts_with($url, 'http://') || str_starts_with($url, 'https://')) {
+            return null;
+        }
+
+        $clean = ltrim($url, '/');
+
+        // Jika diawali storage/
+        if (str_starts_with($clean, 'storage/')) {
+            $storageSubPath = substr($clean, 8); // buang 'storage/'
+            $storageDiskPath = storage_path('app/public/' . $storageSubPath);
+            if (file_exists($storageDiskPath)) {
+                return $storageDiskPath;
+            }
+        }
+
+        $publicPath = public_path($clean);
+        if (file_exists($publicPath)) {
+            return $publicPath;
+        }
+
+        return null;
+    }
+
+    /**
+     * Sinkronisasikan berkas logo ke seluruh aset publik:
+     * - public/logo-sapa-sekolah.png (logo acuan utama)
+     * - public/favicon.png, favicon.ico, favicon-32x32.png, favicon-16x16.png
+     * - public/apple-touch-icon.png
+     * - Seluruh varian ikon PWA (72, 96, 128, 144, 152, 192, 384, 512)
+     */
+    public static function syncLogoToPublicAssets(?string $sourcePath = null): bool
+    {
+        if (!$sourcePath) {
+            $logoSetting = static::get('app_logo_url');
+            $sourcePath = static::resolveLocalPath($logoSetting);
+        }
+
+        if (!$sourcePath || !file_exists($sourcePath)) {
+            return false;
+        }
+
+        try {
+            // 1. Copy ke public/logo-sapa-sekolah.png (hanya jika sumbernya bukan file itu sendiri)
+            $publicLogo = public_path('logo-sapa-sekolah.png');
+            if (realpath($sourcePath) !== realpath($publicLogo)) {
+                @copy($sourcePath, $publicLogo);
+            }
+
+            // 2. Copy ke favicon utama & apple touch icon
+            @copy($sourcePath, public_path('favicon.png'));
+            @copy($sourcePath, public_path('favicon.ico'));
+            @copy($sourcePath, public_path('apple-touch-icon.png'));
+
+            // 3. Resize menggunakan GD jika tersedia
+            $sizes = [
+                'favicon-16x16.png' => 16,
+                'favicon-32x32.png' => 32,
+                'pwa-icon-72.png' => 72,
+                'pwa-icon-96.png' => 96,
+                'pwa-icon-128.png' => 128,
+                'pwa-icon-144.png' => 144,
+                'pwa-icon-152.png' => 152,
+                'pwa-icon-192.png' => 192,
+                'pwa-icon-384.png' => 384,
+                'pwa-icon-512.png' => 512,
+            ];
+
+            $gdAvailable = extension_loaded('gd') && function_exists('imagecreatefromstring');
+
+            if ($gdAvailable) {
+                $rawContent = file_get_contents($sourcePath);
+                $srcImg = @imagecreatefromstring($rawContent);
+
+                if ($srcImg) {
+                    $srcW = imagesx($srcImg);
+                    $srcH = imagesy($srcImg);
+
+                    foreach ($sizes as $filename => $size) {
+                        $targetPath = public_path($filename);
+                        $dst = imagecreatetruecolor($size, $size);
+                        imagealphablending($dst, false);
+                        imagesavealpha($dst, true);
+                        $transparent = imagecolorallocatealpha($dst, 255, 255, 255, 127);
+                        imagefilledrectangle($dst, 0, 0, $size, $size, $transparent);
+                        imagecopyresampled($dst, $srcImg, 0, 0, 0, 0, $size, $size, $srcW, $srcH);
+                        imagepng($dst, $targetPath, 9);
+                        imagedestroy($dst);
+                    }
+
+                    imagedestroy($srcImg);
+                    return true;
+                }
+            }
+
+            // Fallback jika GD gagal / non-raster: salin file langsung
+            foreach ($sizes as $filename => $size) {
+                @copy($sourcePath, public_path($filename));
+            }
+
+            return true;
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Gagal menyinkronkan aset logo ke public: ' . $e->getMessage());
+            return false;
+        }
     }
 }

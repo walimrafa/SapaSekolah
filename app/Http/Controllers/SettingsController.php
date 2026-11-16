@@ -67,6 +67,17 @@ class SettingsController extends Controller
 
             $path = $request->file('logo_file')->store('branding', 'public');
             $validated['app_logo_url'] = '/storage/' . $path;
+
+            // Sinkronisasikan berkas logo baru ke seluruh favicon publik dan ikon PWA
+            $fullSourcePath = Storage::disk('public')->path($path);
+            AppSettingService::syncLogoToPublicAssets($fullSourcePath);
+        } else {
+            // Jika logo tidak diupload ulang, sinkronkan berkas yang sedang aktif di app_logo_url
+            $activeLogoUrl = $validated['app_logo_url'] ?? AppSettingService::get('app_logo_url');
+            $localPath = AppSettingService::resolveLocalPath($activeLogoUrl);
+            if ($localPath && file_exists($localPath)) {
+                AppSettingService::syncLogoToPublicAssets($localPath);
+            }
         }
 
         if ($request->hasFile('building_file')) {

@@ -20,12 +20,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tracking Status Pengajuan Proposal Event | {{ $appSettings['app_name'] }}</title>
 
+    @php $logoAppUrl = \App\Services\AppSettingService::getLogoUrl(); @endphp
     <!-- Favicon / Logo Title SAPA Sekolah -->
-    <link rel="icon" type="image/png" href="{{ !empty($appSettings['app_logo_url']) ? asset($appSettings['app_logo_url']) : asset('favicon-32x32.png') }}">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">
-    <link rel="shortcut icon" href="{{ !empty($appSettings['app_logo_url']) ? asset($appSettings['app_logo_url']) : asset('favicon.ico') }}">
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" href="{{ $logoAppUrl }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ $logoAppUrl }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ $logoAppUrl }}">
+    <link rel="shortcut icon" href="{{ $logoAppUrl }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ $logoAppUrl }}">
 
     <!-- PWA Progressive Web App Meta Tags -->
     <link rel="manifest" href="{{ asset('manifest.json') }}">

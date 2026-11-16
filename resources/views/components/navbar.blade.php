@@ -17,11 +17,9 @@
 
         <!-- Mobile Brand Title Logo -->
         <div class="flex items-center space-x-2 sm:hidden">
-            @if(!empty($appSettings['app_logo_url']))
-                <img src="{{ $appSettings['app_logo_url'] }}" alt="Logo" class="w-7 h-7 object-contain rounded-full bg-white shadow-xs p-0.5 border border-slate-100">
-            @else
-                <img src="{{ asset('logo-sapa-sekolah.png') }}" alt="Logo" class="w-7 h-7 object-contain rounded-full bg-white shadow-xs p-0.5 border border-slate-100">
-            @endif
+            <div class="w-7 h-7 rounded-lg bg-slate-900/10 p-0.5 border border-slate-200/80 shadow-xs shrink-0 flex items-center justify-center overflow-hidden">
+                <img src="{{ \App\Services\AppSettingService::getLogoUrl() }}" alt="{{ $appSettings['app_name'] ?? 'Logo' }}" class="w-full h-full object-contain">
+            </div>
             <span class="text-xs font-extrabold text-slate-900 tracking-tight">{{ $appSettings['app_name'] ?? 'SAPA Sekolah' }}</span>
         </div>
 

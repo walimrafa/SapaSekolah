@@ -1,6 +1,6 @@
 @php
     $appSettings = \App\Services\AppSettingService::all();
-    $pwaLogoUrl = !empty($appSettings['app_logo_url']) ? asset($appSettings['app_logo_url']) : asset('logo-sapa-sekolah.png');
+    $pwaLogoUrl = \App\Services\AppSettingService::getLogoUrl();
 @endphp
 <div x-data="pwaInstallManager()" x-show="showBanner" x-cloak
     x-transition:enter="transition ease-out duration-300"

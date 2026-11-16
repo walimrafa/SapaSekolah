@@ -397,7 +397,7 @@ class DatabaseBackupAndExportIsolationTest extends TestCase
         Storage::fake('local');
 
         \Illuminate\Support\Facades\Http::fake([
-            'https://script.google.com/macros/s/test-webhook/exec' => \Illuminate\Support\Facades\Http::response([
+            'https://script.google.com/*' => \Illuminate\Support\Facades\Http::response([
                 'success' => true,
                 'file_id' => 'mock-gdrive-file-12345',
                 'file_url' => 'https://drive.google.com/file/d/mock-gdrive-file-12345/view',
@@ -405,6 +405,8 @@ class DatabaseBackupAndExportIsolationTest extends TestCase
         ]);
 
         \App\Services\AppSettingService::set('gdrive_webhook_url', 'https://script.google.com/macros/s/test-webhook/exec');
+        \App\Services\AppSettingService::set('gdrive_cikampek_webhook_url', 'https://script.google.com/macros/s/test-webhook/exec');
+        \App\Services\AppSettingService::set('gdrive_karawang_webhook_url', 'https://script.google.com/macros/s/test-webhook/exec');
 
         /** @var DatabaseBackupService $service */
         $service = app(DatabaseBackupService::class);
@@ -429,7 +431,7 @@ class DatabaseBackupAndExportIsolationTest extends TestCase
         Storage::fake('local');
 
         \Illuminate\Support\Facades\Http::fake([
-            'https://script.google.com/macros/s/test-webhook/exec' => \Illuminate\Support\Facades\Http::response([
+            'https://script.google.com/*' => \Illuminate\Support\Facades\Http::response([
                 'success' => true,
                 'file_id' => 'mock-bulk-file-' . uniqid(),
                 'file_url' => 'https://drive.google.com/file/d/mock-bulk/view',
@@ -437,6 +439,8 @@ class DatabaseBackupAndExportIsolationTest extends TestCase
         ]);
 
         \App\Services\AppSettingService::set('gdrive_webhook_url', 'https://script.google.com/macros/s/test-webhook/exec');
+        \App\Services\AppSettingService::set('gdrive_cikampek_webhook_url', 'https://script.google.com/macros/s/test-webhook/exec');
+        \App\Services\AppSettingService::set('gdrive_karawang_webhook_url', 'https://script.google.com/macros/s/test-webhook/exec');
 
         /** @var DatabaseBackupService $service */
         $service = app(DatabaseBackupService::class);

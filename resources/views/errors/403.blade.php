@@ -7,7 +7,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>403 - Akses Ditolak | {{ $appSettings['app_name'] }}</title>
-    <link rel="icon" type="image/png" href="{{ !empty($appSettings['app_logo_url']) ? asset($appSettings['app_logo_url']) : asset('favicon.png') }}">
+    <link rel="icon" type="image/png" href="{{ \App\Services\AppSettingService::getLogoUrl() }}">
+    <link rel="shortcut icon" href="{{ \App\Services\AppSettingService::getLogoUrl() }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="font-sans antialiased text-slate-800 bg-slate-900 min-h-screen flex items-center justify-center p-4">
