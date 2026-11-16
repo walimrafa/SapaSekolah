@@ -17,6 +17,7 @@ class DatabaseBackupCommand extends Command
     protected $signature = 'db:backup 
                             {--campus= : ID atau kode kampus (CKP, KRW, atau ALL)} 
                             {--upload-gdrive : Upload berkas backup ke Google Drive folder masing-masing kampus} 
+                            {--format=both : Format cadangan (both, excel, atau sql)} 
                             {--type=scheduled : Tipe backup (manual atau scheduled)}';
 
     /**
@@ -24,7 +25,7 @@ class DatabaseBackupCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Cadangkan database SAPA Sekolah dan sinkronisasikan ke Google Drive masing-masing kampus';
+    protected $description = 'Cadangkan database SAPA Sekolah (SQL & Excel terisolasi kampus) dan sinkronisasikan ke Google Drive';
 
     /**
      * Execute the console command.
@@ -35,15 +36,15 @@ class DatabaseBackupCommand extends Command
 
         $campusOption = $this->option('campus') ?: 'ALL';
         $uploadGdrive = (bool)$this->option('upload-gdrive');
+        $format = $this->option('format') ?: 'both';
         $type = $this->option('type') ?: 'scheduled';
 
         $campuses = [];
 
         if (strtoupper($campusOption) === 'ALL') {
-            // Ambil semua kampus aktif (UBSI Karawang & UBSI Cikampek)
             $campuses = Campus::where('is_active', true)->get();
             if ($campuses->isEmpty()) {
-                $campuses = [null]; // fallback jika tabel belum terisi
+                $campuses = [null];
             }
         } elseif (is_numeric($campusOption)) {
             $campus = Campus::find($campusOption);
@@ -69,42 +70,47 @@ class DatabaseBackupCommand extends Command
 
         foreach ($campuses as $campus) {
             $campusName = $campus ? $campus->name : 'Global / Pusat';
-            $this->line("\n[>] Memproses cadangan untuk: <comment>{$campusName}</comment>...");
+            $this->line("\n[>] Memproses cadangan untuk: <comment>{$campusName}</comment> (Format: {$format})...");
 
-            $backup = $backupService->createBackup(
+            $backupOutput = $backupService->createBackup(
                 campusId: $campus?->id,
                 type: $type,
                 userId: null,
-                uploadToGdrive: $uploadGdrive
+                uploadToGdrive: $uploadGdrive,
+                format: $format
             );
 
+            $backupsList = is_array($backupOutput) ? array_values($backupOutput) : [$backupOutput];
             $gdriveFolderId = GoogleDriveService::getBackupFolderIdForCampus($campus);
 
-            $results[] = [
-                'Kampus' => $campusName,
-                'File' => $backup->filename,
-                'Ukuran' => $backup->formatted_size,
-                'Status Lokal' => $backup->status,
-                'Status GDrive' => $backup->gdrive_status,
-                'GDrive Folder' => $gdriveFolderId,
-            ];
+            foreach ($backupsList as $backup) {
+                $results[] = [
+                    'Kampus' => $campusName,
+                    'Format' => strtoupper($backup->format ?? 'SQL'),
+                    'File' => $backup->filename,
+                    'Ukuran' => $backup->formatted_size,
+                    'Status Lokal' => $backup->status,
+                    'Status GDrive' => $backup->gdrive_status,
+                    'GDrive Folder' => $gdriveFolderId,
+                ];
 
-            if ($backup->status === 'success') {
-                $this->info("   [OK] File dibuat: {$backup->filename} ({$backup->formatted_size})");
-                if ($uploadGdrive) {
-                    if ($backup->gdrive_status === 'uploaded') {
-                        $this->info("   [OK] Terunggah ke Google Drive Folder: {$gdriveFolderId}");
-                    } else {
-                        $this->warn("   [!] GDrive status: {$backup->gdrive_status} (" . ($backup->error_message ?: 'Belum diatur') . ')');
+                if ($backup->status === 'success') {
+                    $this->info("   [OK] File dibuat: {$backup->filename} ({$backup->formatted_size})");
+                    if ($uploadGdrive) {
+                        if ($backup->gdrive_status === 'uploaded') {
+                            $this->info("   [OK] Terunggah ke Google Drive Folder: {$gdriveFolderId}");
+                        } else {
+                            $this->warn("   [!] GDrive status: {$backup->gdrive_status} (" . ($backup->error_message ?: 'Belum diatur') . ')');
+                        }
                     }
+                } else {
+                    $this->error("   [FAIL] Gagal: {$backup->error_message}");
                 }
-            } else {
-                $this->error("   [ERROR] Gagal: {$backup->error_message}");
             }
         }
 
         $this->newLine();
-        $this->table(['Kampus', 'File', 'Ukuran', 'Status Lokal', 'Status GDrive', 'GDrive Folder'], $results);
+        $this->table(['Kampus', 'Format', 'File', 'Ukuran', 'Status Lokal', 'Status GDrive', 'GDrive Folder'], $results);
         $this->info('Proses cadangan database selesai.');
 
         return Command::SUCCESS;

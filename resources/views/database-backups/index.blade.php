@@ -33,7 +33,7 @@
                 </div>
                 <h1 class="text-2xl font-black text-slate-900 tracking-tight">Cadangan Database & Google Drive</h1>
                 <p class="text-xs text-slate-500 mt-1">
-                    Dump database SQL terkompresi (.sql.gz) berkala mingguan dan sinkronisasi cloud Google Drive terpisah per kampus.
+                    Cadangan data terisolasi kampus: Format Excel (.xlsx multi-sheet) dan SQL Dump (.sql.gz) berkala mingguan serta sinkronisasi cloud Google Drive terpisah per kampus.
                 </p>
             </div>
 
@@ -151,7 +151,7 @@
                     </div>
                 </div>
                 <p class="text-2xl font-black text-slate-900 mt-2">{{ number_format($totalBackups) }}</p>
-                <p class="text-[11px] text-slate-500 mt-0.5">Berkas .sql.gz tersimpan</p>
+                <p class="text-[11px] text-slate-500 mt-0.5">Berkas Excel & SQL tersimpan</p>
             </div>
 
             <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-soft">
@@ -206,7 +206,7 @@
 
         <!-- Filter Card -->
         <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-soft">
-            <form method="GET" action="{{ route('database-backups.index') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <form method="GET" action="{{ route('database-backups.index') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
                 @if($canSwitchCampus)
                 <div>
                     <label class="block text-[11px] font-bold text-slate-600 mb-1">Filter Kampus</label>
@@ -220,6 +220,15 @@
                     </select>
                 </div>
                 @endif
+
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Format Berkas</label>
+                    <select name="format" class="w-full text-xs rounded-xl border-slate-200 focus:border-brand-500 focus:ring-brand-500 py-2">
+                        <option value="">Semua Format</option>
+                        <option value="excel" {{ request('format') === 'excel' ? 'selected' : '' }}>Excel (.xlsx)</option>
+                        <option value="sql" {{ request('format') === 'sql' ? 'selected' : '' }}>SQL Dump (.sql.gz)</option>
+                    </select>
+                </div>
 
                 <div>
                     <label class="block text-[11px] font-bold text-slate-600 mb-1">Status Lokal</label>
@@ -245,7 +254,7 @@
                     <button type="submit" class="flex-1 py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition">
                         Terapkan Filter
                     </button>
-                    @if(request()->hasAny(['campus_id', 'status', 'gdrive_status']))
+                    @if(request()->hasAny(['campus_id', 'format', 'status', 'gdrive_status']))
                     <a href="{{ route('database-backups.index') }}" class="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs transition">
                         Reset
                     </a>
@@ -258,8 +267,8 @@
         <div class="bg-white rounded-3xl border border-slate-200/80 shadow-soft overflow-hidden">
             <div class="p-5 border-b border-slate-100 flex items-center justify-between">
                 <div>
-                    <h2 class="text-sm font-extrabold text-slate-900">Riwayat Berkas Cadangan (.sql.gz)</h2>
-                    <p class="text-xs text-slate-500 mt-0.5">Daftar file cadangan database terisolasi kampus dan link unduh langsung.</p>
+                    <h2 class="text-sm font-extrabold text-slate-900">Riwayat Berkas Cadangan (Excel & SQL Dump)</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Daftar file cadangan database dan lembar kerja Excel terisolasi kampus serta link unduh langsung.</p>
                 </div>
                 <span class="text-xs font-bold text-slate-400">Total: {{ $backups->total() }} File</span>
             </div>
@@ -270,6 +279,7 @@
                         <tr class="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200/80">
                             <th class="py-3 px-4">Waktu Dibuat</th>
                             <th class="py-3 px-4">Kampus</th>
+                            <th class="py-3 px-4">Format</th>
                             <th class="py-3 px-4">Nama File</th>
                             <th class="py-3 px-4">Ukuran</th>
                             <th class="py-3 px-4">Tipe</th>
@@ -302,6 +312,9 @@
                                         Pusat / Seluruhnya
                                     </span>
                                 @endif
+                            </td>
+                            <td class="py-3 px-4 whitespace-nowrap">
+                                {!! $item->format_badge !!}
                             </td>
                             <td class="py-3 px-4 font-mono text-[11px] text-slate-700">
                                 {{ $item->filename }}
@@ -387,7 +400,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="9" class="py-12 text-center text-slate-400">
+                            <td colspan="10" class="py-12 text-center text-slate-400">
                                 <div class="flex flex-col items-center justify-center space-y-2">
                                     <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
                                         <i data-lucide="database" class="w-6 h-6"></i>
@@ -418,8 +431,8 @@
                             <i data-lucide="database" class="w-5 h-5"></i>
                         </div>
                         <div>
-                            <h3 class="text-sm font-extrabold text-slate-900">Buat Cadangan Database</h3>
-                            <p class="text-xs text-slate-400">Dump seluruh skema & data ke format .sql.gz</p>
+                            <h3 class="text-sm font-extrabold text-slate-900">Buat Cadangan Data</h3>
+                            <p class="text-xs text-slate-400">Pilih format Excel (.xlsx) atau SQL Dump (.sql.gz)</p>
                         </div>
                     </div>
                     <button type="button" @click="createModal = false" class="text-slate-400 hover:text-slate-600">
@@ -429,6 +442,39 @@
 
                 <form method="POST" action="{{ route('database-backups.create') }}" class="mt-5 space-y-4">
                     @csrf
+
+                    <!-- Pilihan Format Cadangan -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">Pilih Format Cadangan</label>
+                        <div class="space-y-2">
+                            <label class="flex items-start gap-3 p-3 rounded-xl border border-brand-200 bg-brand-50/30 cursor-pointer hover:bg-brand-50/50 transition">
+                                <input type="radio" name="format" value="both" checked class="mt-0.5 text-brand-600 focus:ring-brand-500">
+                                <div>
+                                    <span class="text-xs font-bold text-slate-900 block flex items-center gap-1.5">
+                                        <span>Keduanya (Excel & SQL Dump)</span>
+                                        <span class="px-2 py-0.2 rounded-full text-[9px] font-black bg-brand-100 text-brand-800 uppercase tracking-wider">Direkomendasikan</span>
+                                    </span>
+                                    <span class="text-[11px] text-slate-500 block mt-0.5">Membuat berkas Excel lengkap (.xlsx) untuk analisis & berkas SQL (.sql.gz) untuk pemulihan teknis.</span>
+                                </div>
+                            </label>
+
+                            <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-200 bg-white cursor-pointer hover:bg-slate-50 transition">
+                                <input type="radio" name="format" value="excel" class="mt-0.5 text-brand-600 focus:ring-brand-500">
+                                <div>
+                                    <span class="text-xs font-bold text-slate-900 block">Hanya Berkas Excel (.xlsx Multi-Sheet)</span>
+                                    <span class="text-[11px] text-slate-500 block mt-0.5">Memuat 11 sheet lengkap: Sekolah, Kunjungan, Hasil Kuisioner, Follow Up, Prospek, PMB, Event, dll.</span>
+                                </div>
+                            </label>
+
+                            <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-200 bg-white cursor-pointer hover:bg-slate-50 transition">
+                                <input type="radio" name="format" value="sql" class="mt-0.5 text-brand-600 focus:ring-brand-500">
+                                <div>
+                                    <span class="text-xs font-bold text-slate-900 block">Hanya Berkas SQL Dump (.sql.gz)</span>
+                                    <span class="text-[11px] text-slate-500 block mt-0.5">Dump skema dan data database terisolasi kampus terkompresi Gzip.</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
 
                     @if($canSwitchCampus)
                     <div>
@@ -637,19 +683,104 @@
                             </div>
                         </div>
 
-                        <!-- OPSI 1: Service Account JSON (Utama) -->
+                        <!-- OPSI 1: Google Apps Script Webhook (Paling Mudah & Cepat) -->
                         <div class="pt-3 border-t border-slate-200">
                             <div class="flex items-center justify-between mb-2">
                                 <label class="block text-xs font-extrabold text-slate-900 flex items-center gap-1.5">
-                                    <span class="w-5 h-5 rounded-full bg-brand-600 text-white flex items-center justify-center text-[10px] font-black">1</span>
-                                    <span>Google Service Account JSON (Direkomendasikan)</span>
+                                    <span class="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-black">1</span>
+                                    <span>Google Apps Script Webhook (Paling Mudah & Cepat - 1 Menit)</span>
                                 </label>
-                                <span class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">Otomatis & Stabil</span>
+                                <span class="text-[10px] font-black text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">Sangat Disarankan</span>
+                            </div>
+
+                            <div class="p-3.5 bg-emerald-50/70 rounded-2xl border border-emerald-200 text-xs space-y-2 mb-3">
+                                <p class="text-emerald-950 font-bold leading-relaxed">
+                                    💡 <strong>Tidak perlu Google Cloud Console / Kunci JSON!</strong> Anda cukup membuat Apps Script sederhana di akun Google Anda, dan seluruh berkas backup (Excel & SQL) akan otomatis tersimpan langsung di folder Google Drive Anda.
+                                </p>
+                                
+                                <div x-data="{ showScriptGuide: false }" class="mt-2">
+                                    <button type="button" @click="showScriptGuide = !showScriptGuide" class="text-emerald-700 font-bold underline hover:text-emerald-900 flex items-center gap-1 text-[11px]">
+                                        <i data-lucide="code-2" class="w-3.5 h-3.5"></i>
+                                        <span x-text="showScriptGuide ? 'Sembunyikan Panduan 1 Menit' : 'Lihat Cara Buat Webhook 1 Menit'"></span>
+                                    </button>
+
+                                    <div x-show="showScriptGuide" class="mt-2.5 p-3 rounded-xl bg-white border border-emerald-200 text-[11px] text-slate-700 space-y-2">
+                                        <ol class="list-decimal list-inside space-y-1.5">
+                                            <li>Buka browser Anda dan kunjungi <a href="https://script.new" target="_blank" class="font-bold text-blue-600 underline">script.new</a> (pastikan sudah login dengan akun Google Anda).</li>
+                                            <li>Hapus semua teks yang ada di editor, lalu tempel kode di bawah ini:</li>
+                                        </ol>
+
+                                        <div class="relative">
+                                            <textarea id="appsScriptCodeBlock" readonly rows="8" class="w-full text-[10px] font-mono bg-slate-900 text-emerald-300 p-2.5 rounded-xl border border-slate-700">function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var targetFolderId = data.folder_id || data.root_folder_id;
+    var folder = DriveApp.getFolderById(targetFolderId);
+
+    if (data.action === "test" || data.action === "ping") {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        message: "Koneksi Google Apps Script Webhook berhasil",
+        folder_name: folder.getName(),
+        folder_id: folder.getId()
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    var base64Data = data.file_base64 || data.content_base64;
+    var bytes = Utilities.base64Decode(base64Data);
+    var blob = Utilities.newBlob(bytes, data.mime_type || "application/octet-stream", data.filename);
+    var file = folder.createFile(blob);
+
+    return ContentService.createTextOutput(JSON.stringify({
+      success: true,
+      file_id: file.getId(),
+      file_url: file.getUrl()
+    })).setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({
+      success: false,
+      message: err.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+}</textarea>
+                                            <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('appsScriptCodeBlock').value); alert('Kode Google Apps Script disalin!');" class="absolute top-2 right-2 px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] shadow">
+                                                Salin Kode
+                                            </button>
+                                        </div>
+
+                                        <ol start="3" class="list-decimal list-inside space-y-1.5 text-slate-700">
+                                            <li>Klik tombol biru <strong>Deploy (Terapkan) > New deployment (Penerapan baru)</strong> di pojok kanan atas.</li>
+                                            <li>Pilih jenis (ikon gerigi): <strong>Web app (Aplikasi web)</strong>.</li>
+                                            <li>Isi Description: <em>Sapa Sekolah Backup</em>.</li>
+                                            <li>Execute as: <strong>Me (Saya)</strong>.</li>
+                                            <li>Who has access: <strong>Anyone (Siapa saja)</strong>.</li>
+                                            <li>Klik <strong>Deploy</strong>, lalu klik <strong>Authorize Access</strong> (pilih email Anda > Advanced > Go to Untitled project > Allow).</li>
+                                            <li>Salin <strong>Web App URL</strong> (berakhiran <code class="bg-slate-100 px-1 py-0.5 rounded text-slate-900 font-mono">/exec</code>) lalu tempel pada kotak di bawah.</li>
+                                        </ol>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">URL Webhook Google Apps Script</label>
+                                <input type="url" name="gdrive_webhook_url" value="{{ $gdriveWebhookUrl }}" placeholder="https://script.google.com/macros/s/AKfycb.../exec" class="w-full text-xs font-mono rounded-xl border-slate-300 focus:border-brand-500 focus:ring-brand-500 py-2">
+                                <p class="text-[10px] text-slate-400 mt-1">Tempelkan URL Web App Google Apps Script di sini untuk sinkronisasi otomatis.</p>
+                            </div>
+                        </div>
+
+                        <!-- OPSI 2: Service Account JSON (Resmi Google Cloud) -->
+                        <div class="pt-3 border-t border-slate-200">
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="block text-xs font-extrabold text-slate-900 flex items-center gap-1.5">
+                                    <span class="w-5 h-5 rounded-full bg-slate-700 text-white flex items-center justify-center text-[10px] font-black">2</span>
+                                    <span>Google Service Account JSON (Google Cloud Console)</span>
+                                </label>
+                                <span class="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">Alternatif</span>
                             </div>
 
                             <!-- Opsi Unggah File Langsung -->
                             <div class="mb-3 p-3 bg-slate-50 rounded-xl border border-dashed border-slate-300">
-                                <label class="block text-[11px] font-bold text-slate-700 mb-1">Cara A: Unggah Berkas .json Service Account (Paling Cepat)</label>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">Cara A: Unggah Berkas .json Service Account</label>
                                 <input type="file" name="gdrive_service_account_file" accept=".json,application/json,text/plain" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 cursor-pointer">
                                 <p class="text-[10px] text-slate-400 mt-1">Pilih berkas JSON yang diunduh dari Google Cloud Console.</p>
                             </div>
@@ -662,11 +793,11 @@
                             </div>
                         </div>
 
-                        <!-- OPSI 2: OAuth2 Refresh Token (Alternatif) -->
+                        <!-- OPSI 3: OAuth2 Refresh Token (Alternatif) -->
                         <div class="pt-3 border-t border-slate-200">
                             <div class="flex items-center justify-between mb-1.5">
                                 <label class="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                                    <span class="w-5 h-5 rounded-full bg-slate-400 text-white flex items-center justify-center text-[10px] font-black">2</span>
+                                    <span class="w-5 h-5 rounded-full bg-slate-400 text-white flex items-center justify-center text-[10px] font-black">3</span>
                                     <span>OAuth2 Refresh Token (Opsi Alternatif)</span>
                                 </label>
                                 <span class="text-[10px] font-bold text-slate-500">Opsional</span>

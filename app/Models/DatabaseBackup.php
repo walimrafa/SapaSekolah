@@ -18,6 +18,7 @@ class DatabaseBackup extends Model
         'file_size',
         'campus_id',
         'type',
+        'format',
         'status',
         'gdrive_status',
         'gdrive_folder_id',
@@ -41,6 +42,17 @@ class DatabaseBackup extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Badge format cadangan (SQL / Excel).
+     */
+    public function getFormatBadgeAttribute(): string
+    {
+        return match ($this->format) {
+            'excel' => '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-300"><i data-lucide="file-spreadsheet" class="w-3 h-3 text-emerald-600"></i><span>Excel (.xlsx)</span></span>',
+            default => '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-50 text-blue-800 border border-blue-300"><i data-lucide="database" class="w-3 h-3 text-blue-600"></i><span>SQL Dump (.sql.gz)</span></span>',
+        };
     }
 
     /**

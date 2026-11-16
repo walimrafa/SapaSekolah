@@ -253,4 +253,171 @@ class DatabaseBackupAndExportIsolationTest extends TestCase
         $this->assertStringContainsString('Siswa Cikampek Asli', $allText);
         $this->assertStringNotContainsString('Siswa Karawang Asli', $allText);
     }
+
+    /**
+     * Memastikan pembuatan backup format Excel (.xlsx) menghasilkan 11 sheet lengkap dan terisolasi kampus.
+     */
+    public function test_excel_backup_generation_contains_all_sheets_and_is_isolated(): void
+    {
+        Storage::fake('local');
+
+        $schoolCkp = School::create([
+            'npsn' => 'CKP' . bin2hex(random_bytes(3)),
+            'name' => 'SMK Laboratorium Cikampek',
+            'campus_id' => $this->campusCikampek->id,
+            'status' => 'swasta',
+        ]);
+
+        $schoolKrw = School::create([
+            'npsn' => 'KRW' . bin2hex(random_bytes(3)),
+            'name' => 'SMA Favorit Karawang',
+            'campus_id' => $this->campusKarawang->id,
+            'status' => 'negeri',
+        ]);
+
+        /** @var DatabaseBackupService $service */
+        $service = app(DatabaseBackupService::class);
+
+        $backup = $service->createBackup(
+            campusId: $this->campusCikampek->id,
+            type: 'manual',
+            uploadToGdrive: false,
+            format: 'excel'
+        );
+
+        $this->assertInstanceOf(DatabaseBackup::class, $backup);
+        $this->assertEquals('excel', $backup->format);
+        $this->assertEquals('success', $backup->status);
+        $this->assertStringEndsWith('.xlsx', $backup->filename);
+        $this->assertTrue(Storage::disk('local')->exists($backup->file_path));
+
+        // Muat spreadsheet dan periksa seluruh 11 sheet
+        $filePath = Storage::disk('local')->path($backup->file_path);
+        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($filePath);
+        $sheetNames = $spreadsheet->getSheetNames();
+
+        $expectedSheets = [
+            'Ringkasan Cadangan',
+            'Master Sekolah',
+            'Kunjungan Sekolah',
+            'Hasil Kuisioner',
+            'Follow Up Siswa',
+            'Prospek CRM',
+            'Mahasiswa Baru',
+            'Support Event',
+            'Leads Siswa Event',
+            'Rekomendasi KOL',
+            'Pengguna & Tim Petugas',
+        ];
+
+        foreach ($expectedSheets as $expected) {
+            $this->assertContains($expected, $sheetNames, "Sheet '{$expected}' harus ada dalam workbook cadangan Excel.");
+        }
+
+        // Pastikan isi data sekolah terisolasi: hanya memuat sekolah Cikampek
+        $sekolahSheet = $spreadsheet->getSheetByName('Master Sekolah');
+        $sheetText = '';
+        foreach ($sekolahSheet->getRowIterator() as $row) {
+            $cellIterator = $row->getCellIterator();
+            foreach ($cellIterator as $cell) {
+                $sheetText .= ' ' . $cell->getValue();
+            }
+        }
+
+        $this->assertStringContainsString('SMK Laboratorium Cikampek', $sheetText);
+        $this->assertStringNotContainsString('SMA Favorit Karawang', $sheetText);
+    }
+
+    /**
+     * Memastikan pembuatan backup format 'both' menghasilkan berkas SQL dan Excel sekaligus.
+     */
+    public function test_backup_format_both_creates_sql_and_excel_files(): void
+    {
+        Storage::fake('local');
+
+        /** @var DatabaseBackupService $service */
+        $service = app(DatabaseBackupService::class);
+
+        $backups = $service->createBackup(
+            campusId: $this->campusKarawang->id,
+            type: 'manual',
+            uploadToGdrive: false,
+            format: 'both'
+        );
+
+        $this->assertIsArray($backups);
+        $this->assertArrayHasKey('sql', $backups);
+        $this->assertArrayHasKey('excel', $backups);
+
+        $sqlBackup = $backups['sql'];
+        $excelBackup = $backups['excel'];
+
+        $this->assertEquals('sql', $sqlBackup->format);
+        $this->assertStringEndsWith('.sql.gz', $sqlBackup->filename);
+        $this->assertTrue(Storage::disk('local')->exists($sqlBackup->file_path));
+
+        $this->assertEquals('excel', $excelBackup->format);
+        $this->assertStringEndsWith('.xlsx', $excelBackup->filename);
+        $this->assertTrue(Storage::disk('local')->exists($excelBackup->file_path));
+    }
+
+    /**
+     * Memastikan SQL Dump kampus Cikampek tidak membocorkan baris kampus Karawang.
+     */
+    public function test_sql_dump_strictly_excludes_other_campus_records(): void
+    {
+        $schoolCkp = School::create([
+            'npsn' => 'CKP' . bin2hex(random_bytes(3)),
+            'name' => 'SMK Isolated Cikampek',
+            'campus_id' => $this->campusCikampek->id,
+            'status' => 'swasta',
+        ]);
+
+        $schoolKrw = School::create([
+            'npsn' => 'KRW' . bin2hex(random_bytes(3)),
+            'name' => 'SMA Isolated Karawang',
+            'campus_id' => $this->campusKarawang->id,
+            'status' => 'negeri',
+        ]);
+
+        /** @var DatabaseBackupService $service */
+        $service = app(DatabaseBackupService::class);
+
+        $sqlContent = $service->dumpDatabaseToSql($this->campusCikampek);
+
+        $this->assertStringContainsString('SMK Isolated Cikampek', $sqlContent);
+        $this->assertStringNotContainsString('SMA Isolated Karawang', $sqlContent);
+    }
+
+    /**
+     * Memastikan integrasi Webhook Google Apps Script berhasil mengunggah berkas.
+     */
+    public function test_google_drive_webhook_upload_integration(): void
+    {
+        Storage::fake('local');
+
+        \Illuminate\Support\Facades\Http::fake([
+            'https://script.google.com/macros/s/test-webhook/exec' => \Illuminate\Support\Facades\Http::response([
+                'success' => true,
+                'file_id' => 'mock-gdrive-file-12345',
+                'file_url' => 'https://drive.google.com/file/d/mock-gdrive-file-12345/view',
+            ], 200),
+        ]);
+
+        \App\Services\AppSettingService::set('gdrive_webhook_url', 'https://script.google.com/macros/s/test-webhook/exec');
+
+        /** @var DatabaseBackupService $service */
+        $service = app(DatabaseBackupService::class);
+
+        $backup = $service->createBackup(
+            campusId: $this->campusCikampek->id,
+            type: 'manual',
+            uploadToGdrive: true,
+            format: 'sql'
+        );
+
+        $this->assertEquals('uploaded', $backup->gdrive_status);
+        $this->assertEquals('mock-gdrive-file-12345', $backup->gdrive_file_id);
+        $this->assertStringContainsString('mock-gdrive-file-12345', $backup->gdrive_file_url);
+    }
 }

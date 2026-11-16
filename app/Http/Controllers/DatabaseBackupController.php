@@ -49,6 +49,11 @@ class DatabaseBackupController extends Controller
         // Ambil query backup terisolasi
         $backupsQuery = $this->backupService->getBackupsForUser($user, is_numeric($selectedCampusId) ? (int)$selectedCampusId : null);
 
+        // Filter format jika ada
+        if ($request->filled('format')) {
+            $backupsQuery->where('format', $request->get('format'));
+        }
+
         // Filter status lokal / gdrive jika ada
         if ($request->filled('status')) {
             $backupsQuery->where('status', $request->get('status'));
@@ -81,6 +86,7 @@ class DatabaseBackupController extends Controller
 
         $campuses = Campus::where('is_active', true)->orderBy('name')->get();
         $isGdriveConfigured = $this->googleDriveService->isConfigured();
+        $gdriveWebhookUrl = AppSettingService::get('gdrive_webhook_url', env('GOOGLE_DRIVE_WEBHOOK_URL', ''));
 
         // Ambil email service account jika sudah pernah disimpan
         $serviceAccountJson = AppSettingService::get('gdrive_service_account_json', '');
@@ -108,6 +114,7 @@ class DatabaseBackupController extends Controller
             'cikampekFolderUrl',
             'karawangFolderUrl',
             'isGdriveConfigured',
+            'gdriveWebhookUrl',
             'serviceAccountEmail'
         ));
     }
@@ -124,6 +131,7 @@ class DatabaseBackupController extends Controller
 
         $canSwitchCampus = $user->canAccessAllCampuses();
         $uploadToGdrive = $request->boolean('upload_to_gdrive', true);
+        $format = $request->get('format', 'both'); // 'both', 'excel', 'sql'
 
         if (!$canSwitchCampus) {
             // User cabang terikat hanya pada kampusnya sendiri
@@ -147,30 +155,35 @@ class DatabaseBackupController extends Controller
         $gdriveSuccess = 0;
 
         foreach ($campusesToBackup as $campus) {
-            $backup = $this->backupService->createBackup(
+            $backupOutput = $this->backupService->createBackup(
                 campusId: $campus?->id,
                 type: 'manual',
                 userId: $user->id,
-                uploadToGdrive: $uploadToGdrive
+                uploadToGdrive: $uploadToGdrive,
+                format: $format
             );
 
-            if ($backup->status === 'success') {
-                $successCount++;
-                if ($backup->gdrive_status === 'uploaded') {
-                    $gdriveSuccess++;
+            $backupsList = is_array($backupOutput) ? array_values($backupOutput) : [$backupOutput];
+
+            foreach ($backupsList as $backup) {
+                if ($backup->status === 'success') {
+                    $successCount++;
+                    if ($backup->gdrive_status === 'uploaded') {
+                        $gdriveSuccess++;
+                    }
+                } else {
+                    $failedCount++;
                 }
-            } else {
-                $failedCount++;
             }
         }
 
         if ($failedCount === 0) {
-            $msg = "Berhasil membuat {$successCount} berkas cadangan database (.sql.gz).";
+            $msg = "Berhasil membuat {$successCount} berkas cadangan data ({$format}).";
             if ($uploadToGdrive) {
                 if ($gdriveSuccess > 0) {
                     $msg .= " Sinkronisasi ke Google Drive sukses ({$gdriveSuccess} file).";
                 } else {
-                    $msg .= " (Catatan: Berkas tersimpan lokal. Sinkronisasi Google Drive memerlukan kredensial Service Account / OAuth aktif).";
+                    $msg .= " (Catatan: Berkas tersimpan lokal di server dan siap diunduh. Untuk sinkronisasi cloud otomatis, masukkan Webhook Google Apps Script di menu Kredensial GDrive).";
                 }
             }
             return redirect()->route('database-backups.index')->with('success', $msg);
@@ -180,7 +193,7 @@ class DatabaseBackupController extends Controller
     }
 
     /**
-     * Unduh file cadangan database lokal (.sql.gz).
+     * Unduh file cadangan database lokal (.sql.gz atau .xlsx).
      */
     public function download(DatabaseBackup $backup): StreamedResponse|RedirectResponse
     {
@@ -202,13 +215,18 @@ class DatabaseBackupController extends Controller
             'DOWNLOAD_BACKUP',
             'system',
             $backup->id,
-            "Mengunduh berkas cadangan database: {$backup->filename}"
+            "Mengunduh berkas cadangan ({$backup->format}): {$backup->filename}"
         );
+
+        $mimeType = match (true) {
+            $backup->format === 'excel' || str_ends_with($backup->filename, '.xlsx') => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            default => 'application/gzip',
+        };
 
         return Storage::disk($backup->disk)->download(
             $backup->file_path,
             $backup->filename,
-            ['Content-Type' => 'application/gzip']
+            ['Content-Type' => $mimeType]
         );
     }
 
@@ -294,6 +312,7 @@ class DatabaseBackupController extends Controller
         }
 
         $validated = $request->validate([
+            'gdrive_webhook_url' => 'nullable|string',
             'gdrive_cikampek_folder_id' => 'required|string',
             'gdrive_karawang_folder_id' => 'required|string',
             'gdrive_client_id' => 'nullable|string',
@@ -304,6 +323,11 @@ class DatabaseBackupController extends Controller
         ]);
 
         $botEmail = null;
+        $warningMsg = null;
+
+        if (!empty($validated['gdrive_client_id']) && filter_var(trim($validated['gdrive_client_id']), FILTER_VALIDATE_EMAIL)) {
+            $warningMsg = "Catatan: Client ID Google OAuth2 bukan alamat email pribadi. Jika ingin menghubungkan Google Drive dengan akun pribadi Anda tanpa Google Cloud Console, gunakan 'Metode 1: Google Apps Script Webhook' di atas.";
+        }
 
         // Opsi 1A: Jika user mengunggah langsung file .json Service Account
         if ($request->hasFile('gdrive_service_account_file')) {
@@ -333,6 +357,13 @@ class DatabaseBackupController extends Controller
         $msg = 'Pengaturan integrasi Google Drive berhasil disimpan.';
         if ($botEmail) {
             $msg .= " Email Robot Service Account terdeteksi: {$botEmail}. Pastikan folder Google Drive Cikampek & Karawang telah dibagikan (Share) dengan hak akses Editor ke email tersebut.";
+        }
+        if (!empty($validated['gdrive_webhook_url'])) {
+            $msg .= " Webhook Google Apps Script aktif: cadangan akan otomatis dikirim ke folder Google Drive.";
+        }
+
+        if ($warningMsg) {
+            return redirect()->route('database-backups.index')->with('success', $msg)->with('warning', $warningMsg);
         }
 
         return redirect()->route('database-backups.index')->with('success', $msg);

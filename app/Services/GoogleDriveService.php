@@ -231,11 +231,22 @@ class GoogleDriveService
     }
 
     /**
-     * Cek apakah kredensial otentikasi Google Drive telah dikonfigurasi.
+     * Cek apakah kredensial otentikasi Google Drive telah dikonfigurasi (Webhook, Service Account, atau OAuth).
      */
     public function isConfigured(): bool
     {
-        return !empty($this->getServiceAccountCredentials()) || !empty($this->getOAuthRefreshToken());
+        return !empty($this->getWebhookUrl())
+            || !empty($this->getServiceAccountCredentials())
+            || !empty($this->getOAuthRefreshToken());
+    }
+
+    /**
+     * Dapatkan Webhook URL Google Apps Script jika ada.
+     */
+    public function getWebhookUrl(): ?string
+    {
+        $url = trim((string)(AppSettingService::get('gdrive_webhook_url') ?? env('GOOGLE_DRIVE_WEBHOOK_URL', '')));
+        return !empty($url) ? $url : null;
     }
 
     /**
@@ -254,14 +265,86 @@ class GoogleDriveService
         $folderId = $targetFolderId ?: ($backup->gdrive_folder_id ?: self::getBackupFolderIdForCampus($backup->campus));
 
         if (!$this->isConfigured()) {
+            $backup->update([
+                'gdrive_status' => 'not_configured',
+                'gdrive_folder_id' => $folderId,
+                'error_message' => 'Kredensial atau Webhook Google Drive belum dikonfigurasi di Pengaturan Kredensial GDrive.',
+            ]);
+
             return [
                 'success' => false,
                 'status' => 'not_configured',
                 'folder_id' => $folderId,
-                'message' => 'Kredensial otentikasi Google Drive (Service Account / OAuth2) belum dikonfigurasi di sistem.',
+                'message' => 'Kredensial atau Webhook Google Drive belum dikonfigurasi. Berkas tersimpan di server lokal dan siap diunduh langsung.',
             ];
         }
 
+        $filePath = Storage::disk($backup->disk)->path($backup->file_path);
+        $fileName = $backup->filename;
+        $fileContent = file_get_contents($filePath);
+        $mimeType = match (true) {
+            str_ends_with($fileName, '.xlsx') => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            str_ends_with($fileName, '.gz') => 'application/gzip',
+            str_ends_with($fileName, '.sql') => 'application/sql',
+            default => 'application/octet-stream',
+        };
+
+        // 1. OPSI A: Google Apps Script Webhook (Paling Praktis & Bebas Kuota Cloud)
+        $webhookUrl = $this->getWebhookUrl();
+        if (!empty($webhookUrl)) {
+            try {
+                $response = Http::timeout(60)->post($webhookUrl, [
+                    'action' => 'backup_upload',
+                    'folder_id' => $folderId,
+                    'filename' => $fileName,
+                    'mime_type' => $mimeType,
+                    'file_base64' => base64_encode($fileContent),
+                ]);
+
+                if ($response->successful()) {
+                    $json = $response->json();
+                    if (!empty($json['success']) || !empty($json['file_id']) || !empty($json['file_url']) || !empty($json['url'])) {
+                        $fileId = $json['file_id'] ?? null;
+                        $webViewLink = $json['file_url'] ?? ($json['url'] ?? "https://drive.google.com/drive/folders/{$folderId}?usp=sharing");
+
+                        $backup->update([
+                            'gdrive_status' => 'uploaded',
+                            'gdrive_folder_id' => $folderId,
+                            'gdrive_file_id' => $fileId,
+                            'gdrive_file_url' => $webViewLink,
+                            'error_message' => null,
+                        ]);
+
+                        return [
+                            'success' => true,
+                            'status' => 'uploaded',
+                            'file_id' => $fileId,
+                            'folder_id' => $folderId,
+                            'url' => $webViewLink,
+                            'message' => 'Berkas berhasil diunggah ke Google Drive via Webhook Apps Script.',
+                        ];
+                    }
+                }
+            } catch (Throwable $e) {
+                Log::warning('Google Drive Webhook Upload Error: ' . $e->getMessage());
+                if (empty($this->getServiceAccountCredentials()) && empty($this->getOAuthRefreshToken())) {
+                    $backup->update([
+                        'gdrive_status' => 'failed',
+                        'gdrive_folder_id' => $folderId,
+                        'error_message' => 'Webhook GDrive Error: ' . $e->getMessage(),
+                    ]);
+
+                    return [
+                        'success' => false,
+                        'status' => 'failed',
+                        'folder_id' => $folderId,
+                        'message' => 'Gagal upload ke Google Drive via Webhook: ' . $e->getMessage(),
+                    ];
+                }
+            }
+        }
+
+        // 2. OPSI B: Google Drive v3 REST API (Service Account / OAuth2)
         try {
             $accessToken = $this->getAccessToken();
             if (!$accessToken) {
@@ -269,14 +352,9 @@ class GoogleDriveService
                     'success' => false,
                     'status' => 'failed',
                     'folder_id' => $folderId,
-                    'message' => 'Gagal memperoleh access token dari Google OAuth. Periksa kredensial akun.',
+                    'message' => 'Gagal memperoleh access token dari Google OAuth/Service Account. Periksa kredensial.',
                 ];
             }
-
-            $filePath = Storage::disk($backup->disk)->path($backup->file_path);
-            $fileName = $backup->filename;
-            $fileContent = file_get_contents($filePath);
-            $mimeType = str_ends_with($fileName, '.gz') ? 'application/gzip' : 'application/sql';
 
             // Google Drive v3 Multipart Upload
             $metadata = [
@@ -363,8 +441,46 @@ class GoogleDriveService
         if (!$this->isConfigured()) {
             return [
                 'success' => false,
-                'message' => 'Kredensial Google Drive belum diisi di sistem.',
+                'message' => 'Kredensial atau Webhook Google Drive belum diisi di sistem.',
             ];
+        }
+
+        // Cek Webhook jika ada
+        $webhookUrl = $this->getWebhookUrl();
+        if (!empty($webhookUrl)) {
+            try {
+                $response = Http::timeout(15)->post($webhookUrl, [
+                    'action' => 'test',
+                    'folder_id' => $folderId,
+                ]);
+
+                if ($response->successful()) {
+                    $json = $response->json();
+                    if (!empty($json['success'])) {
+                        return [
+                            'success' => true,
+                            'folder_id' => $folderId,
+                            'folder_name' => $json['folder_name'] ?? 'Folder Google Drive (Webhook)',
+                            'can_add_children' => true,
+                            'message' => 'Koneksi ke Google Apps Script Webhook berhasil dan folder siap menerima berkas!',
+                        ];
+                    }
+
+                    if (isset($json['message'])) {
+                        return [
+                            'success' => false,
+                            'message' => 'Webhook Google Apps Script error: ' . $json['message'],
+                        ];
+                    }
+                }
+            } catch (Throwable $e) {
+                if (empty($this->getServiceAccountCredentials()) && empty($this->getOAuthRefreshToken())) {
+                    return [
+                        'success' => false,
+                        'message' => 'Gagal menghubungi Webhook Google Apps Script: ' . $e->getMessage(),
+                    ];
+                }
+            }
         }
 
         try {
@@ -372,7 +488,7 @@ class GoogleDriveService
             if (!$accessToken) {
                 return [
                     'success' => false,
-                    'message' => 'Gagal mengotentikasi akun Google.',
+                    'message' => 'Gagal mengotentikasi akun Google (Access token tidak ditemukan).',
                 ];
             }
 
@@ -389,7 +505,7 @@ class GoogleDriveService
                 'folder_id' => $data['id'] ?? $folderId,
                 'folder_name' => $data['name'] ?? 'Folder Google Drive',
                 'can_add_children' => $data['capabilities']['canAddChildren'] ?? true,
-                'message' => 'Koneksi ke Google Drive berhasil! Akses folder diverifikasi.',
+                'message' => 'Koneksi ke Google Drive API berhasil! Akses folder diverifikasi.',
             ];
         } catch (Throwable $e) {
             return [
