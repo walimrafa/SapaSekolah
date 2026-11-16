@@ -18,9 +18,37 @@ class EventStudentLeadController extends Controller
     {
         $campuses = \App\Models\Campus::where('is_active', true)->orderBy('is_default', 'desc')->get();
         $requestedCampusId = $request->query('campus_id');
-        $activeCampus = $requestedCampusId 
-            ? \App\Models\Campus::find($requestedCampusId) 
-            : \App\Services\AppContextService::getActiveCampus();
+
+        $activeCampus = null;
+        $isCampusLocked = false;
+
+        if (auth()->check()) {
+            $user = auth()->user();
+            if ($user->campus_id) {
+                $activeCampus = \App\Models\Campus::find($user->campus_id);
+                $isCampusLocked = true;
+            } elseif ($requestedCampusId) {
+                $activeCampus = \App\Models\Campus::find($requestedCampusId);
+                $isCampusLocked = true;
+            } else {
+                $activeCampus = \App\Services\AppContextService::getActiveCampus();
+                $isCampusLocked = ($activeCampus !== null);
+            }
+        } elseif ($requestedCampusId) {
+            $activeCampus = \App\Models\Campus::find($requestedCampusId);
+            $isCampusLocked = ($activeCampus !== null);
+        }
+
+        $selectedEventId = $request->query('event_id');
+        $selectedEvent = $selectedEventId ? SchoolEventProposal::find($selectedEventId) : null;
+        if ($selectedEvent && $selectedEvent->campus_id && !$requestedCampusId) {
+            $activeCampus = $selectedEvent->campus;
+            $isCampusLocked = true;
+        }
+
+        if (!$activeCampus) {
+            $activeCampus = \App\Services\AppContextService::getActiveCampus() ?? \App\Models\Campus::getDefault();
+        }
 
         if (!\App\Services\AppContextService::isPortalActive(\App\Services\AppContextService::PORTAL_EVENT_STUDENT_LEAD, $activeCampus?->id)) {
             return view('errors.portal-disabled', [
@@ -32,7 +60,7 @@ class EventStudentLeadController extends Controller
             ->select('id', 'name', 'district_id', 'campus_id', 'school_type_id')
             ->with(['district:id,name', 'campus', 'schoolType']);
 
-        if ($requestedCampusId && $activeCampus) {
+        if ($activeCampus) {
             $schoolsQuery->where('campus_id', $activeCampus->id);
         }
 
@@ -46,15 +74,9 @@ class EventStudentLeadController extends Controller
         }
 
         $events = $eventsQuery->get(['id', 'event_name', 'school_name', 'school_id', 'event_date', 'event_location']);
-
-        $selectedEventId = $request->query('event_id');
-        $selectedEvent = $selectedEventId ? SchoolEventProposal::find($selectedEventId) : null;
-        if ($selectedEvent && $selectedEvent->campus_id && !$requestedCampusId) {
-            $activeCampus = $selectedEvent->campus;
-        }
         $selectedSchoolId = $request->query('school_id') ?? ($selectedEvent ? $selectedEvent->school_id : null);
 
-        return view('public-events.student-form', compact('schools', 'events', 'selectedEvent', 'selectedEventId', 'selectedSchoolId', 'campuses', 'activeCampus'));
+        return view('public-events.student-form', compact('schools', 'events', 'selectedEvent', 'selectedEventId', 'selectedSchoolId', 'campuses', 'activeCampus', 'isCampusLocked'));
     }
 
     /**

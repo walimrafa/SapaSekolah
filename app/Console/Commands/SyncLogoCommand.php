@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Services\AppSettingService;
 use Illuminate\Console\Command;
+use Symfony\Component\Console\Command\Command as SymfonyCommand;
 
 class SyncLogoCommand extends Command
 {
@@ -35,7 +36,7 @@ class SyncLogoCommand extends Command
             $sourcePath = realpath($customPath) ?: $customPath;
             if (!file_exists($sourcePath)) {
                 $this->error("Berkas spesifik tidak ditemukan di: {$customPath}");
-                return Command::FAILURE;
+                return SymfonyCommand::FAILURE;
             }
         } else {
             $logoSetting = AppSettingService::get('app_logo_url');
@@ -54,7 +55,7 @@ class SyncLogoCommand extends Command
         if (!$sourcePath || !file_exists($sourcePath)) {
             $this->error('Gagal menemukan berkas sumber logo fisik di server.');
             $this->line('Pastikan logo sudah diunggah atau berada di public/logo-sapa-sekolah.png.');
-            return Command::FAILURE;
+            return SymfonyCommand::FAILURE;
         }
 
         $this->line("Berkas sumber ditemukan di: <info>{$sourcePath}</info>");
@@ -73,10 +74,10 @@ class SyncLogoCommand extends Command
                 ['public/pwa-icon-*.png (72..512)', 'Tersinkron'],
             ]);
             $this->line('URL Logo dengan cache buster: <comment>' . AppSettingService::getLogoUrl() . '</comment>');
-            return Command::SUCCESS;
+            return SymfonyCommand::SUCCESS;
         }
 
         $this->error('Terjadi kesalahan saat menyinkronkan aset logo.');
-        return Command::FAILURE;
+        return SymfonyCommand::FAILURE;
     }
 }

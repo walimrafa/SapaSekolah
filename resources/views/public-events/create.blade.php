@@ -163,19 +163,37 @@
                             <label class="text-xs font-semibold text-slate-300 block mb-1.5">
                                 Kampus UBSI Dituju <span class="text-rose-400">*</span>
                             </label>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                                @foreach($campuses as $cmp)
-                                    <label class="flex items-center space-x-3 p-3 rounded-xl border cursor-pointer transition"
-                                        @click="selectedCampusId = '{{ $cmp->id }}'; selectedSchoolId = ''; schoolSearch = ''; filterSchoolOptions()"
-                                        :class="selectedCampusId == {{ $cmp->id }} ? 'bg-brand-600/20 border-brand-500 text-white font-bold ring-1 ring-brand-500' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500'">
-                                        <input type="radio" name="campus_id" value="{{ $cmp->id }}" x-model="selectedCampusId" @change="selectedSchoolId = ''; schoolSearch = ''; filterSchoolOptions()" class="text-brand-500 focus:ring-brand-500">
-                                        <div class="text-left">
-                                            <span class="block text-xs font-bold">{{ $cmp->name }}</span>
-                                            <span class="block text-[10px] text-slate-400">{{ $cmp->code == 'CKP' ? 'Wilayah Cikampek & Sekitarnya' : 'Wilayah Karawang Barat & Sekitarnya' }}</span>
+                            @if(!empty($isCampusLocked) && $activeCampus)
+                                <div class="p-3.5 rounded-xl border border-emerald-500/30 bg-emerald-950/20 text-white flex items-center justify-between">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                                            <i data-lucide="graduation-cap" class="w-4 h-4"></i>
                                         </div>
-                                    </label>
-                                @endforeach
-                            </div>
+                                        <div>
+                                            <span class="block text-xs font-bold text-emerald-300">{{ $activeCampus->name }}</span>
+                                            <span class="block text-[10px] text-slate-400">{{ $activeCampus->code == 'CKP' ? 'Wilayah UBSI Kampus Cikampek & Purwakarta' : 'Wilayah UBSI Kampus Karawang Barat & Sekitarnya' }}</span>
+                                        </div>
+                                    </div>
+                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 uppercase">
+                                        Akses Terkunci
+                                    </span>
+                                </div>
+                                <input type="hidden" name="campus_id" value="{{ $activeCampus->id }}">
+                            @else
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                    @foreach($campuses as $cmp)
+                                        <label class="flex items-center space-x-3 p-3 rounded-xl border cursor-pointer transition"
+                                            @click="selectedCampusId = '{{ $cmp->id }}'; selectedSchoolId = ''; schoolSearch = ''; filterSchoolOptions()"
+                                            :class="selectedCampusId == {{ $cmp->id }} ? 'bg-brand-600/20 border-brand-500 text-white font-bold ring-1 ring-brand-500' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500'">
+                                            <input type="radio" name="campus_id" value="{{ $cmp->id }}" x-model="selectedCampusId" @change="selectedSchoolId = ''; schoolSearch = ''; filterSchoolOptions()" class="text-brand-500 focus:ring-brand-500">
+                                            <div class="text-left">
+                                                <span class="block text-xs font-bold">{{ $cmp->name }}</span>
+                                                <span class="block text-[10px] text-slate-400">{{ $cmp->code == 'CKP' ? 'Wilayah Cikampek & Sekitarnya' : 'Wilayah Karawang Barat & Sekitarnya' }}</span>
+                                            </div>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            @endif
                         </div>
 
                         <!-- Pilihan Sekolah Terdaftar / Input Manual (Terpisah Karawang & Cikampek) -->

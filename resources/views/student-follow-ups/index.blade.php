@@ -40,7 +40,11 @@
                 <i data-lucide="clipboard-list" class="w-4 h-4 text-brand-600"></i>
                 <span>Lihat Analisis Kuisioner</span>
             </a>
-            <a href="{{ route('student-questionnaire.create') }}" target="_blank" rel="noopener" class="px-3.5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs shadow-md flex items-center gap-2 transition duration-150">
+            @php
+                $myFollowUpCampusId = auth()->user()->campus_id ?? ($activeCampus?->id ?? null);
+                $followUpQuestionnaireLink = route('student-questionnaire.create', array_filter(['campus_id' => $myFollowUpCampusId]));
+            @endphp
+            <a href="{{ $followUpQuestionnaireLink }}" target="_blank" rel="noopener" class="px-3.5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs shadow-md flex items-center gap-2 transition duration-150">
                 <i data-lucide="external-link" class="w-4 h-4 text-amber-400"></i>
                 <span>Buka Form Siswa</span>
             </a>

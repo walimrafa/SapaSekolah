@@ -181,4 +181,36 @@ class StudentQuestionnaireTest extends TestCase
         $reportResponse->assertSee('chartQuestionnaireMajors');
         $reportResponse->assertSee('chartQuestionnaireClasses');
     }
+
+    public function test_public_questionnaire_is_strictly_locked_to_assigned_campus(): void
+    {
+        $ckpCampus = \App\Models\Campus::where('code', 'CKP')->first();
+        $krwCampus = \App\Models\Campus::where('code', 'KRW')->first();
+
+        if (!$ckpCampus || !$krwCampus) {
+            $this->markTestSkipped('Campus CKP or KRW not found in DB');
+        }
+
+        // 1. Staff logged in to Cikampek
+        $role = \App\Models\Role::firstOrCreate(['name' => 'Marketing'], ['description' => 'Marketing']);
+        $cikampekStaff = User::factory()->create([
+            'campus_id' => $ckpCampus->id,
+            'role_id' => $role->id,
+        ]);
+
+        $responseCkp = $this->actingAs($cikampekStaff)->get(route('student-questionnaire.create'));
+        $responseCkp->assertOk();
+        $responseCkp->assertSee('Akses Terkunci: CKP');
+        $responseCkp->assertSee($ckpCampus->name);
+        // Switcher tabs must NOT be present
+        $responseCkp->assertDontSee('Pilih Kampus UBSI Tujuan:');
+
+        // 2. Query param ?campus_id=KRW for public student
+        auth()->logout();
+        $responseKrw = $this->get(route('student-questionnaire.create', ['campus_id' => $krwCampus->id]));
+        $responseKrw->assertOk();
+        $responseKrw->assertSee('Akses Terkunci: KRW');
+        $responseKrw->assertSee($krwCampus->name);
+        $responseKrw->assertDontSee('Pilih Kampus UBSI Tujuan:');
+    }
 }

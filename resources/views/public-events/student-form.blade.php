@@ -77,7 +77,27 @@
             </div>
         @endif
 
-        @if(isset($campuses) && $campuses->count() > 1 && empty($selectedEvent))
+        <!-- Selector / Banner Kampus Penyelenggara -->
+        @if(!empty($isCampusLocked) && $activeCampus)
+            <div class="bg-white p-4.5 rounded-3xl border border-slate-200/80 shadow-soft flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center shrink-0 shadow-sm border border-brand-100">
+                        <i data-lucide="graduation-cap" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Kampus UBSI Penyelenggara:</span>
+                        <span class="text-sm sm:text-base font-extrabold text-brand-900 block leading-tight">{{ $activeCampus->name }}</span>
+                        <span class="text-[11px] text-slate-500 font-medium">{{ $activeCampus->code === 'CKP' ? 'Wilayah UBSI Kampus Cikampek & Purwakarta' : 'Wilayah UBSI Kampus Karawang Barat & Sekitarnya' }}</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 self-end sm:self-auto">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase tracking-wider shadow-2xs">
+                        <i data-lucide="lock" class="w-3.5 h-3.5 text-emerald-600"></i>
+                        <span>Akses Terkunci: {{ $activeCampus->code }}</span>
+                    </span>
+                </div>
+            </div>
+        @elseif(isset($campuses) && $campuses->count() > 1 && empty($selectedEvent))
             <div class="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-soft flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div class="flex items-center gap-2">
                     <div class="w-8 h-8 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">

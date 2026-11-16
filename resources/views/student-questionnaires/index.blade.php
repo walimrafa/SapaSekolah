@@ -27,7 +27,11 @@
                 <i data-lucide="download" class="w-4 h-4"></i>
                 Unduh Hasil Excel
             </a>
-            <a href="{{ route('student-questionnaire.create') }}" target="_blank" rel="noopener" class="px-4 py-2.5 bg-brand-navy hover:bg-slate-900 text-white font-bold rounded-xl text-xs shadow-md flex items-center gap-2">
+            @php
+                $myCampusId = auth()->user()->campus_id ?? ($activeCampus?->id ?? null);
+                $questionnaireLink = route('student-questionnaire.create', array_filter(['campus_id' => $myCampusId]));
+            @endphp
+            <a href="{{ $questionnaireLink }}" target="_blank" rel="noopener" class="px-4 py-2.5 bg-brand-navy hover:bg-slate-900 text-white font-bold rounded-xl text-xs shadow-md flex items-center gap-2">
                 <i data-lucide="external-link" class="w-4 h-4"></i>
                 Buka Form Publik
             </a>

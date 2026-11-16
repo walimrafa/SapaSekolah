@@ -6,6 +6,7 @@ use App\Models\Campus;
 use App\Services\DatabaseBackupService;
 use App\Services\GoogleDriveService;
 use Illuminate\Console\Command;
+use Symfony\Component\Console\Command\Command as SymfonyCommand;
 
 class DatabaseBackupCommand extends Command
 {
@@ -50,7 +51,7 @@ class DatabaseBackupCommand extends Command
             $campus = Campus::find($campusOption);
             if (!$campus) {
                 $this->error("Kampus dengan ID {$campusOption} tidak ditemukan.");
-                return Command::FAILURE;
+                return SymfonyCommand::FAILURE;
             }
             $campuses = [$campus];
         } else {
@@ -61,7 +62,7 @@ class DatabaseBackupCommand extends Command
             }
             if (!$campus) {
                 $this->error("Kampus dengan kode/nama '{$campusOption}' tidak ditemukan.");
-                return Command::FAILURE;
+                return SymfonyCommand::FAILURE;
             }
             $campuses = [$campus];
         }
@@ -113,6 +114,6 @@ class DatabaseBackupCommand extends Command
         $this->table(['Kampus', 'Format', 'File', 'Ukuran', 'Status Lokal', 'Status GDrive', 'GDrive Folder'], $results);
         $this->info('Proses cadangan database selesai.');
 
-        return Command::SUCCESS;
+        return SymfonyCommand::SUCCESS;
     }
 }

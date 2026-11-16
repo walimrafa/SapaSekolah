@@ -23,7 +23,11 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-2.5 shrink-0">
-                <a href="{{ route('student-questionnaire.create') }}" target="_blank"
+                @php
+                    $masterPreviewCampusId = auth()->user()->campus_id ?? (\App\Services\AppContextService::getActiveCampus()?->id ?? null);
+                    $masterPreviewLink = route('student-questionnaire.create', array_filter(['campus_id' => $masterPreviewCampusId]));
+                @endphp
+                <a href="{{ $masterPreviewLink }}" target="_blank"
                     class="inline-flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/90 shadow-sm transition"
                     title="Buka pratinjau tampilan publik formulir kuisioner siswa">
                     <i data-lucide="external-link" class="w-4 h-4 text-slate-500"></i>

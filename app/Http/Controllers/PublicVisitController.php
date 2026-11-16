@@ -22,9 +22,28 @@ class PublicVisitController extends Controller
     {
         $campuses = \App\Models\Campus::where('is_active', true)->orderBy('is_default', 'desc')->get();
         $requestedCampusId = $request->query('campus_id');
-        $activeCampus = $requestedCampusId 
-            ? \App\Models\Campus::find($requestedCampusId) 
-            : AppContextService::getActiveCampus();
+
+        $activeCampus = null;
+        $isCampusLocked = false;
+
+        if (auth()->check()) {
+            $user = auth()->user();
+            if ($user->campus_id) {
+                $activeCampus = \App\Models\Campus::find($user->campus_id);
+                $isCampusLocked = true;
+            } elseif ($requestedCampusId) {
+                $activeCampus = \App\Models\Campus::find($requestedCampusId);
+                $isCampusLocked = true;
+            } else {
+                $activeCampus = AppContextService::getActiveCampus();
+                $isCampusLocked = ($activeCampus !== null);
+            }
+        } elseif ($requestedCampusId) {
+            $activeCampus = \App\Models\Campus::find($requestedCampusId);
+            $isCampusLocked = ($activeCampus !== null);
+        } else {
+            $activeCampus = AppContextService::getActiveCampus() ?? \App\Models\Campus::getDefault();
+        }
 
         if (!AppContextService::isPortalActive(AppContextService::PORTAL_PUBLIC_VISIT, $activeCampus?->id)) {
             return view('errors.portal-disabled', [
@@ -62,7 +81,7 @@ class PublicVisitController extends Controller
         }
         $marketingUsers = $marketingUsersQuery->get();
 
-        return view('public-visit', compact('districts', 'schools', 'marketingUsers', 'campuses', 'activeCampus'));
+        return view('public-visit', compact('districts', 'schools', 'marketingUsers', 'campuses', 'activeCampus', 'isCampusLocked'));
     }
 
     /**

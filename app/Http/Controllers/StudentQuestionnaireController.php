@@ -31,30 +31,65 @@ class StudentQuestionnaireController extends Controller
     {
         $campuses = \App\Models\Campus::where('is_active', true)->orderBy('is_default', 'desc')->get();
         $requestedCampusId = $request->query('campus_id');
-        $activeCampus = $requestedCampusId 
-            ? \App\Models\Campus::find($requestedCampusId) 
-            : \App\Services\AppContextService::getActiveCampus();
 
-        if (!\App\Services\AppContextService::isPortalActive(\App\Services\AppContextService::PORTAL_STUDENT_QUESTIONNAIRE, $activeCampus?->id)) {
-            return view('errors.portal-disabled', [
-                'portalName' => 'Portal Kuisioner Siswa & Beasiswa (' . ($activeCampus?->name ?? 'UBSI') . ')',
-            ]);
-        }
+        // Resolusi isolasi kampus ketat:
+        // 1. Jika staf login di kampus tertentu -> Kunci mutlak ke kampus penugasan
+        // 2. Jika Super Admin -> Kunci ke requestedCampusId atau active campus sesi
+        // 3. Jika publik via link/QR -> Kunci ke query campus_id
+        // 4. Jika publik tanpa query -> Default ke kampus acuan sistem
+        $activeCampus = null;
+        $isCampusLocked = false;
 
-        $schoolsQuery = School::with(['district', 'campus', 'schoolType']);
-        if ($requestedCampusId && $activeCampus) {
-            $schoolsQuery->where('campus_id', $activeCampus->id);
+        if (auth()->check()) {
+            $user = auth()->user();
+            if ($user->campus_id) {
+                $activeCampus = \App\Models\Campus::find($user->campus_id);
+                $isCampusLocked = true;
+            } elseif ($requestedCampusId) {
+                $activeCampus = \App\Models\Campus::find($requestedCampusId);
+                $isCampusLocked = true;
+            } else {
+                $activeCampus = \App\Services\AppContextService::getActiveCampus() ?? \App\Models\Campus::getDefault();
+                $isCampusLocked = ($activeCampus !== null);
+            }
+        } elseif ($requestedCampusId) {
+            $activeCampus = \App\Models\Campus::find($requestedCampusId);
+            $isCampusLocked = true;
+        } else {
+            $activeCampus = \App\Services\AppContextService::getActiveCampus() ?? \App\Models\Campus::getDefault();
+            $isCampusLocked = false;
         }
-        $schools = $schoolsQuery->orderBy('name')->get();
 
         $selectedEventId = $request->query('event_id') ?? $request->query('school_event_proposal_id');
         $selectedEvent = $selectedEventId ? \App\Models\SchoolEventProposal::find($selectedEventId) : null;
+        if ($selectedEvent && $selectedEvent->school?->campus_id) {
+            $activeCampus = $selectedEvent->school->campus;
+            $isCampusLocked = true;
+        }
+
+        if ($activeCampus) {
+            if (!\App\Services\AppContextService::isPortalActive(\App\Services\AppContextService::PORTAL_STUDENT_QUESTIONNAIRE, $activeCampus->id)) {
+                return view('errors.portal-disabled', [
+                    'portalName' => 'Portal Kuisioner Siswa & Beasiswa (' . $activeCampus->name . ')',
+                ]);
+            }
+
+            // Kunci daftar sekolah hanya untuk kampus tujuan yang aktif
+            $schools = School::with(['district', 'campus', 'schoolType'])
+                ->where('campus_id', $activeCampus->id)
+                ->orderBy('name')
+                ->get();
+        } else {
+            $schools = School::with(['district', 'campus', 'schoolType'])->orderBy('name')->get();
+        }
+
         $selectedSchoolId = $request->query('school_id') ?? ($selectedEvent ? $selectedEvent->school_id : null);
 
         return view('student-questionnaires.create', [
             'questionSections' => self::questionSections(),
             'campuses' => $campuses,
             'activeCampus' => $activeCampus,
+            'isCampusLocked' => $isCampusLocked,
             'schools' => $schools,
             'selectedSchoolId' => $selectedSchoolId,
             'selectedEventId' => $selectedEventId,
@@ -124,7 +159,11 @@ class StudentQuestionnaireController extends Controller
         $activeCampus = \App\Services\AppContextService::getActiveCampus();
         $activePeriod = \App\Services\AppContextService::getActivePeriod();
 
-        $targetCampusId = $school?->campus_id ?: ($request->input('campus_id') ?: ($activeCampus?->id ?? 1));
+        if (auth()->check() && auth()->user()->campus_id) {
+            $targetCampusId = auth()->user()->campus_id;
+        } else {
+            $targetCampusId = $school?->campus_id ?: ($request->input('campus_id') ?: ($activeCampus?->id ?? 1));
+        }
 
         $gender = !empty($validated['gender'])
             ? (strtoupper(substr($validated['gender'], 0, 1)) === 'P' ? 'P' : 'L')
