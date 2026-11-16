@@ -39,6 +39,15 @@
 
             <!-- Tombol Aksi Utama -->
             <div class="flex flex-wrap items-center gap-2.5">
+                <!-- Tombol Sinkronisasi Semua Berkas Tertunda -->
+                <form method="POST" action="{{ route('database-backups.sync-all') }}" class="inline">
+                    @csrf
+                    <button type="submit" class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold hover:bg-blue-100 transition shadow-xs">
+                        <i data-lucide="cloud-upload" class="w-4 h-4 text-blue-600"></i>
+                        <span>Unggah Semua ke GDrive</span>
+                    </button>
+                </form>
+
                 @if(auth()->user()->isAdmin())
                 <button type="button" @click="settingsModal = true" class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50 transition shadow-xs">
                     <i data-lucide="settings" class="w-4 h-4 text-slate-500"></i>
@@ -81,6 +90,30 @@
                 <p class="font-bold">Kesalahan Terjadi</p>
                 <p class="mt-0.5 text-red-700">{{ session('error') }}</p>
             </div>
+        </div>
+        @endif
+
+        @php
+            $pendingCount = $backups->filter(fn($b) => $b->gdrive_status !== 'uploaded' && $b->status === 'success')->count();
+        @endphp
+        @if($pendingCount > 0)
+        <div class="p-4 rounded-2xl bg-amber-50/90 border border-amber-300 text-amber-950 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs shadow-xs">
+            <div class="flex items-start sm:items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-amber-200/80 flex items-center justify-center text-amber-800 shrink-0">
+                    <i data-lucide="clock" class="w-4 h-4"></i>
+                </div>
+                <div>
+                    <p class="font-extrabold text-amber-950">Ada {{ $pendingCount }} berkas cadangan lokal berstatus "Menunggu Upload".</p>
+                    <p class="text-[11px] text-amber-800 mt-0.5">Setelah URL Webhook GDrive disimpan, klik tombol di samping untuk otomatis mengirim seluruh berkas ke folder Google Drive masing-masing.</p>
+                </div>
+            </div>
+            <form method="POST" action="{{ route('database-backups.sync-all') }}" class="shrink-0">
+                @csrf
+                <button type="submit" class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs transition shadow-xs flex items-center gap-1.5">
+                    <i data-lucide="cloud-upload" class="w-4 h-4"></i>
+                    <span>Unggah Semua Sekarang ({{ $pendingCount }})</span>
+                </button>
+            </form>
         </div>
         @endif
 

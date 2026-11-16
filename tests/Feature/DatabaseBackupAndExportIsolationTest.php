@@ -420,4 +420,46 @@ class DatabaseBackupAndExportIsolationTest extends TestCase
         $this->assertEquals('mock-gdrive-file-12345', $backup->gdrive_file_id);
         $this->assertStringContainsString('mock-gdrive-file-12345', $backup->gdrive_file_url);
     }
+
+    /**
+     * Memastikan aksi massal syncAll berhasil menyinkronkan seluruh berkas lokal pending.
+     */
+    public function test_bulk_sync_all_pending_backups_to_google_drive(): void
+    {
+        Storage::fake('local');
+
+        \Illuminate\Support\Facades\Http::fake([
+            'https://script.google.com/macros/s/test-webhook/exec' => \Illuminate\Support\Facades\Http::response([
+                'success' => true,
+                'file_id' => 'mock-bulk-file-' . uniqid(),
+                'file_url' => 'https://drive.google.com/file/d/mock-bulk/view',
+            ], 200),
+        ]);
+
+        \App\Services\AppSettingService::set('gdrive_webhook_url', 'https://script.google.com/macros/s/test-webhook/exec');
+
+        /** @var DatabaseBackupService $service */
+        $service = app(DatabaseBackupService::class);
+
+        // Buat 2 berkas tanpa upload (status pending)
+        $backup1 = $service->createBackup(campusId: $this->campusCikampek->id, uploadToGdrive: false, format: 'sql');
+        $backup2 = $service->createBackup(campusId: $this->campusKarawang->id, uploadToGdrive: false, format: 'excel');
+
+        $this->assertEquals('pending', $backup1->gdrive_status);
+        $this->assertEquals('pending', $backup2->gdrive_status);
+
+        $superAdmin = User::factory()->create([
+            'name' => 'Super Administrator',
+            'role_id' => $this->adminRole->id,
+            'campus_id' => null,
+        ]);
+
+        $this->actingAs($superAdmin);
+        $response = $this->post(route('database-backups.sync-all'));
+        $response->assertRedirect(route('database-backups.index'));
+        $response->assertSessionHas('success');
+
+        $this->assertEquals('uploaded', $backup1->fresh()->gdrive_status);
+        $this->assertEquals('uploaded', $backup2->fresh()->gdrive_status);
+    }
 }

@@ -254,6 +254,48 @@ class DatabaseBackupController extends Controller
     }
 
     /**
+     * Sinkronisasikan semua berkas cadangan lokal yang tertunda ke Google Drive secara massal.
+     */
+    public function syncAll(): RedirectResponse
+    {
+        $user = auth()->user();
+        if (!$user || !$user->canManageBackups()) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        if (!$this->googleDriveService->isConfigured()) {
+            return redirect()->route('database-backups.index')->with('warning', 'Integrasi Google Drive belum aktif. Masukkan Webhook Google Apps Script di menu Kredensial GDrive terlebih dahulu.');
+        }
+
+        $query = DatabaseBackup::where('gdrive_status', '!=', 'uploaded')->where('status', 'success');
+        if (!$user->canAccessAllCampuses()) {
+            $query->where('campus_id', $user->campus_id);
+        }
+
+        $pendingBackups = $query->get()->filter(fn($b) => $b->existsLocally());
+        if ($pendingBackups->isEmpty()) {
+            return redirect()->route('database-backups.index')->with('info', 'Semua berkas cadangan fisik sudah tersinkronisasi ke Google Drive.');
+        }
+
+        $success = 0;
+        $failed = 0;
+        foreach ($pendingBackups as $backup) {
+            $res = $this->googleDriveService->uploadBackup($backup);
+            if ($res['success']) {
+                $success++;
+            } else {
+                $failed++;
+            }
+        }
+
+        if ($failed === 0) {
+            return redirect()->route('database-backups.index')->with('success', "Berhasil menyinkronkan {$success} berkas cadangan ke Google Drive.");
+        }
+
+        return redirect()->route('database-backups.index')->with('warning', "Sinkronisasi selesai: {$success} berhasil, {$failed} gagal diunggah.");
+    }
+
+    /**
      * Hapus berkas cadangan database.
      */
     public function destroy(DatabaseBackup $backup): RedirectResponse
@@ -360,6 +402,28 @@ class DatabaseBackupController extends Controller
         }
         if (!empty($validated['gdrive_webhook_url'])) {
             $msg .= " Webhook Google Apps Script aktif: cadangan akan otomatis dikirim ke folder Google Drive.";
+        }
+
+        // Otomatis sinkronkan berkas lokal yang sebelumnya berstatus pending / belum terunggah
+        if ($this->googleDriveService->isConfigured()) {
+            $pendingBackups = DatabaseBackup::where('gdrive_status', '!=', 'uploaded')
+                ->where('status', 'success')
+                ->latest()
+                ->take(20)
+                ->get()
+                ->filter(fn($b) => $b->existsLocally());
+
+            $autoSynced = 0;
+            foreach ($pendingBackups as $pending) {
+                $syncRes = $this->googleDriveService->uploadBackup($pending);
+                if ($syncRes['success']) {
+                    $autoSynced++;
+                }
+            }
+
+            if ($autoSynced > 0) {
+                $msg .= " Sebanyak {$autoSynced} berkas cadangan lokal berhasil otomatis diunggah ke Google Drive.";
+            }
         }
 
         if ($warningMsg) {

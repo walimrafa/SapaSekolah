@@ -310,6 +310,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/database-backups/create', [\App\Http\Controllers\DatabaseBackupController::class, 'createManual'])->name('database-backups.create');
         Route::get('/database-backups/{backup}/download', [\App\Http\Controllers\DatabaseBackupController::class, 'download'])->name('database-backups.download');
         Route::post('/database-backups/{backup}/upload-gdrive', [\App\Http\Controllers\DatabaseBackupController::class, 'uploadGdrive'])->name('database-backups.upload-gdrive');
+        Route::post('/database-backups/sync-all', [\App\Http\Controllers\DatabaseBackupController::class, 'syncAll'])->name('database-backups.sync-all');
         Route::delete('/database-backups/{backup}', [\App\Http\Controllers\DatabaseBackupController::class, 'destroy'])->name('database-backups.destroy');
         Route::post('/database-backups/test-connection', [\App\Http\Controllers\DatabaseBackupController::class, 'testConnection'])->name('database-backups.test-connection');
         Route::post('/database-backups/settings', [\App\Http\Controllers\DatabaseBackupController::class, 'updateSettings'])->name('database-backups.settings');
