@@ -106,16 +106,21 @@ class AppSettingService
             'submenu_new_students' => 'Mahasiswa Baru',
             'submenu_questionnaires' => 'Kuisioner',
             'submenu_student_followups' => 'Follow Up',
-            'submenu_kol_recommendations' => 'Rekomendasi KOL',
             'submenu_study_programs' => 'Prodi',
 
-            // 6. Support Event Sekolah
+            // 6. Rekomendasi KOL & Brand Ambassador
+            'menu_kol_recommendations' => 'Rekomendasi KOL',
+            'badge_kol' => 'KOL',
+            'submenu_kol_candidates' => 'Daftar Calon KOL',
+            'submenu_kol_documentation' => 'Hasil Dokumentasi KOL',
+
+            // 7. Support Event Sekolah
             'menu_events' => 'Support Event',
             'badge_events' => 'Event',
             'submenu_event_proposals' => 'Proposal',
             'submenu_event_students' => 'Data Siswa Hasil Support Event',
 
-            // 7. Laporan
+            // 8. Laporan
             'menu_reports' => 'Laporan',
             'badge_reports' => 'Laporan',
             'submenu_report_charts' => 'Diagram & Analisis',
@@ -123,7 +128,7 @@ class AppSettingService
             'submenu_report_events' => 'Laporan & Dokumentasi Kegiatan',
             'submenu_report_export' => 'Ekspor & Rekap',
 
-            // 8. Informasi PMB
+            // 9. Informasi PMB
             'menu_pmb' => 'Info PMB',
             'badge_pmb' => 'UBSI',
             'submenu_pmb_portal' => 'Portal',
@@ -134,16 +139,33 @@ class AppSettingService
             'submenu_pmb_procedure' => 'Alur Daftar',
             'submenu_pmb_scholarship' => 'Beasiswa',
 
-            // 8. Sistem & Master
-            'menu_master' => 'Master & Sistem',
-            'submenu_master_data' => 'Wilayah',
+            // 10. Master Data (Akademik & Kampus)
+            'menu_master_data' => 'Master Data',
+            'badge_master_data' => 'Akademik',
+            'submenu_campuses' => 'Master Kampus',
+            'submenu_periods' => 'Master Periode',
+            'submenu_master_data' => 'Master Wilayah',
+
+            // 11. Portal & Kuisioner Publik
+            'menu_portals_questionnaires' => 'Portal & Kuisioner',
+            'badge_portals' => 'Publik',
+            'submenu_portals' => 'Portal Publik',
             'submenu_master_questionnaires' => 'Master Kuisioner',
-            'submenu_users' => 'User',
             'submenu_qr_codes' => 'QR Code',
-            'submenu_whatsapp' => 'WhatsApp',
-            'submenu_settings' => 'Pengaturan',
+
+            // 12. Sistem & Manajemen Operasional
+            'menu_system_ops' => 'Sistem & Manajemen',
+            'badge_system_ops' => 'Admin',
+            'submenu_users' => 'User & Akun',
+            'submenu_whatsapp' => 'WhatsApp Gateway',
+            'submenu_settings' => 'Pengaturan Branding',
+            'submenu_database_backups' => 'Cadangan Database GDrive',
             'submenu_activity_logs' => 'Log Aktivitas',
             'submenu_period_closing' => 'Tutup Periode',
+
+            // Legacy backward compatibility keys
+            'menu_master' => 'Master & Sistem',
+            'submenu_kol_recommendations' => 'Rekomendasi KOL',
         ];
     }
 

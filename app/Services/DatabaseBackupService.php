@@ -638,7 +638,7 @@ class DatabaseBackupService
         $headers = ['No', 'Tanggal Input', 'Nama Prospek', 'Asal Sekolah', 'No WhatsApp', 'Jurusan Pilihan', 'Waktu Kuliah', 'Beasiswa', 'Status Prospek', 'Marketing'];
         $this->applyHeaderTitle($sheet, 'DATA PROSPEK SISWA (LEADS CRM)', $campusName, $nowStr, $headers);
 
-        $prospects = Prospect::with(['school', 'marketingUser', 'studyProgram'])
+        $prospects = Prospect::with(['school', 'marketingUser'])
             ->when($campusId, fn($q) => $q->where('campus_id', $campusId)->orWhereHas('school', fn($sq) => $sq->where('campus_id', $campusId)))
             ->latest()
             ->get();
@@ -648,10 +648,10 @@ class DatabaseBackupService
         foreach ($prospects as $p) {
             $sheet->setCellValue("A{$row}", $no++);
             $sheet->setCellValue("B{$row}", $p->created_at ? $p->created_at->format('d/m/Y') : '-');
-            $sheet->setCellValue("C{$row}", $p->student_name);
+            $sheet->setCellValue("C{$row}", $p->name ?? ($p->student_name ?? '-'));
             $sheet->setCellValue("D{$row}", $p->school?->name ?? ($p->school_name ?? '-'));
-            $sheet->setCellValueExplicit("E{$row}", (string)($p->whatsapp ?? $p->phone ?? '-'), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
-            $sheet->setCellValue("F{$row}", $p->studyProgram?->name ?? '-');
+            $sheet->setCellValueExplicit("E{$row}", (string)($p->phone ?? ($p->whatsapp ?? '-')), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->setCellValue("F{$row}", $p->interest_program ?? '-');
             $sheet->setCellValue("G{$row}", ucfirst($p->study_time ?? '-'));
             $sheet->setCellValue("H{$row}", $p->scholarship_type ?? '-');
             $sheet->setCellValue("I{$row}", ucfirst($p->status ?? 'Prospek'));
@@ -671,7 +671,7 @@ class DatabaseBackupService
         $headers = ['No', 'Tanggal Validasi', 'NIM / No Daftar', 'Nama Lengkap', 'Asal Sekolah', 'No WhatsApp', 'Program Studi', 'Divalidasi Oleh'];
         $this->applyHeaderTitle($sheet, 'DATA MAHASISWA BARU (PMB CLOSING)', $campusName, $nowStr, $headers);
 
-        $mhs = Prospect::with(['school', 'validatedBy', 'studyProgram'])
+        $mhs = Prospect::with(['school', 'validatedBy'])
             ->where('status', Prospect::STATUS_MAHASISWA)
             ->when($campusId, fn($q) => $q->where('campus_id', $campusId)->orWhereHas('school', fn($sq) => $sq->where('campus_id', $campusId)))
             ->latest('validated_at')
@@ -683,10 +683,10 @@ class DatabaseBackupService
             $sheet->setCellValue("A{$row}", $no++);
             $sheet->setCellValue("B{$row}", $m->validated_at ? Carbon::parse($m->validated_at)->format('d/m/Y') : '-');
             $sheet->setCellValueExplicit("C{$row}", (string)($m->nim ?? '-'), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
-            $sheet->setCellValue("D{$row}", $m->student_name);
+            $sheet->setCellValue("D{$row}", $m->name ?? ($m->student_name ?? '-'));
             $sheet->setCellValue("E{$row}", $m->school?->name ?? '-');
-            $sheet->setCellValueExplicit("F{$row}", (string)($m->whatsapp ?? '-'), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
-            $sheet->setCellValue("G{$row}", $m->studyProgram?->name ?? '-');
+            $sheet->setCellValueExplicit("F{$row}", (string)($m->phone ?? ($m->whatsapp ?? '-')), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->setCellValue("G{$row}", $m->interest_program ?? '-');
             $sheet->setCellValue("H{$row}", $m->validatedBy?->name ?? '-');
             $row++;
         }

@@ -91,6 +91,8 @@
                     LAPORAN DETAIL PROGRES PROSPEK SISWA & PIPELINE CRM PMB
                 @elseif($activeTab === 'questionnaires')
                     LAPORAN DETAIL PROGRES HASIL KUISIONER & MINAT BEASISWA
+                @elseif($activeTab === 'kol')
+                    LAPORAN DETAIL REKOMENDASI KOL &amp; BRAND AMBASSADOR SISWA
                 @elseif($activeTab === 'schools')
                     LAPORAN DETAIL PROGRES PEMETAAN & PRIORITAS SEKOLAH
                 @endif
@@ -416,6 +418,52 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Panel 4: Analisis Rekomendasi KOL & Brand Ambassador Siswa -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-soft overflow-hidden">
+                <div class="p-4 sm:px-6 bg-gradient-to-r from-slate-50 via-white to-slate-50 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-pink-500 to-amber-500 text-white flex items-center justify-center font-bold shadow-xs">
+                            <i data-lucide="award" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h2 class="text-sm font-extrabold text-slate-900">Analisis Calon Rekomendasi KOL &amp; Brand Ambassador</h2>
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-pink-100 text-pink-800 border border-pink-300">
+                                    {{ $chartsData['kol']['total'] ?? 0 }} Siswa Teridentifikasi
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-0.5">Distribusi status rekrutmen KOL dan verifikasi profil Instagram siswa untuk promosi digital kampus.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-4 sm:p-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                        <!-- Chart KOL Status (7 cols) -->
+                        <div class="lg:col-span-7 bg-slate-50/70 p-4 rounded-2xl border border-slate-200/80 flex flex-col justify-between">
+                            <h3 class="text-xs font-extrabold text-slate-900 mb-3 flex items-center gap-1.5">
+                                <i data-lucide="bar-chart" class="w-4 h-4 text-pink-600"></i>
+                                <span>Distribusi Status Rekrutmen KOL / Brand Ambassador</span>
+                            </h3>
+                            <div class="h-60 relative w-full">
+                                <canvas id="chartKolStatus"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Chart KOL Verification (5 cols) -->
+                        <div class="lg:col-span-5 bg-slate-50/70 p-4 rounded-2xl border border-slate-200/80 flex flex-col justify-between">
+                            <h3 class="text-xs font-extrabold text-slate-900 mb-3 flex items-center gap-1.5">
+                                <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i>
+                                <span>Status Verifikasi Real Follower Instagram</span>
+                            </h3>
+                            <div class="h-60 relative flex items-center justify-center">
+                                <canvas id="chartKolVerification"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     @else
         <!-- ==================== TAB NAVIGATION (PILIHAN LAPORAN) ==================== -->
@@ -461,6 +509,13 @@
                 class="px-3.5 py-2 rounded-xl text-xs font-bold flex items-center space-x-2 transition {{ $activeTab === 'questionnaires' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-white/50' }}">
                 <i data-lucide="clipboard-list" class="w-4 h-4 {{ $activeTab === 'questionnaires' ? 'text-emerald-600' : 'text-slate-400' }}"></i>
                 <span>Progres Kuisioner</span>
+            </a>
+
+            <!-- Tab: Rekomendasi KOL & Brand Ambassador -->
+            <a href="{{ route('reports.index', array_merge(request()->except('tab', 'page'), ['tab' => 'kol'])) }}"
+                class="px-3.5 py-2 rounded-xl text-xs font-bold flex items-center space-x-2 transition {{ $activeTab === 'kol' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-white/50' }}">
+                <i data-lucide="award" class="w-4 h-4 {{ $activeTab === 'kol' ? 'text-pink-600' : 'text-slate-400' }}"></i>
+                <span>Rekomendasi KOL</span>
             </a>
 
             <!-- Tab: Progres Pemetaan Sekolah -->
@@ -1727,6 +1782,255 @@
     </div>
     @endif
 
+    <!-- ==================== TAB: REKOMENDASI KOL & BRAND AMBASSADOR ==================== -->
+    @if($activeTab === 'kol')
+    <div class="space-y-6">
+        <!-- Sub-KPI Banner KOL -->
+        <div class="grid grid-cols-2 sm:grid-cols-6 gap-3 no-print">
+            <div class="p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
+                <p class="text-[10px] font-bold text-slate-400 uppercase">Total Calon KOL</p>
+                <h4 class="text-lg font-black text-slate-900 mt-0.5">{{ number_format($stats['total'] ?? 0) }}</h4>
+            </div>
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 shadow-sm">
+                <p class="text-[10px] font-bold text-slate-500 uppercase">Kandidat Terdata</p>
+                <h4 class="text-lg font-black text-slate-700 mt-0.5">{{ number_format($stats['kandidat'] ?? 0) }}</h4>
+            </div>
+            <div class="p-3 bg-blue-50 rounded-xl border border-blue-200 shadow-sm">
+                <p class="text-[10px] font-bold text-blue-600 uppercase">Dihubungi</p>
+                <h4 class="text-lg font-black text-blue-700 mt-0.5">{{ number_format($stats['dihubungi'] ?? 0) }}</h4>
+            </div>
+            <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 shadow-sm">
+                <p class="text-[10px] font-bold text-emerald-600 uppercase">Bersedia / Deal</p>
+                <h4 class="text-lg font-black text-emerald-700 mt-0.5">{{ number_format($stats['bersedia'] ?? 0) }}</h4>
+            </div>
+            <div class="p-3 bg-pink-50 rounded-xl border border-pink-200 shadow-sm">
+                <p class="text-[10px] font-bold text-pink-600 uppercase">Brand Ambassador</p>
+                <h4 class="text-lg font-black text-pink-700 mt-0.5">{{ number_format($stats['brand_ambassador'] ?? 0) }}</h4>
+            </div>
+            <div class="p-3 bg-purple-50 rounded-xl border border-purple-200 shadow-sm">
+                <p class="text-[10px] font-bold text-purple-600 uppercase">Ada Link Karya</p>
+                <h4 class="text-lg font-black text-purple-700 mt-0.5">{{ number_format($stats['with_work'] ?? 0) }}</h4>
+            </div>
+        </div>
+
+        <!-- Diagram Mini Sebaran Status KOL & Verifikasi -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 no-print">
+            <div class="lg:col-span-6 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-soft flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-3">
+                    <div>
+                        <h3 class="text-sm font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                            <i data-lucide="pie-chart" class="w-4 h-4 text-pink-600"></i>
+                            <span>Status Rekrutmen Calon KOL</span>
+                        </h3>
+                        <p class="text-[11px] text-slate-500 mt-0.5">Proporsi kandidat dari pendekatan awal hingga aktif sebagai Ambassador</p>
+                    </div>
+                    <span class="text-[11px] font-bold px-2 py-0.5 bg-pink-50 text-pink-700 border border-pink-200 rounded-lg">
+                        {{ number_format($stats['total'] ?? 0) }} Siswa
+                    </span>
+                </div>
+                <div class="h-60 flex items-center justify-center">
+                    <canvas id="kolStatusReportChart"></canvas>
+                </div>
+            </div>
+
+            <div class="lg:col-span-6 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-soft flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-3">
+                    <div>
+                        <h3 class="text-sm font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                            <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i>
+                            <span>Verifikasi Real Follower &amp; Rate Card</span>
+                        </h3>
+                        <p class="text-[11px] text-slate-500 mt-0.5">Ringkasan akurasi follower dan rata-rata rate card pasar</p>
+                    </div>
+                    <span class="text-[11px] font-bold px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg">
+                        {{ number_format($stats['verified'] ?? 0) }} Terverifikasi Real
+                    </span>
+                </div>
+                <div class="space-y-4 my-auto">
+                    <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                        <div class="flex items-center justify-between text-xs font-bold text-slate-700 mb-1">
+                            <span>Tingkat Verifikasi Akun Asli:</span>
+                            <span class="text-emerald-700 font-extrabold">{{ ($stats['total'] ?? 0) > 0 ? round((($stats['verified'] ?? 0) / $stats['total']) * 100, 1) : 0 }}%</span>
+                        </div>
+                        <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                            <div class="bg-emerald-500 h-2 rounded-full" style="width: {{ ($stats['total'] ?? 0) > 0 ? round((($stats['verified'] ?? 0) / $stats['total']) * 100, 1) : 0 }}%"></div>
+                        </div>
+                    </div>
+                    <div class="p-3.5 bg-pink-50/60 rounded-xl border border-pink-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-[11px] font-bold text-pink-900">Total Brand Ambassador Aktif</p>
+                            <p class="text-[10px] text-pink-700">Telah siap memposting konten promosi UBSI</p>
+                        </div>
+                        <p class="text-xl font-black text-pink-700">{{ number_format($stats['brand_ambassador'] ?? 0) }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabel Data Tabular KOL -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-soft overflow-hidden">
+            <div class="p-4 sm:px-6 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-extrabold text-slate-900">Daftar Tabulasi Rekomendasi KOL &amp; Brand Ambassador</h3>
+                    <p class="text-xs text-slate-500">Rincian profil siswa, sekolah, follower IG/TikTok, rate card pasaran, status, dan link karya.</p>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200/80 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                            <th class="py-3 px-3 text-center">No</th>
+                            <th class="py-3 px-3">Siswa &amp; Kontak</th>
+                            <th class="py-3 px-3">Asal Sekolah &amp; Kampus</th>
+                            <th class="py-3 px-3">Follower &amp; Verifikasi</th>
+                            <th class="py-3 px-3">Status KOL</th>
+                            <th class="py-3 px-3">Estimasi Rate Card</th>
+                            <th class="py-3 px-3">Link Karya Konten</th>
+                            <th class="py-3 px-3">Catatan</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @forelse($kolCandidates as $idx => $k)
+                            <tr class="hover:bg-slate-50/80 transition">
+                                <td class="py-3 px-3 text-center font-bold text-slate-400">
+                                    {{ $kolCandidates->firstItem() + $idx }}
+                                </td>
+                                <td class="py-3 px-3">
+                                    <span class="font-extrabold text-slate-900 block">{{ $k->student_name }}</span>
+                                    <div class="flex items-center gap-2 mt-0.5">
+                                        @if($k->student_phone)
+                                            <a href="https://wa.me/{{ $k->formatted_student_phone }}" target="_blank" class="text-[11px] font-semibold text-emerald-700 hover:underline flex items-center gap-1">
+                                                <i data-lucide="message-circle" class="w-3 h-3 text-emerald-600"></i>
+                                                <span>{{ $k->student_phone }}</span>
+                                            </a>
+                                        @endif
+                                        @if($k->student_email)
+                                            <span class="text-[10px] text-slate-400">• {{ $k->student_email }}</span>
+                                        @endif
+                                    </div>
+                                </td>
+                                <td class="py-3 px-3">
+                                    <span class="font-bold text-slate-800 block">{{ $k->school->name ?? '-' }}</span>
+                                    <div class="flex items-center gap-1 mt-0.5">
+                                        <span class="text-[10px] text-slate-500">{{ $k->student_class ?? 'Kelas XII' }}</span>
+                                        <span class="text-slate-300">•</span>
+                                        <span class="px-1.5 py-0.2 text-[9px] font-bold rounded {{ ($k->campus->code ?? '') === 'CKP' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700' }}">
+                                            {{ $k->campus->name ?? ($k->school->campus->name ?? 'UBSI') }}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-3">
+                                    <div class="space-y-1">
+                                        @if($k->instagram_handle)
+                                            <div class="flex items-center gap-1.5">
+                                                <i data-lucide="instagram" class="w-3 h-3 text-pink-600"></i>
+                                                <span class="font-mono font-bold text-slate-800">{{ '@' . ltrim($k->instagram_handle, '@') }}</span>
+                                                <span class="px-1.5 py-0.2 text-[9px] font-extrabold bg-pink-100 text-pink-800 rounded">
+                                                    {{ number_format($k->instagram_followers ?? 0) }}
+                                                </span>
+                                            </div>
+                                        @endif
+                                        @if($k->tiktok_handle)
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="text-[9px] font-black text-slate-900 bg-slate-200 px-1 rounded">TT</span>
+                                                <span class="font-mono text-slate-700 text-[10px]">{{ '@' . ltrim($k->tiktok_handle, '@') }}</span>
+                                                <span class="text-[9px] text-slate-500">({{ number_format($k->tiktok_followers ?? 0) }})</span>
+                                            </div>
+                                        @endif
+                                        <div class="mt-0.5">
+                                            @if($k->kol_verification_status === 'verified')
+                                                <span class="px-1.5 py-0.2 text-[9px] font-bold bg-emerald-100 text-emerald-800 rounded">✓ Real Instagram</span>
+                                            @elseif($k->kol_verification_status === 'rejected')
+                                                <span class="px-1.5 py-0.2 text-[9px] font-bold bg-rose-100 text-rose-800 rounded">✕ Tidak Sesuai</span>
+                                            @else
+                                                <span class="px-1.5 py-0.2 text-[9px] font-semibold bg-slate-100 text-slate-600 rounded">Belum Verifikasi</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-3 whitespace-nowrap">
+                                    @php
+                                        $kolStatus = $k->kol_status ?? 'kandidat';
+                                        $kolBadgeClass = match($kolStatus) {
+                                            'dihubungi' => 'bg-blue-100 text-blue-800 border-blue-200',
+                                            'bersedia' => 'bg-amber-100 text-amber-800 border-amber-200',
+                                            'deal', 'brand_ambassador', 'aktif' => 'bg-pink-100 text-pink-800 border-pink-200 font-extrabold',
+                                            'ditolak' => 'bg-rose-100 text-rose-800 border-rose-200',
+                                            default => 'bg-slate-100 text-slate-700 border-slate-200',
+                                        };
+                                        $kolStatusLabel = match($kolStatus) {
+                                            'dihubungi' => 'Dihubungi',
+                                            'bersedia' => 'Bersedia / Minat',
+                                            'deal' => 'Deal Kerjasama',
+                                            'brand_ambassador', 'aktif' => 'Brand Ambassador',
+                                            'ditolak' => 'Ditolak / Batal',
+                                            default => 'Kandidat',
+                                        };
+                                        $rateCardDisplay = is_array($k->estimated_rate_card) 
+                                            ? (($k->estimated_rate_card['package'] ?? null) ?: ($k->estimated_rate_card['feed_post'] ?? ($k->estimated_rate_card['tier'] ?? '-'))) 
+                                            : ($k->estimated_rate_card ?: '-');
+                                        $workLinks = is_array($k->work_links) ? $k->work_links : [];
+                                    @endphp
+                                    <span class="px-2.5 py-1 text-[10px] font-bold rounded-lg border {{ $kolBadgeClass }}">
+                                        {{ $kolStatusLabel }}
+                                    </span>
+                                </td>
+                                <td class="py-3 px-3 font-semibold text-slate-800">
+                                    {{ $rateCardDisplay }}
+                                </td>
+                                <td class="py-3 px-3">
+                                    <div class="flex flex-wrap gap-1">
+                                        @if(!empty($workLinks['instagram']))
+                                            <a href="{{ $workLinks['instagram'] }}" target="_blank" class="px-1.5 py-0.5 rounded bg-pink-100 text-pink-700 hover:bg-pink-200 text-[10px] font-bold flex items-center gap-1">
+                                                <i data-lucide="instagram" class="w-3 h-3"></i>
+                                                <span>IG Post</span>
+                                            </a>
+                                        @endif
+                                        @if(!empty($workLinks['tiktok']))
+                                            <a href="{{ $workLinks['tiktok'] }}" target="_blank" class="px-1.5 py-0.5 rounded bg-slate-900 text-white hover:bg-slate-800 text-[10px] font-bold flex items-center gap-1">
+                                                <span>TikTok</span>
+                                            </a>
+                                        @endif
+                                        @if(!empty($workLinks['facebook']))
+                                            <a href="{{ $workLinks['facebook'] }}" target="_blank" class="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 text-[10px] font-bold flex items-center gap-1">
+                                                <span>FB</span>
+                                            </a>
+                                        @endif
+                                        @if(!empty($workLinks['youtube']))
+                                            <a href="{{ $workLinks['youtube'] }}" target="_blank" class="px-1.5 py-0.5 rounded bg-red-100 text-red-700 hover:bg-red-200 text-[10px] font-bold flex items-center gap-1">
+                                                <span>YT</span>
+                                            </a>
+                                        @endif
+                                        @if(empty($workLinks['instagram']) && empty($workLinks['tiktok']) && empty($workLinks['facebook']) && empty($workLinks['youtube']))
+                                            <span class="text-slate-400 text-[11px]">- Belum ada -</span>
+                                        @endif
+                                    </div>
+                                </td>
+                                <td class="py-3 px-3 text-slate-600 max-w-xs">
+                                    <p class="line-clamp-2 text-[11px]">{{ $workLinks['notes'] ?? ($k->kol_notes ?: '-') }}</p>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="8" class="py-12 text-center text-slate-400">
+                                    <i data-lucide="inbox" class="w-8 h-8 mx-auto text-slate-300 mb-2"></i>
+                                    Tidak ada data calon KOL yang sesuai dengan filter.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+            @if($kolCandidates->hasPages())
+                <div class="p-4 border-t border-slate-100 no-print">
+                    {{ $kolCandidates->links() }}
+                </div>
+            @endif
+        </div>
+    </div>
+    @endif
+
     <!-- ==================== 7. TAB: PROGRES PEMETAAN SEKOLAH & PRIORITAS ==================== -->
     @if($activeTab === 'schools')
     <div class="space-y-6">
@@ -2230,6 +2534,69 @@
                     }
                 });
             }
+
+            const chartKolStatusCanvas = document.getElementById('chartKolStatus');
+            if (chartKolStatusCanvas) {
+                const kolStatus = @json($chartsData['kol']['status_counts'] ?? []);
+                new Chart(chartKolStatusCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Kandidat', 'Dihubungi', 'Bersedia', 'Brand Ambassador', 'Ditolak'],
+                        datasets: [{
+                            label: 'Jumlah Siswa',
+                            data: [
+                                kolStatus.kandidat || 0,
+                                kolStatus.dihubungi || 0,
+                                kolStatus.bersedia || 0,
+                                kolStatus.brand_ambassador || 0,
+                                kolStatus.ditolak || 0
+                            ],
+                            backgroundColor: ['#64748b', '#3b82f6', '#10b981', '#ec4899', '#ef4444'],
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { precision: 0 } },
+                            x: { grid: { display: false } }
+                        },
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+            }
+
+            const chartKolVerifCanvas = document.getElementById('chartKolVerification');
+            if (chartKolVerifCanvas) {
+                const kolVerif = @json($chartsData['kol']['verified_counts'] ?? []);
+                new Chart(chartKolVerifCanvas, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Terverifikasi Real', 'Belum Verifikasi', 'Tidak Sesuai / Ditolak'],
+                        datasets: [{
+                            data: [
+                                kolVerif.verified || 0,
+                                kolVerif.unverified || 0,
+                                kolVerif.rejected || 0
+                            ],
+                            backgroundColor: ['#10b981', '#cbd5e1', '#ef4444'],
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '68%',
+                        plugins: {
+                            legend: { position: 'bottom', labels: { boxWidth: 10, usePointStyle: true, padding: 12 } }
+                        }
+                    }
+                });
+            }
         @else
         // 1. OVERVIEW CHARTS
         @if($activeTab === 'overview')
@@ -2648,6 +3015,40 @@
                                 {{ $stats['unvisited'] ?? 0 }}
                             ],
                             backgroundColor: ['#2563eb', '#e2e8f0'],
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'right', labels: { boxWidth: 10, usePointStyle: true, padding: 12 } },
+                            tooltip: { padding: 10, cornerRadius: 8 }
+                        },
+                        cutout: '68%'
+                    }
+                });
+            }
+        @endif
+
+        // 7. KOL CHARTS
+        @if($activeTab === 'kol')
+            const kolStatusReportCanvas = document.getElementById('kolStatusReportChart');
+            if (kolStatusReportCanvas) {
+                new Chart(kolStatusReportCanvas, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Kandidat', 'Dihubungi', 'Bersedia', 'Brand Ambassador', 'Ditolak'],
+                        datasets: [{
+                            data: [
+                                {{ $stats['kandidat'] ?? 0 }},
+                                {{ $stats['dihubungi'] ?? 0 }},
+                                {{ $stats['bersedia'] ?? 0 }},
+                                {{ $stats['brand_ambassador'] ?? 0 }},
+                                {{ $stats['ditolak'] ?? 0 }}
+                            ],
+                            backgroundColor: ['#64748b', '#3b82f6', '#10b981', '#ec4899', '#ef4444'],
                             borderWidth: 2,
                             borderColor: '#ffffff'
                         }]

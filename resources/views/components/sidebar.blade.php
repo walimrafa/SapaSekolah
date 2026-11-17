@@ -328,7 +328,7 @@
                     @if($kolCandidateCount > 0)
                         <span class="px-1.5 py-0.2 text-[9px] font-bold bg-pink-500/20 text-pink-300 border border-pink-500/30 rounded">{{ $kolCandidateCount }}</span>
                     @endif
-                    <span class="px-1.5 py-0.2 text-[9px] font-extrabold bg-gradient-to-r from-amber-400 to-orange-400 text-slate-950 rounded">KOL</span>
+                    <span class="px-1.5 py-0.2 text-[9px] font-extrabold bg-gradient-to-r from-amber-400 to-orange-400 text-slate-950 rounded">{{ $lbl('badge_kol', 'KOL') }}</span>
                     <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform duration-200" :class="expanded ? 'rotate-180 text-pink-400' : ''"></i>
                 </div>
             </button>
@@ -618,7 +618,7 @@
                     <span>{{ $lbl('menu_master_data', 'Master Data') }}</span>
                 </div>
                 <div class="flex items-center space-x-1.5">
-                    <span class="px-1.5 py-0.2 text-[9px] font-bold bg-emerald-500/20 text-emerald-300 rounded">Akademik</span>
+                    <span class="px-1.5 py-0.2 text-[9px] font-bold bg-emerald-500/20 text-emerald-300 rounded">{{ $lbl('badge_master_data', 'Akademik') }}</span>
                     <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform duration-200" :class="expanded ? 'rotate-180 text-amber-400' : ''"></i>
                 </div>
             </button>
@@ -666,7 +666,7 @@
                     <span>{{ $lbl('menu_portals_questionnaires', 'Portal & Kuisioner') }}</span>
                 </div>
                 <div class="flex items-center space-x-1.5">
-                    <span class="px-1.5 py-0.2 text-[9px] font-bold bg-indigo-500/20 text-indigo-300 rounded">Publik</span>
+                    <span class="px-1.5 py-0.2 text-[9px] font-bold bg-indigo-500/20 text-indigo-300 rounded">{{ $lbl('badge_portals', 'Publik') }}</span>
                     <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform duration-200" :class="expanded ? 'rotate-180 text-amber-400' : ''"></i>
                 </div>
             </button>
@@ -719,6 +719,7 @@
                     @if($hasPendingPeriodNotice)
                         <span class="px-1.5 py-0.2 text-[9px] font-extrabold bg-amber-400 text-slate-900 rounded-full animate-bounce">1 Aksi</span>
                     @endif
+                    <span class="px-1.5 py-0.2 text-[9px] font-bold bg-sky-500/20 text-sky-300 rounded">{{ $lbl('badge_system_ops', 'Admin') }}</span>
                     <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform duration-200" :class="expanded ? 'rotate-180 text-amber-400' : ''"></i>
                 </div>
             </button>
@@ -767,7 +768,7 @@
                     class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('database-backups.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <div class="flex items-center space-x-2.5">
                         <i data-lucide="database" class="w-3.5 h-3.5 text-blue-400"></i>
-                        <span>Backup Database</span>
+                        <span>{{ $lbl('submenu_database_backups', 'Cadangan Database GDrive') }}</span>
                     </div>
                     <span class="px-1.5 py-0.2 text-[9px] font-bold bg-blue-500/20 text-blue-300 rounded border border-blue-500/30">GDrive</span>
                 </a>

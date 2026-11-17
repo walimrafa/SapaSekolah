@@ -282,6 +282,12 @@
                         <i data-lucide="users" class="w-3.5 h-3.5 text-emerald-400"></i>
                         <span>Prospek &amp; CRM</span>
                     </button>
+                    <button type="button" @click="activeTab = 'kol'"
+                        :class="activeTab === 'kol' ? 'bg-slate-900 text-white font-bold shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 font-semibold'"
+                        class="px-3 py-1.5 rounded-xl transition flex items-center gap-1.5">
+                        <i data-lucide="award" class="w-3.5 h-3.5 text-pink-400"></i>
+                        <span>Rekomendasi KOL</span>
+                    </button>
                     <button type="button" @click="activeTab = 'events'"
                         :class="activeTab === 'events' ? 'bg-slate-900 text-white font-bold shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 font-semibold'"
                         class="px-3 py-1.5 rounded-xl transition flex items-center gap-1.5">
@@ -300,11 +306,23 @@
                         <i data-lucide="graduation-cap" class="w-3.5 h-3.5 text-amber-400"></i>
                         <span>Info PMB</span>
                     </button>
-                    <button type="button" @click="activeTab = 'master'"
-                        :class="activeTab === 'master' ? 'bg-slate-900 text-white font-bold shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 font-semibold'"
+                    <button type="button" @click="activeTab = 'master_data'"
+                        :class="activeTab === 'master_data' ? 'bg-slate-900 text-white font-bold shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 font-semibold'"
                         class="px-3 py-1.5 rounded-xl transition flex items-center gap-1.5">
-                        <i data-lucide="settings-2" class="w-3.5 h-3.5 text-rose-400"></i>
-                        <span>Master &amp; Sistem</span>
+                        <i data-lucide="database" class="w-3.5 h-3.5 text-emerald-400"></i>
+                        <span>Master Data</span>
+                    </button>
+                    <button type="button" @click="activeTab = 'portal'"
+                        :class="activeTab === 'portal' ? 'bg-slate-900 text-white font-bold shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 font-semibold'"
+                        class="px-3 py-1.5 rounded-xl transition flex items-center gap-1.5">
+                        <i data-lucide="globe" class="w-3.5 h-3.5 text-indigo-400"></i>
+                        <span>Portal &amp; Kuisioner</span>
+                    </button>
+                    <button type="button" @click="activeTab = 'system'"
+                        :class="activeTab === 'system' ? 'bg-slate-900 text-white font-bold shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 font-semibold'"
+                        class="px-3 py-1.5 rounded-xl transition flex items-center gap-1.5">
+                        <i data-lucide="settings-2" class="w-3.5 h-3.5 text-sky-400"></i>
+                        <span>Sistem &amp; Manajemen</span>
                     </button>
                 </div>
 
@@ -537,6 +555,52 @@
                     </div>
                 </div>
 
+                <!-- Tab: Rekomendasi KOL & Brand Ambassador -->
+                <div x-show="activeTab === 'kol'" class="space-y-4 text-xs" style="display: none;">
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4">
+                        <div class="font-bold text-slate-800 flex items-center gap-2">
+                            <i data-lucide="award" class="w-4 h-4 text-pink-500"></i>
+                            <span>Kelompok Accordion Rekomendasi KOL &amp; Brand Ambassador</span>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block font-semibold text-slate-600 mb-1">Nama Menu Utama (Accordion)</label>
+                                <input type="text" name="sidebar_labels[menu_kol_recommendations]"
+                                    value="{{ old('sidebar_labels.menu_kol_recommendations', $settings['sidebar_labels']['menu_kol_recommendations'] ?? 'Rekomendasi KOL') }}"
+                                    data-default="Rekomendasi KOL" placeholder="Rekomendasi KOL"
+                                    class="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-600 mb-1">Label Tag Badge Kanan</label>
+                                <input type="text" name="sidebar_labels[badge_kol]"
+                                    value="{{ old('sidebar_labels.badge_kol', $settings['sidebar_labels']['badge_kol'] ?? 'KOL') }}"
+                                    data-default="KOL" placeholder="KOL"
+                                    class="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold">
+                            </div>
+                        </div>
+
+                        <div class="pt-2 border-t border-slate-200">
+                            <p class="text-[11px] font-bold text-slate-500 mb-3">Sub-Menu Rekomendasi KOL:</p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Daftar Calon KOL</label>
+                                    <input type="text" name="sidebar_labels[submenu_kol_candidates]"
+                                        value="{{ old('sidebar_labels.submenu_kol_candidates', $settings['sidebar_labels']['submenu_kol_candidates'] ?? 'Daftar Calon KOL') }}"
+                                        data-default="Daftar Calon KOL" placeholder="Daftar Calon KOL"
+                                        class="w-full px-3 py-2 rounded-xl border border-slate-300">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Hasil Dokumentasi KOL</label>
+                                    <input type="text" name="sidebar_labels[submenu_kol_documentation]"
+                                        value="{{ old('sidebar_labels.submenu_kol_documentation', $settings['sidebar_labels']['submenu_kol_documentation'] ?? 'Hasil Dokumentasi KOL') }}"
+                                        data-default="Hasil Dokumentasi KOL" placeholder="Hasil Dokumentasi KOL"
+                                        class="w-full px-3 py-2 rounded-xl border border-slate-300">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Tab 4: Support Event Sekolah -->
                 <div x-show="activeTab === 'events'" class="space-y-4 text-xs" style="display: none;">
                     <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4">
@@ -724,36 +788,98 @@
                     </div>
                 </div>
 
-                <!-- Tab 6: Sistem & Master -->
-                <div x-show="activeTab === 'master'" class="space-y-4 text-xs" style="display: none;">
+                <!-- Tab: Master Data Akademik & Kampus -->
+                <div x-show="activeTab === 'master_data'" class="space-y-4 text-xs" style="display: none;">
                     <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4">
                         <div class="font-bold text-slate-800 flex items-center gap-2">
-                            <i data-lucide="settings-2" class="w-4 h-4 text-rose-500"></i>
-                            <span>Kelompok Accordion Master &amp; Sistem</span>
+                            <i data-lucide="database" class="w-4 h-4 text-emerald-500"></i>
+                            <span>Kelompok Accordion Master Data (Akademik &amp; Kampus)</span>
                         </div>
-                        <div>
-                            <label class="block font-semibold text-slate-600 mb-1">Nama Menu Utama (Accordion)</label>
-                            <input type="text" name="sidebar_labels[menu_master]"
-                                value="{{ old('sidebar_labels.menu_master', $settings['sidebar_labels']['menu_master'] ?? 'Master & Sistem') }}"
-                                data-default="Master & Sistem" placeholder="Master & Sistem"
-                                class="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block font-semibold text-slate-600 mb-1">Nama Menu Utama (Accordion)</label>
+                                <input type="text" name="sidebar_labels[menu_master_data]"
+                                    value="{{ old('sidebar_labels.menu_master_data', $settings['sidebar_labels']['menu_master_data'] ?? 'Master Data') }}"
+                                    data-default="Master Data" placeholder="Master Data"
+                                    class="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-600 mb-1">Label Tag Badge Kanan</label>
+                                <input type="text" name="sidebar_labels[badge_master_data]"
+                                    value="{{ old('sidebar_labels.badge_master_data', $settings['sidebar_labels']['badge_master_data'] ?? 'Akademik') }}"
+                                    data-default="Akademik" placeholder="Akademik"
+                                    class="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold">
+                            </div>
                         </div>
 
                         <div class="pt-2 border-t border-slate-200">
-                            <p class="text-[11px] font-bold text-slate-500 mb-3">Sub-Menu Navigasi Master &amp; Sistem:</p>
+                            <p class="text-[11px] font-bold text-slate-500 mb-3">Sub-Menu Navigasi Master Data:</p>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                                 <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Wilayah</label>
-                                    <input type="text" name="sidebar_labels[submenu_master_data]"
-                                        value="{{ old('sidebar_labels.submenu_master_data', $settings['sidebar_labels']['submenu_master_data'] ?? 'Wilayah') }}"
-                                        data-default="Wilayah" placeholder="Wilayah"
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Master Kampus</label>
+                                    <input type="text" name="sidebar_labels[submenu_campuses]"
+                                        value="{{ old('sidebar_labels.submenu_campuses', $settings['sidebar_labels']['submenu_campuses'] ?? 'Master Kampus') }}"
+                                        data-default="Master Kampus" placeholder="Master Kampus"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                                 <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">User</label>
-                                    <input type="text" name="sidebar_labels[submenu_users]"
-                                        value="{{ old('sidebar_labels.submenu_users', $settings['sidebar_labels']['submenu_users'] ?? 'User') }}"
-                                        data-default="User" placeholder="User"
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Master Periode</label>
+                                    <input type="text" name="sidebar_labels[submenu_periods]"
+                                        value="{{ old('sidebar_labels.submenu_periods', $settings['sidebar_labels']['submenu_periods'] ?? 'Master Periode') }}"
+                                        data-default="Master Periode" placeholder="Master Periode"
+                                        class="w-full px-3 py-2 rounded-xl border border-slate-300">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Master Wilayah</label>
+                                    <input type="text" name="sidebar_labels[submenu_master_data]"
+                                        value="{{ old('sidebar_labels.submenu_master_data', $settings['sidebar_labels']['submenu_master_data'] ?? 'Master Wilayah') }}"
+                                        data-default="Master Wilayah" placeholder="Master Wilayah"
+                                        class="w-full px-3 py-2 rounded-xl border border-slate-300">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Portal & Kuisioner Publik -->
+                <div x-show="activeTab === 'portal'" class="space-y-4 text-xs" style="display: none;">
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4">
+                        <div class="font-bold text-slate-800 flex items-center gap-2">
+                            <i data-lucide="globe" class="w-4 h-4 text-indigo-500"></i>
+                            <span>Kelompok Accordion Portal &amp; Kuisioner Publik</span>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block font-semibold text-slate-600 mb-1">Nama Menu Utama (Accordion)</label>
+                                <input type="text" name="sidebar_labels[menu_portals_questionnaires]"
+                                    value="{{ old('sidebar_labels.menu_portals_questionnaires', $settings['sidebar_labels']['menu_portals_questionnaires'] ?? 'Portal & Kuisioner') }}"
+                                    data-default="Portal & Kuisioner" placeholder="Portal & Kuisioner"
+                                    class="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-600 mb-1">Label Tag Badge Kanan</label>
+                                <input type="text" name="sidebar_labels[badge_portals]"
+                                    value="{{ old('sidebar_labels.badge_portals', $settings['sidebar_labels']['badge_portals'] ?? 'Publik') }}"
+                                    data-default="Publik" placeholder="Publik"
+                                    class="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold">
+                            </div>
+                        </div>
+
+                        <div class="pt-2 border-t border-slate-200">
+                            <p class="text-[11px] font-bold text-slate-500 mb-3">Sub-Menu Navigasi Portal &amp; Kuisioner:</p>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Portal Publik</label>
+                                    <input type="text" name="sidebar_labels[submenu_portals]"
+                                        value="{{ old('sidebar_labels.submenu_portals', $settings['sidebar_labels']['submenu_portals'] ?? 'Portal Publik') }}"
+                                        data-default="Portal Publik" placeholder="Portal Publik"
+                                        class="w-full px-3 py-2 rounded-xl border border-slate-300">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Master Kuisioner</label>
+                                    <input type="text" name="sidebar_labels[submenu_master_questionnaires]"
+                                        value="{{ old('sidebar_labels.submenu_master_questionnaires', $settings['sidebar_labels']['submenu_master_questionnaires'] ?? 'Master Kuisioner') }}"
+                                        data-default="Master Kuisioner" placeholder="Master Kuisioner"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                                 <div>
@@ -763,18 +889,64 @@
                                         data-default="QR Code" placeholder="QR Code"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Sistem & Manajemen Operasional -->
+                <div x-show="activeTab === 'system'" class="space-y-4 text-xs" style="display: none;">
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4">
+                        <div class="font-bold text-slate-800 flex items-center gap-2">
+                            <i data-lucide="settings-2" class="w-4 h-4 text-sky-500"></i>
+                            <span>Kelompok Accordion Sistem &amp; Manajemen</span>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block font-semibold text-slate-600 mb-1">Nama Menu Utama (Accordion)</label>
+                                <input type="text" name="sidebar_labels[menu_system_ops]"
+                                    value="{{ old('sidebar_labels.menu_system_ops', $settings['sidebar_labels']['menu_system_ops'] ?? 'Sistem & Manajemen') }}"
+                                    data-default="Sistem & Manajemen" placeholder="Sistem & Manajemen"
+                                    class="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-600 mb-1">Label Tag Badge Kanan</label>
+                                <input type="text" name="sidebar_labels[badge_system_ops]"
+                                    value="{{ old('sidebar_labels.badge_system_ops', $settings['sidebar_labels']['badge_system_ops'] ?? 'Admin') }}"
+                                    data-default="Admin" placeholder="Admin"
+                                    class="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold">
+                            </div>
+                        </div>
+
+                        <div class="pt-2 border-t border-slate-200">
+                            <p class="text-[11px] font-bold text-slate-500 mb-3">Sub-Menu Navigasi Sistem &amp; Manajemen:</p>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                                 <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">WhatsApp</label>
-                                    <input type="text" name="sidebar_labels[submenu_whatsapp]"
-                                        value="{{ old('sidebar_labels.submenu_whatsapp', $settings['sidebar_labels']['submenu_whatsapp'] ?? 'WhatsApp') }}"
-                                        data-default="WhatsApp" placeholder="WhatsApp"
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">User &amp; Akun</label>
+                                    <input type="text" name="sidebar_labels[submenu_users]"
+                                        value="{{ old('sidebar_labels.submenu_users', $settings['sidebar_labels']['submenu_users'] ?? 'User & Akun') }}"
+                                        data-default="User & Akun" placeholder="User & Akun"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                                 <div>
-                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Pengaturan</label>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">WhatsApp Gateway</label>
+                                    <input type="text" name="sidebar_labels[submenu_whatsapp]"
+                                        value="{{ old('sidebar_labels.submenu_whatsapp', $settings['sidebar_labels']['submenu_whatsapp'] ?? 'WhatsApp Gateway') }}"
+                                        data-default="WhatsApp Gateway" placeholder="WhatsApp Gateway"
+                                        class="w-full px-3 py-2 rounded-xl border border-slate-300">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Pengaturan Branding</label>
                                     <input type="text" name="sidebar_labels[submenu_settings]"
-                                        value="{{ old('sidebar_labels.submenu_settings', $settings['sidebar_labels']['submenu_settings'] ?? 'Pengaturan') }}"
-                                        data-default="Pengaturan" placeholder="Pengaturan"
+                                        value="{{ old('sidebar_labels.submenu_settings', $settings['sidebar_labels']['submenu_settings'] ?? 'Pengaturan Branding') }}"
+                                        data-default="Pengaturan Branding" placeholder="Pengaturan Branding"
+                                        class="w-full px-3 py-2 rounded-xl border border-slate-300">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Cadangan Database GDrive</label>
+                                    <input type="text" name="sidebar_labels[submenu_database_backups]"
+                                        value="{{ old('sidebar_labels.submenu_database_backups', $settings['sidebar_labels']['submenu_database_backups'] ?? 'Cadangan Database GDrive') }}"
+                                        data-default="Cadangan Database GDrive" placeholder="Cadangan Database GDrive"
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                                 <div>
@@ -794,6 +966,7 @@
                             </div>
                         </div>
                     </div>
+                </div>
                 </div>
             </div>
 

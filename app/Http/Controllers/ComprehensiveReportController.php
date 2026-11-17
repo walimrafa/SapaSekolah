@@ -58,6 +58,7 @@ class ComprehensiveReportController extends Controller
             'prospects' => $this->filterQuery(Prospect::query(), $dateMode, $startDate, $endDate, $campusId, $periodId, 'created_at')->count(),
             'new_students' => $this->filterQuery(Prospect::where('status', Prospect::STATUS_MAHASISWA), $dateMode, $startDate, $endDate, $campusId, $periodId, 'validated_at')->count(),
             'events' => $this->filterQuery(SchoolEventProposal::query(), $dateMode, $startDate, $endDate, $campusId, $periodId, 'event_date')->count(),
+            'kol' => $this->filterQuery(StudentQuestionnaire::kolCandidates(), $dateMode, $startDate, $endDate, $campusId, $periodId, 'created_at')->count(),
             'schools' => School::when($campusId && $campusId !== 'ALL', fn($q) => $q->where('campus_id', $campusId))->count(),
         ];
 
@@ -117,6 +118,7 @@ class ComprehensiveReportController extends Controller
             $this->buildQuestionnairesSheet($spreadsheet->createSheet(), $dateMode, $startDate, $endDate, $campusId, $periodId);
             $this->buildProspectsSheet($spreadsheet->createSheet(), $dateMode, $startDate, $endDate, $campusId, $periodId);
             $this->buildEventsSheet($spreadsheet->createSheet(), $dateMode, $startDate, $endDate, $campusId, $periodId);
+            $this->buildKolSheet($spreadsheet->createSheet(), $dateMode, $startDate, $endDate, $campusId, $periodId);
             $this->buildSchoolsSheet($spreadsheet->createSheet(), $campusId);
             $spreadsheet->setActiveSheetIndex(0);
         } else {
@@ -127,6 +129,7 @@ class ComprehensiveReportController extends Controller
                 'questionnaires' => $this->buildQuestionnairesSheet($sheet, $dateMode, $startDate, $endDate, $campusId, $periodId),
                 'prospects' => $this->buildProspectsSheet($sheet, $dateMode, $startDate, $endDate, $campusId, $periodId),
                 'events' => $this->buildEventsSheet($sheet, $dateMode, $startDate, $endDate, $campusId, $periodId),
+                'kol' => $this->buildKolSheet($sheet, $dateMode, $startDate, $endDate, $campusId, $periodId),
                 'schools' => $this->buildSchoolsSheet($sheet, $campusId),
                 default => $this->buildVisitsSheet($sheet, $dateMode, $startDate, $endDate, $campusId, $periodId),
             };
@@ -225,6 +228,7 @@ class ComprehensiveReportController extends Controller
             [6, 'Total Prospek Calon Mahasiswa (CRM)', $this->filterQuery(Prospect::query(), $dateMode, $startDate, $endDate, $campusId, $periodId, 'created_at')->count(), 'Pipeline tahap 1 s/d 5'],
             [7, 'Total Mahasiswa Baru Resmi (Validasi NIM)', $this->filterQuery(Prospect::where('status', Prospect::STATUS_MAHASISWA), $dateMode, $startDate, $endDate, $campusId, $periodId, 'validated_at')->count(), 'Sudah memiliki NIM resmi'],
             [8, 'Total Proposal Event Sekolah Masuk', $this->filterQuery(SchoolEventProposal::query(), $dateMode, $startDate, $endDate, $campusId, $periodId, 'event_date')->count(), 'Pengajuan sponsorship sekolah'],
+            [9, 'Total Kandidat KOL & Brand Ambassador', $this->filterQuery(StudentQuestionnaire::kolCandidates(), $dateMode, $startDate, $endDate, $campusId, $periodId, 'created_at')->count(), 'Siswa influencer teridentifikasi'],
         ];
 
         foreach ($rows as $r) {
@@ -423,6 +427,59 @@ class ComprehensiveReportController extends Controller
             $sheet->setCellValue("K{$row}", $e->status_label);
             $sheet->setCellValue("L{$row}", $e->execution_status_label);
             $sheet->getStyle("J{$row}")->getNumberFormat()->setFormatCode('#,##0');
+            $row++;
+        }
+
+        foreach (range(1, count($headers)) as $c) {
+            $sheet->getColumnDimension(Coordinate::stringFromColumnIndex($c))->setAutoSize(true);
+        }
+    }
+
+    private function buildKolSheet($sheet, $dateMode, $startDate, $endDate, $campusId, $periodId)
+    {
+        $sheet->setTitle('Rekomendasi KOL');
+        $headers = [
+            'No', 'Nama Siswa', 'No. WhatsApp Siswa', 'Email Siswa', 'Asal Sekolah',
+            'Kelas', 'Jurusan', 'Kampus', 'Akun Instagram', 'Followers Instagram',
+            'Akun TikTok', 'Followers TikTok', 'Verifikasi Akun IG', 'Status Rekrutmen KOL',
+            'Estimasi Rate Card', 'Link Karya Instagram', 'Link Karya TikTok',
+            'Link Karya Facebook', 'Link Karya YouTube', 'Catatan / Portofolio'
+        ];
+
+        $startRow = $this->applyHeaderStyling($sheet, $headers, 'LAPORAN REKOMENDASI KOL & BRAND AMBASSADOR SISWA');
+        $query = $this->filterQuery(
+            StudentQuestionnaire::kolCandidates()->with(['school.district', 'campus', 'eventProposal']),
+            $dateMode, $startDate, $endDate, $campusId, $periodId, 'created_at'
+        );
+        $candidates = $query->orderBy('created_at', 'desc')->get();
+
+        $row = $startRow;
+        foreach ($candidates as $idx => $k) {
+            $rateCard = is_array($k->estimated_rate_card) 
+                ? (($k->estimated_rate_card['package'] ?? null) ?: ($k->estimated_rate_card['tier'] ?? '-')) 
+                : ($k->estimated_rate_card ?: '-');
+            $workLinks = is_array($k->work_links) ? $k->work_links : [];
+
+            $sheet->setCellValue("A{$row}", $idx + 1);
+            $sheet->setCellValue("B{$row}", $k->student_name);
+            $sheet->setCellValueExplicit("C{$row}", (string) ($k->student_phone ?? '-'), DataType::TYPE_STRING);
+            $sheet->setCellValue("D{$row}", $k->student_email ?? '-');
+            $sheet->setCellValue("E{$row}", $k->school->name ?? '-');
+            $sheet->setCellValue("F{$row}", $k->student_class ?? '-');
+            $sheet->setCellValue("G{$row}", $k->student_major ?? '-');
+            $sheet->setCellValue("H{$row}", $k->campus->name ?? ($k->school->campus->name ?? 'UBSI'));
+            $sheet->setCellValue("I{$row}", $k->instagram_handle ? '@' . ltrim($k->instagram_handle, '@') : '-');
+            $sheet->setCellValue("J{$row}", (int) ($k->instagram_followers ?? 0));
+            $sheet->setCellValue("K{$row}", $k->tiktok_handle ? '@' . ltrim($k->tiktok_handle, '@') : '-');
+            $sheet->setCellValue("L{$row}", (int) ($k->tiktok_followers ?? 0));
+            $sheet->setCellValue("M{$row}", ucfirst($k->kol_verification_status ?? 'unverified'));
+            $sheet->setCellValue("N{$row}", ucfirst($k->kol_status ?? 'kandidat'));
+            $sheet->setCellValue("O{$row}", $rateCard);
+            $sheet->setCellValue("P{$row}", $workLinks['instagram'] ?? '-');
+            $sheet->setCellValue("Q{$row}", $workLinks['tiktok'] ?? '-');
+            $sheet->setCellValue("R{$row}", $workLinks['facebook'] ?? '-');
+            $sheet->setCellValue("S{$row}", $workLinks['youtube'] ?? '-');
+            $sheet->setCellValue("T{$row}", $workLinks['notes'] ?? ($k->kol_notes ?? '-'));
             $row++;
         }
 

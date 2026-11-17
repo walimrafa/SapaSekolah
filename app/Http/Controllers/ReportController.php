@@ -35,7 +35,7 @@ class ReportController extends Controller
         $category = $request->get('category', 'diagram'); // 'diagram' or 'data'
         $activeTab = $request->get('tab');
 
-        if ($request->has('tab') && in_array($request->get('tab'), ['visits', 'followups', 'activities', 'prospects', 'questionnaires', 'schools'])) {
+        if ($request->has('tab') && in_array($request->get('tab'), ['visits', 'followups', 'activities', 'prospects', 'questionnaires', 'schools', 'kol'])) {
             $category = 'data';
         }
 
@@ -346,6 +346,62 @@ class ReportController extends Controller
                 ];
                 break;
 
+            case 'kol':
+                $query = StudentQuestionnaire::kolCandidates()
+                    ->with(['school.district', 'campus', 'eventProposal'])
+                    ->when($activeCampus, function ($q) use ($activeCampus) {
+                        $q->where(function ($sub) use ($activeCampus) {
+                            $sub->where('campus_id', $activeCampus->id)
+                                ->orWhereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id))
+                                ->orWhereHas('eventProposal', fn($ep) => $ep->where('campus_id', $activeCampus->id));
+                        });
+                    })
+                    ->latest('updated_at');
+
+                if ($startDate) $query->whereDate('created_at', '>=', $startDate);
+                if ($endDate) $query->whereDate('created_at', '<=', $endDate);
+                if ($districtId) $query->whereHas('school', fn($q) => $q->where('district_id', $districtId));
+                if ($status && $status !== 'all') {
+                    if (in_array($status, ['verified', 'unverified', 'rejected'])) {
+                        $query->where('kol_verification_status', $status);
+                    } else {
+                        $query->where('kol_status', $status);
+                    }
+                }
+                if ($search) {
+                    $query->where(function ($q) use ($search) {
+                        $q->where('student_name', 'like', "%{$search}%")
+                          ->orWhere('student_phone', 'like', "%{$search}%")
+                          ->orWhere('instagram_handle', 'like', "%{$search}%")
+                          ->orWhere('tiktok_handle', 'like', "%{$search}%")
+                          ->orWhereHas('school', fn($sq) => $sq->where('name', 'like', "%{$search}%"));
+                    });
+                }
+
+                $kolCandidates = $query->paginate(15)->withQueryString();
+                $data['kolCandidates'] = $kolCandidates;
+
+                $kolBase = StudentQuestionnaire::kolCandidates()
+                    ->when($activeCampus, function ($q) use ($activeCampus) {
+                        $q->where(function ($sub) use ($activeCampus) {
+                            $sub->where('campus_id', $activeCampus->id)
+                                ->orWhereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id))
+                                ->orWhereHas('eventProposal', fn($ep) => $ep->where('campus_id', $activeCampus->id));
+                        });
+                    });
+
+                $data['stats'] = [
+                    'total' => (clone $kolBase)->count(),
+                    'kandidat' => (clone $kolBase)->where('kol_status', 'kandidat')->count(),
+                    'dihubungi' => (clone $kolBase)->where('kol_status', 'dihubungi')->count(),
+                    'bersedia' => (clone $kolBase)->where('kol_status', 'bersedia')->count(),
+                    'brand_ambassador' => (clone $kolBase)->whereIn('kol_status', ['deal', 'brand_ambassador', 'aktif'])->count(),
+                    'ditolak' => (clone $kolBase)->where('kol_status', 'ditolak')->count(),
+                    'verified' => (clone $kolBase)->where('kol_verification_status', 'verified')->count(),
+                    'with_work' => (clone $kolBase)->whereNotNull('work_links')->count(),
+                ];
+                break;
+
             case 'charts':
             default:
                 // Nothing extra required since $chartsData is populated
@@ -502,6 +558,32 @@ class ReportController extends Controller
             ]
         ];
 
+        // 7. KOL & Brand Ambassador Analytics
+        $kolBaseCharts = StudentQuestionnaire::kolCandidates()
+            ->when($activeCampus, function ($q) use ($activeCampus) {
+                $q->where(function ($sub) use ($activeCampus) {
+                    $sub->where('campus_id', $activeCampus->id)
+                        ->orWhereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id))
+                        ->orWhereHas('eventProposal', fn($ep) => $ep->where('campus_id', $activeCampus->id));
+                });
+            });
+
+        $kolStatusCounts = [
+            'kandidat' => (clone $kolBaseCharts)->where('kol_status', 'kandidat')->count(),
+            'dihubungi' => (clone $kolBaseCharts)->where('kol_status', 'dihubungi')->count(),
+            'bersedia' => (clone $kolBaseCharts)->where('kol_status', 'bersedia')->count(),
+            'brand_ambassador' => (clone $kolBaseCharts)->whereIn('kol_status', ['deal', 'brand_ambassador', 'aktif'])->count(),
+            'ditolak' => (clone $kolBaseCharts)->where('kol_status', 'ditolak')->count(),
+        ];
+
+        $kolVerifiedCounts = [
+            'verified' => (clone $kolBaseCharts)->where('kol_verification_status', 'verified')->count(),
+            'unverified' => (clone $kolBaseCharts)->where(function($q) {
+                $q->where('kol_verification_status', 'unverified')->orWhereNull('kol_verification_status');
+            })->count(),
+            'rejected' => (clone $kolBaseCharts)->where('kol_verification_status', 'rejected')->count(),
+        ];
+
         return [
             'timeline' => [
                 'labels' => $timelineLabels,
@@ -533,6 +615,11 @@ class ReportController extends Controller
                 'classes' => $qClasses,
             ],
             'prospect_funnel' => $prospectStages,
+            'kol' => [
+                'total' => (clone $kolBaseCharts)->count(),
+                'status_counts' => $kolStatusCounts,
+                'verified_counts' => $kolVerifiedCounts,
+            ],
         ];
     }
 

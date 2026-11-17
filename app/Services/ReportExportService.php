@@ -82,6 +82,11 @@ class ReportExportService
                 $filename = 'Laporan_Progres_Pemetaan_Sekolah_' . date('Ymd_His') . '.xlsx';
                 break;
 
+            case 'kol':
+                $this->buildKolSheet($spreadsheet, $request, $campusName, $exportDate);
+                $filename = 'Laporan_Rekomendasi_KOL_' . date('Ymd_His') . '.xlsx';
+                break;
+
             case 'overview':
             default:
                 $this->buildOverviewSheet($spreadsheet, $request, $campusName, $exportDate);
@@ -736,6 +741,129 @@ class ReportExportService
             $sheet->getStyle("B{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet->getStyle("D{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet->getStyle("F{$row}:J{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $row++;
+        }
+
+        $sheet->getStyle("A{$headerRow}:{$highestCol}" . max($row - 1, $headerRow))->applyFromArray([
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CBD5E1']]],
+        ]);
+
+        for ($col = 1; $col <= count($headers); $col++) {
+            $sheet->getColumnDimension(Coordinate::stringFromColumnIndex($col))->setAutoSize(true);
+        }
+    }
+
+    /**
+     * SHEET: Detail Rekomendasi KOL & Brand Ambassador
+     */
+    protected function buildKolSheet(Spreadsheet $spreadsheet, Request $request, string $campusName, string $exportDate): void
+    {
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Rekomendasi KOL');
+
+        $sheet->setCellValue('A1', 'LAPORAN REKOMENDASI KOL & BRAND AMBASSADOR SISWA');
+        $sheet->mergeCells('A1:S1');
+        $sheet->getStyle('A1')->getFont()->setSize(14)->setBold(true)->getColor()->setRGB('1E3A5F');
+
+        $sheet->setCellValue('A2', strtoupper($campusName) . ' • Dicetak pada: ' . $exportDate);
+        $sheet->getStyle('A2')->getFont()->setSize(9)->setItalic(true)->getColor()->setRGB('64748B');
+
+        $headers = [
+            'No', 'Nama Siswa', 'No. WhatsApp', 'Email', 'Asal Sekolah',
+            'Kelas / Jurusan', 'Kampus', 'Akun Instagram', 'Followers IG',
+            'Akun TikTok', 'Followers TikTok', 'Verifikasi IG', 'Status KOL',
+            'Estimasi Rate Card', 'Link Karya IG', 'Link Karya TikTok',
+            'Link Karya FB', 'Link Karya YouTube', 'Catatan / Portofolio'
+        ];
+
+        $headerRow = 4;
+        $colIndex = 1;
+        foreach ($headers as $h) {
+            $col = Coordinate::stringFromColumnIndex($colIndex);
+            $sheet->setCellValue("{$col}{$headerRow}", $h);
+            $colIndex++;
+        }
+        $highestCol = Coordinate::stringFromColumnIndex(count($headers));
+        $sheet->getStyle("A{$headerRow}:{$highestCol}{$headerRow}")->applyFromArray([
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1E3A5F']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+        ]);
+
+        $query = StudentQuestionnaire::kolCandidates()
+            ->with(['school.district', 'campus', 'eventProposal'])
+            ->latest('updated_at');
+
+        $activeCampus = $this->resolveActiveCampus($request);
+        if ($activeCampus) {
+            $query->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)
+                    ->orWhereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id))
+                    ->orWhereHas('eventProposal', fn($ep) => $ep->where('campus_id', $activeCampus->id));
+            });
+        }
+
+        if ($request->filled('start_date')) {
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $query->whereDate('created_at', '<=', $request->end_date);
+        }
+        if ($request->filled('district_id')) {
+            $query->whereHas('school', fn($q) => $q->where('district_id', $request->district_id));
+        }
+        if ($request->filled('status') && $request->status !== 'all') {
+            if (in_array($request->status, ['verified', 'unverified', 'rejected'])) {
+                $query->where('kol_verification_status', $request->status);
+            } else {
+                $query->where('kol_status', $request->status);
+            }
+        }
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('student_name', 'like', "%{$search}%")
+                  ->orWhere('student_phone', 'like', "%{$search}%")
+                  ->orWhere('instagram_handle', 'like', "%{$search}%")
+                  ->orWhere('tiktok_handle', 'like', "%{$search}%")
+                  ->orWhereHas('school', fn($sq) => $sq->where('name', 'like', "%{$search}%"));
+            });
+        }
+
+        $candidates = $query->get();
+
+        $row = 5;
+        $num = 1;
+        foreach ($candidates as $k) {
+            $rateCard = is_array($k->estimated_rate_card) 
+                ? (($k->estimated_rate_card['package'] ?? null) ?: ($k->estimated_rate_card['tier'] ?? '-')) 
+                : ($k->estimated_rate_card ?: '-');
+            $workLinks = is_array($k->work_links) ? $k->work_links : [];
+
+            $sheet->setCellValue("A{$row}", $num++);
+            $sheet->setCellValue("B{$row}", $k->student_name);
+            $sheet->setCellValueExplicit("C{$row}", (string) ($k->student_phone ?? '-'), DataType::TYPE_STRING);
+            $sheet->setCellValue("D{$row}", $k->student_email ?? '-');
+            $sheet->setCellValue("E{$row}", $k->school->name ?? '-');
+            $sheet->setCellValue("F{$row}", ($k->student_class ?? '') . ($k->student_major ? ' - ' . $k->student_major : ''));
+            $sheet->setCellValue("G{$row}", $k->campus->name ?? ($k->school->campus->name ?? '-'));
+            $sheet->setCellValue("H{$row}", $k->instagram_handle ? '@' . ltrim($k->instagram_handle, '@') : '-');
+            $sheet->setCellValue("I{$row}", (int) ($k->instagram_followers ?? 0));
+            $sheet->setCellValue("J{$row}", $k->tiktok_handle ? '@' . ltrim($k->tiktok_handle, '@') : '-');
+            $sheet->setCellValue("K{$row}", (int) ($k->tiktok_followers ?? 0));
+            $sheet->setCellValue("L{$row}", ucfirst($k->kol_verification_status ?? 'unverified'));
+            $sheet->setCellValue("M{$row}", ucfirst($k->kol_status ?? 'kandidat'));
+            $sheet->setCellValue("N{$row}", $rateCard);
+            $sheet->setCellValue("O{$row}", $workLinks['instagram'] ?? '-');
+            $sheet->setCellValue("P{$row}", $workLinks['tiktok'] ?? '-');
+            $sheet->setCellValue("Q{$row}", $workLinks['facebook'] ?? '-');
+            $sheet->setCellValue("R{$row}", $workLinks['youtube'] ?? '-');
+            $sheet->setCellValue("S{$row}", $workLinks['notes'] ?? ($k->kol_notes ?? '-'));
+
+            $sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle("C{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle("I{$row}:K{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $sheet->getStyle("L{$row}:M{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $row++;
         }
 

@@ -110,6 +110,7 @@
                             <option value="questionnaires">Hasil Kuisioner Siswa & Follow Up CRM</option>
                             <option value="prospects">Pipeline Prospek & Mahasiswa Baru Resmi (NIM)</option>
                             <option value="events">Support Event Sekolah & Pendaftar Siswa</option>
+                            <option value="kol">Rekomendasi KOL & Brand Ambassador (Instagram & TikTok)</option>
                             <option value="schools">Master Data Sekolah & Skor Prioritas</option>
                         </select>
                     </div>
@@ -139,7 +140,7 @@
                 <span>Data Tersedia Sesuai Parameter Filter Saat Ini</span>
             </h3>
 
-            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-3">
                 <div class="p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-soft text-center">
                     <p class="text-[10px] font-bold text-slate-400 uppercase">Kunjungan</p>
                     <p class="text-lg font-black text-brand-600">{{ number_format($counts['visits']) }}</p>
@@ -169,6 +170,10 @@
                     <p class="text-lg font-black text-rose-600">{{ number_format($counts['events']) }}</p>
                 </div>
                 <div class="p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-soft text-center">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase">Kandidat KOL</p>
+                    <p class="text-lg font-black text-pink-600">{{ number_format($counts['kol'] ?? 0) }}</p>
+                </div>
+                <div class="p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-soft text-center">
                     <p class="text-[10px] font-bold text-slate-400 uppercase">Sekolah</p>
                     <p class="text-lg font-black text-slate-800">{{ number_format($counts['schools']) }}</p>
                 </div>
@@ -188,7 +193,7 @@
                     <div>
                         <div class="w-8 h-8 rounded-xl bg-amber-400/20 text-amber-300 flex items-center justify-center text-xs font-bold mb-2">★</div>
                         <h4 class="font-extrabold text-sm">Master Multi-Sheet All-In-One</h4>
-                        <p class="text-xs text-slate-300 mt-1">Seluruh 7 kategori dalam 1 file Excel lengkap dengan ringkasan eksekutif.</p>
+                        <p class="text-xs text-slate-300 mt-1">Seluruh 8 kategori dalam 1 file Excel lengkap dengan ringkasan eksekutif.</p>
                     </div>
                     <a href="{{ route('comprehensive-reports.download', ['category' => 'all', 'date_mode' => $dateMode, 'start_date' => $startDate, 'end_date' => $endDate, 'campus_id' => $campusId, 'academic_period_id' => $periodId]) }}" class="w-full py-2 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs text-center transition">
                         Unduh Rekap Lengkap
@@ -252,6 +257,18 @@
                     </div>
                     <a href="{{ route('comprehensive-reports.download', ['category' => 'events', 'date_mode' => $dateMode, 'start_date' => $startDate, 'end_date' => $endDate, 'campus_id' => $campusId, 'academic_period_id' => $periodId]) }}" class="w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-rose-600 hover:text-white text-slate-700 font-bold text-xs text-center transition">
                         Unduh Data Event
+                    </a>
+                </div>
+
+                <!-- Card 7: Rekomendasi KOL & Brand Ambassador -->
+                <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-soft space-y-3 flex flex-col justify-between">
+                    <div>
+                        <div class="w-8 h-8 rounded-xl bg-pink-50 text-pink-600 flex items-center justify-center text-xs font-bold mb-2"><i data-lucide="award" class="w-4 h-4"></i></div>
+                        <h4 class="font-extrabold text-sm text-slate-900">Rekomendasi KOL &amp; Ambassador</h4>
+                        <p class="text-xs text-slate-500 mt-1">Daftar siswa influencer, verifikasi follower asli, estimasi rate card, dan link karya konten.</p>
+                    </div>
+                    <a href="{{ route('comprehensive-reports.download', ['category' => 'kol', 'date_mode' => $dateMode, 'start_date' => $startDate, 'end_date' => $endDate, 'campus_id' => $campusId, 'academic_period_id' => $periodId]) }}" class="w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-pink-600 hover:text-white text-slate-700 font-bold text-xs text-center transition">
+                        Unduh Data KOL
                     </a>
                 </div>
             </div>
