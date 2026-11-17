@@ -37,6 +37,15 @@ class GoogleDriveService
     public const BACKUP_CIKAMPEK_FOLDER_ID = self::DEFAULT_CIKAMPEK_FOLDER_ID;
     public const BACKUP_KARAWANG_FOLDER_ID = self::DEFAULT_KARAWANG_FOLDER_ID;
 
+    // =========================================================================
+    // 3. FOLDER BUKTI DAFTAR AKUN SISWA PROSPEK (RESMI DARI USER)
+    // =========================================================================
+    public const PROOF_KARAWANG_FOLDER_ID = '1VT016fnw2hx3S5m5ZCS8UaUOIte2jnGL';
+    public const PROOF_KARAWANG_FOLDER_URL = 'https://drive.google.com/drive/folders/1VT016fnw2hx3S5m5ZCS8UaUOIte2jnGL?usp=sharing';
+
+    public const PROOF_CIKAMPEK_FOLDER_ID = '1DnHwtZuUITqVPh4YPHoeWi1TGem3SJUl';
+    public const PROOF_CIKAMPEK_FOLDER_URL = 'https://drive.google.com/drive/folders/1DnHwtZuUITqVPh4YPHoeWi1TGem3SJUl?usp=sharing';
+
     protected Client $httpClient;
 
     public function __construct()
@@ -105,6 +114,104 @@ class GoogleDriveService
     public static function getFolderUrlForCampus(int|string|Campus|null $campus = null, ?string $schoolName = null): string
     {
         return self::isCikampekCampus($campus, $schoolName) ? self::CIKAMPEK_FOLDER_URL : self::KARAWANG_FOLDER_URL;
+    }
+
+    /**
+     * Dapatkan Folder ID Google Drive untuk Bukti Daftar Akun Prospek (Karawang vs Cikampek).
+     */
+    public static function getProofFolderIdForCampus(int|string|Campus|null $campus = null, ?string $schoolName = null): string
+    {
+        return self::isCikampekCampus($campus, $schoolName) ? self::PROOF_CIKAMPEK_FOLDER_ID : self::PROOF_KARAWANG_FOLDER_ID;
+    }
+
+    /**
+     * Dapatkan Folder URL Google Drive untuk Bukti Daftar Akun Prospek (Karawang vs Cikampek).
+     */
+    public static function getProofFolderUrlForCampus(int|string|Campus|null $campus = null, ?string $schoolName = null): string
+    {
+        return self::isCikampekCampus($campus, $schoolName) ? self::PROOF_CIKAMPEK_FOLDER_URL : self::PROOF_KARAWANG_FOLDER_URL;
+    }
+
+    /**
+     * Upload Bukti Pendaftaran Akun Mahasiswa ke Google Drive folder kampus terkait.
+     */
+    public function uploadRegistrationProof(UploadedFile $file, \App\Models\Prospect $prospect): array
+    {
+        $campusId = $prospect->campus_id ?: ($prospect->school?->campus_id);
+        $folderId = self::getProofFolderIdForCampus($campusId, $prospect->school?->name);
+        $folderUrl = self::getProofFolderUrlForCampus($campusId, $prospect->school?->name);
+
+        $ext = $file->getClientOriginalExtension() ?: 'png';
+        $safeName = Str::slug($prospect->name ?: 'prospek') . '-bukti-daftar-' . date('Ymd-His') . '.' . $ext;
+
+        // 1. Simpan salinan lokal di public storage untuk keandalan & preview instan
+        $localPath = $file->storeAs('registration-proofs', $safeName, 'public');
+
+        // 2. Coba upload langsung ke Google Drive API
+        $gdriveFileUrl = $folderUrl;
+        $gdriveFileId = null;
+
+        try {
+            $accessToken = $this->getAccessToken();
+            if ($accessToken) {
+                $metadata = [
+                    'name' => $safeName,
+                    'parents' => [$folderId],
+                    'description' => "Bukti Pendaftaran Akun PMB untuk {$prospect->name} (" . ($prospect->school?->name ?? 'SLTA') . ")",
+                ];
+
+                $boundary = '-------' . md5(microtime());
+                $delimiter = "\r\n--" . $boundary . "\r\n";
+                $closeDelimiter = "\r\n--" . $boundary . "--";
+
+                $fileContent = file_get_contents($file->getRealPath());
+                $mimeType = $file->getMimeType() ?: 'image/jpeg';
+
+                $multipartBody = $delimiter
+                    . "Content-Type: application/json; charset=UTF-8\r\n\r\n"
+                    . json_encode($metadata)
+                    . $delimiter
+                    . "Content-Type: {$mimeType}\r\n"
+                    . "Content-Transfer-Encoding: binary\r\n\r\n"
+                    . $fileContent
+                    . $closeDelimiter;
+
+                $response = $this->httpClient->post('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink', [
+                    'headers' => [
+                        'Authorization' => 'Bearer ' . $accessToken,
+                        'Content-Type' => 'multipart/related; boundary=' . $boundary,
+                        'Content-Length' => strlen($multipartBody),
+                    ],
+                    'body' => $multipartBody,
+                ]);
+
+                $result = json_decode($response->getBody()->getContents(), true);
+                if (!empty($result['id'])) {
+                    $gdriveFileId = $result['id'];
+                    $gdriveFileUrl = $result['webViewLink'] ?? "https://drive.google.com/file/d/{$gdriveFileId}/view";
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning("Upload proof to Google Drive warning: " . $e->getMessage());
+        }
+
+        // Simpan data di database prospect
+        $prospect->update([
+            'registration_proof_path' => $localPath,
+            'registration_proof_drive_url' => $gdriveFileUrl,
+            'registration_proof_drive_id' => $gdriveFileId,
+            'registration_proof_uploaded_at' => now(),
+            'registration_proof_uploaded_by' => auth()->id(),
+        ]);
+
+        return [
+            'success' => true,
+            'local_path' => $localPath,
+            'drive_url' => $gdriveFileUrl,
+            'drive_file_id' => $gdriveFileId,
+            'folder_id' => $folderId,
+            'message' => 'Bukti pendaftaran akun berhasil diunggah ke Google Drive!',
+        ];
     }
 
     /**

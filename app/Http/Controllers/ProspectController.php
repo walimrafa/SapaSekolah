@@ -282,6 +282,97 @@ class ProspectController extends Controller
     }
 
     /**
+     * Upload Bukti Pendaftaran Akun ke Google Drive per Kampus.
+     */
+    public function uploadProof(Request $request, Prospect $prospect, \App\Services\GoogleDriveService $driveService): RedirectResponse
+    {
+        $request->validate([
+            'registration_proof' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
+        ], [
+            'registration_proof.required' => 'Pilih berkas bukti pendaftaran akun siswa.',
+            'registration_proof.mimes' => 'Berkas harus berupa gambar (JPG, PNG) atau PDF.',
+            'registration_proof.max' => 'Ukuran maksimal berkas adalah 10 MB.',
+        ]);
+
+        $result = $driveService->uploadRegistrationProof($request->file('registration_proof'), $prospect);
+
+        \App\Services\ActivityLogService::log(
+            'UPLOAD_PROOF',
+            'prospect',
+            $prospect->id,
+            "Mengunggah bukti daftar akun untuk prospek {$prospect->name} ke Google Drive",
+            null,
+            ['drive_url' => $result['drive_url']]
+        );
+
+        return redirect()->back()->with('toast', [
+            'type' => 'success',
+            'message' => "Bukti daftar akun untuk {$prospect->name} berhasil diunggah ke Google Drive!",
+        ]);
+    }
+
+    /**
+     * Update masal status tahapan prospek yang dipilih.
+     */
+    public function bulkUpdateStatus(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'selected_ids' => ['required', 'array'],
+            'selected_ids.*' => ['exists:prospects,id'],
+            'status' => ['required', 'in:daftar_akun,bayar_registrasi,ujian_saringan,bayar_daftar_ulang,berkas_lengkap,tidak_lanjut'],
+        ]);
+
+        $ids = $validated['selected_ids'];
+        $status = $validated['status'];
+        $count = Prospect::whereIn('id', $ids)->update(['status' => $status]);
+
+        $statusLabel = Prospect::getStatusLabels()[$status] ?? $status;
+
+        \App\Services\ActivityLogService::log(
+            'BULK_UPDATE_STATUS',
+            'prospect',
+            null,
+            "Memperbarui status masal sebanyak {$count} prospek menjadi: {$statusLabel}"
+        );
+
+        return redirect()->route('prospects.index')->with('toast', [
+            'type' => 'success',
+            'message' => "Berhasil memperbarui status {$count} calon siswa menjadi '{$statusLabel}'.",
+        ]);
+    }
+
+    /**
+     * Hapus masal data prospek yang dipilih.
+     */
+    public function bulkDelete(Request $request): RedirectResponse
+    {
+        $user = auth()->user();
+        if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator())) {
+            abort(403, 'Akses ditolak. Anda tidak berhak menghapus data prospek calon mahasiswa.');
+        }
+
+        $validated = $request->validate([
+            'selected_ids' => ['required', 'array'],
+            'selected_ids.*' => ['exists:prospects,id'],
+        ]);
+
+        $ids = $validated['selected_ids'];
+        $count = Prospect::whereIn('id', $ids)->delete();
+
+        \App\Services\ActivityLogService::log(
+            'BULK_DELETE',
+            'prospect',
+            null,
+            "Menghapus masal sebanyak {$count} prospek calon mahasiswa."
+        );
+
+        return redirect()->route('prospects.index')->with('toast', [
+            'type' => 'success',
+            'message' => "Berhasil memindahkan {$count} data prospek ke tempat sampah.",
+        ]);
+    }
+
+    /**
      * Validate candidate to become official new student (Tahap 5 -> Mahasiswa Baru).
      */
     public function validateStudent(Request $request, Prospect $prospect, \App\Services\SchoolScoringService $scoringService): RedirectResponse

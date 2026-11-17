@@ -199,6 +199,189 @@ class KolRecommendationController extends Controller
     }
 
     /**
+     * Verifikasi otomatis jumlah follower riil Instagram siswa.
+     */
+    public function verifyFollowers(Request $request, StudentQuestionnaire $studentQuestionnaire): JsonResponse|RedirectResponse
+    {
+        $this->authorizeAccess();
+        $this->authorizeCampusAccess($studentQuestionnaire);
+
+        $result = \App\Services\InstagramVerificationService::verifyCandidate($studentQuestionnaire);
+
+        ActivityLogService::log(
+            'VERIFY_KOL_FOLLOWERS',
+            'student_questionnaire',
+            $studentQuestionnaire->id,
+            "Verifikasi follower IG siswa {$studentQuestionnaire->student_name}: Status {$result['status']} ({$result['verified_followers']} followers)"
+        );
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'result' => $result,
+                'candidate' => $studentQuestionnaire->fresh(),
+            ]);
+        }
+
+        $type = ($result['status'] === StudentQuestionnaire::KOL_VERIFY_VERIFIED) ? 'success' : 'warning';
+        return back()->with('toast', [
+            'type' => $type,
+            'message' => $result['notes'],
+        ]);
+    }
+
+    /**
+     * Simpan tautan karya Brand Ambassador (IG, TikTok, Facebook, YouTube).
+     */
+    public function saveWorkLinks(Request $request, StudentQuestionnaire $studentQuestionnaire): JsonResponse|RedirectResponse
+    {
+        $this->authorizeAccess();
+        $this->authorizeCampusAccess($studentQuestionnaire);
+
+        $validated = $request->validate([
+            'instagram_link' => ['nullable', 'url', 'max:255'],
+            'tiktok_link' => ['nullable', 'url', 'max:255'],
+            'facebook_link' => ['nullable', 'url', 'max:255'],
+            'youtube_link' => ['nullable', 'url', 'max:255'],
+            'notes' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $workLinks = [
+            'instagram' => $validated['instagram_link'] ?? null,
+            'tiktok' => $validated['tiktok_link'] ?? null,
+            'facebook' => $validated['facebook_link'] ?? null,
+            'youtube' => $validated['youtube_link'] ?? null,
+            'notes' => $validated['notes'] ?? null,
+            'updated_at' => now()->toIso8601String(),
+        ];
+
+        $studentQuestionnaire->update([
+            'work_links' => $workLinks,
+        ]);
+
+        ActivityLogService::log(
+            'SAVE_KOL_WORK_LINKS',
+            'student_questionnaire',
+            $studentQuestionnaire->id,
+            "Memperbarui link karya Brand Ambassador siswa {$studentQuestionnaire->student_name}"
+        );
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Link karya Brand Ambassador berhasil disimpan!',
+                'work_links' => $workLinks,
+            ]);
+        }
+
+        return back()->with('toast', [
+            'type' => 'success',
+            'message' => 'Tautan karya Brand Ambassador berhasil diperbarui!',
+        ]);
+    }
+
+    /**
+     * Update masal status rekrutmen KOL yang dipilih.
+     */
+    public function bulkUpdateStatus(Request $request): RedirectResponse
+    {
+        $this->authorizeAccess();
+
+        $validated = $request->validate([
+            'selected_ids' => ['required', 'array'],
+            'selected_ids.*' => ['exists:student_questionnaires,id'],
+            'kol_status' => ['required', 'string', 'in:' . implode(',', array_keys(StudentQuestionnaire::kolStatusOptions()))],
+        ]);
+
+        $ids = $validated['selected_ids'];
+        $newStatus = $validated['kol_status'];
+
+        $count = StudentQuestionnaire::whereIn('id', $ids)->update([
+            'kol_status' => $newStatus,
+            'is_kol' => ($newStatus !== StudentQuestionnaire::KOL_STATUS_DITOLAK),
+        ]);
+
+        $label = StudentQuestionnaire::kolStatusOptions()[$newStatus] ?? $newStatus;
+
+        ActivityLogService::log(
+            'BULK_UPDATE_KOL_STATUS',
+            'student_questionnaire',
+            null,
+            "Memperbarui status masal sebanyak {$count} kandidat KOL menjadi: {$label}"
+        );
+
+        return back()->with('toast', [
+            'type' => 'success',
+            'message' => "Berhasil memperbarui status {$count} kandidat KOL menjadi '{$label}'.",
+        ]);
+    }
+
+    /**
+     * Hapus masal data siswa yang tidak sesuai dari daftar Rekomendasi KOL.
+     */
+    public function bulkDelete(Request $request): RedirectResponse
+    {
+        $this->authorizeAccess();
+
+        $validated = $request->validate([
+            'selected_ids' => ['required', 'array'],
+            'selected_ids.*' => ['exists:student_questionnaires,id'],
+        ]);
+
+        $ids = $validated['selected_ids'];
+
+        $count = StudentQuestionnaire::whereIn('id', $ids)->update([
+            'is_kol' => false,
+            'kol_status' => StudentQuestionnaire::KOL_STATUS_DITOLAK,
+            'kol_verification_status' => StudentQuestionnaire::KOL_VERIFY_REJECTED,
+            'kol_verification_notes' => 'Dikeluarkan dari rekomendasi KOL karena data tidak sesuai / tidak valid.',
+        ]);
+
+        ActivityLogService::log(
+            'BULK_REMOVE_KOL',
+            'student_questionnaire',
+            null,
+            "Mengeluarkan sebanyak {$count} siswa dari daftar Rekomendasi KOL."
+        );
+
+        return back()->with('toast', [
+            'type' => 'success',
+            'message' => "Berhasil menghapus {$count} data yang tidak sesuai dari Rekomendasi KOL.",
+        ]);
+    }
+
+    /**
+     * Pengecekan real followers masal untuk akun yang dipilih.
+     */
+    public function bulkVerifyFollowers(Request $request): RedirectResponse
+    {
+        $this->authorizeAccess();
+
+        $validated = $request->validate([
+            'selected_ids' => ['required', 'array'],
+            'selected_ids.*' => ['exists:student_questionnaires,id'],
+        ]);
+
+        $candidates = StudentQuestionnaire::whereIn('id', $validated['selected_ids'])->get();
+        $verifiedCount = 0;
+        $rejectedCount = 0;
+
+        foreach ($candidates as $candidate) {
+            $res = \App\Services\InstagramVerificationService::verifyCandidate($candidate);
+            if ($res['status'] === StudentQuestionnaire::KOL_VERIFY_VERIFIED) {
+                $verifiedCount++;
+            } elseif ($res['status'] === StudentQuestionnaire::KOL_VERIFY_REJECTED) {
+                $rejectedCount++;
+            }
+        }
+
+        return back()->with('toast', [
+            'type' => 'success',
+            'message' => "Pengecekan selesai: {$verifiedCount} akun terverifikasi valid, {$rejectedCount} akun tertolak otomatis karena data tidak sesuai.",
+        ]);
+    }
+
+    /**
      * Ekspor Data Rekomendasi KOL ke Microsoft Excel (.xlsx)
      */
     public function exportExcel(Request $request): StreamedResponse

@@ -11,6 +11,28 @@
         prospectScholarshipType: '',
         prospectIsScholarship: 'beasiswa',
         prospectNotes: '',
+        selectedIds: [],
+        allIds: {{ json_encode($prospects->pluck('id')->toArray()) }},
+        toggleSelectAll(e) {
+            if (e.target.checked) {
+                this.selectedIds = [...this.allIds];
+            } else {
+                this.selectedIds = [];
+            }
+        },
+        toggleSelect(id) {
+            if (this.selectedIds.includes(id)) {
+                this.selectedIds = this.selectedIds.filter(i => i !== id);
+            } else {
+                this.selectedIds.push(id);
+            }
+        },
+        proofModalOpen: false,
+        proofProspect: null,
+        openUploadProofModal(p) {
+            this.proofProspect = p;
+            this.proofModalOpen = true;
+        },
         openValidateModal(p) {
             this.validatingProspect = p;
             this.prospectNim = p.nim || '';
@@ -266,22 +288,85 @@
                 </div>
             </div>
 
+            <!-- Toolbar Aksi Masal (Bulk Action Bar) -->
+            <div x-show="selectedIds.length > 0" x-cloak
+                class="p-3.5 bg-gradient-to-r from-slate-950 via-slate-900 to-brand-navy text-white rounded-2xl shadow-xl flex flex-wrap items-center justify-between gap-3 mb-4 border border-slate-700 animate-in fade-in slide-in-from-top-2">
+                <div class="flex items-center gap-2.5">
+                    <span class="w-7 h-7 rounded-full bg-brand-500 text-white text-xs font-black flex items-center justify-center shadow" x-text="selectedIds.length"></span>
+                    <div>
+                        <p class="text-xs font-extrabold tracking-tight">Data Prospek Terpilih</p>
+                        <p class="text-[10px] text-slate-400">Pilih aksi masal untuk data yang diceklis</p>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                    <!-- Form Bulk Status Update -->
+                    <form method="POST" action="{{ route('prospects.bulk-status') }}" class="flex items-center gap-1.5"
+                        onsubmit="return confirm('Apakah Anda yakin ingin memperbarui tahapan status untuk ' + selectedIds.length + ' prospek terpilih?')">
+                        @csrf
+                        <template x-for="id in selectedIds" :key="'status-'+id">
+                            <input type="hidden" name="selected_ids[]" :value="id">
+                        </template>
+                        <select name="status" required class="py-1.5 px-3 rounded-xl text-xs bg-slate-800 text-white border border-slate-700 font-bold focus:ring-brand-500">
+                            <option value="daftar_akun">1. Sudah Daftar Akun</option>
+                            <option value="bayar_registrasi">2. Sudah Bayar Registrasi</option>
+                            <option value="ujian_saringan">3. Sudah Ujian Saringan</option>
+                            <option value="bayar_daftar_ulang">4. Sudah Bayar Daftar Ulang</option>
+                            <option value="berkas_lengkap">5. Sudah Melengkapi Berkas</option>
+                            <option value="tidak_lanjut">Tidak Lanjut / Batal</option>
+                        </select>
+                        <button type="submit" class="px-3.5 py-1.5 rounded-xl text-xs font-black bg-brand-600 hover:bg-brand-500 text-white transition shadow-sm flex items-center gap-1">
+                            <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                            <span>Ubah Status</span>
+                        </button>
+                    </form>
+
+                    <!-- Form Bulk Delete -->
+                    <form method="POST" action="{{ route('prospects.bulk-delete') }}" class="inline"
+                        onsubmit="return confirm('Apakah Anda yakin ingin menghapus ' + selectedIds.length + ' data prospek terpilih ke tempat sampah?')">
+                        @csrf
+                        <template x-for="id in selectedIds" :key="'del-'+id">
+                            <input type="hidden" name="selected_ids[]" :value="id">
+                        </template>
+                        <button type="submit" class="px-3.5 py-1.5 rounded-xl text-xs font-black bg-rose-600 hover:bg-rose-500 text-white transition shadow-sm flex items-center gap-1">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            <span>Hapus Terpilih</span>
+                        </button>
+                    </form>
+
+                    <button type="button" @click="selectedIds = []" class="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition">
+                        Batal
+                    </button>
+                </div>
+            </div>
+
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs">
                     <thead class="bg-slate-900 text-white font-bold uppercase tracking-wider text-[11px]">
                         <tr>
+                            <th class="py-3.5 px-3 text-center w-10">
+                                <input type="checkbox" :checked="selectedIds.length === allIds.length && allIds.length > 0"
+                                    @change="toggleSelectAll($event)"
+                                    class="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 border-slate-700 bg-slate-800 cursor-pointer"
+                                    title="Pilih Semua di Halaman Ini">
+                            </th>
                             <th class="py-3.5 px-4">Nama Calon Siswa</th>
                             <th class="py-3.5 px-4">No HP / WhatsApp</th>
                             <th class="py-3.5 px-4">Sekolah Asal</th>
                             <th class="py-3.5 px-4">Program &amp; Beasiswa</th>
                             <th class="py-3.5 px-4">PIC Marketing</th>
-                            <th class="py-3.5 px-4 text-center">Tahapan Status</th>
+                            <th class="py-3.5 px-4 text-center">Tahapan Status &amp; Bukti</th>
                             <th class="py-3.5 px-4 text-center">Aksi / Validasi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                         @forelse($prospects as $p)
-                            <tr class="hover:bg-slate-50/80 transition {{ $p->status === 'berkas_lengkap' ? 'bg-emerald-50/30' : '' }}">
+                            <tr class="hover:bg-slate-50/80 transition {{ $p->status === 'berkas_lengkap' ? 'bg-emerald-50/30' : '' }}" :class="selectedIds.includes({{ $p->id }}) ? 'bg-indigo-50/50' : ''">
+                                <td class="py-3.5 px-3 text-center">
+                                    <input type="checkbox" :value="{{ $p->id }}" :checked="selectedIds.includes({{ $p->id }})"
+                                        @change="toggleSelect({{ $p->id }})"
+                                        class="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 border-slate-300 cursor-pointer">
+                                </td>
                                 <td class="py-3.5 px-4">
                                     <div class="font-bold text-slate-900 text-xs">{{ $p->name }}</div>
                                     <div class="flex items-center space-x-1.5 text-[10px] text-slate-500 mt-0.5">
@@ -382,6 +467,28 @@
                                             <option value="mahasiswa" {{ $p->status == 'mahasiswa' ? 'selected' : '' }}>Mahasiswa Baru (Tervalidasi)</option>
                                         </select>
                                     </form>
+
+                                    <!-- Bukti Pendaftaran Akun (Google Drive) -->
+                                    <div class="mt-1.5 flex items-center justify-center gap-1">
+                                        @if($p->has_registration_proof)
+                                            <a href="{{ $p->registration_proof_drive_url ?: asset('storage/' . $p->registration_proof_path) }}" target="_blank"
+                                                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200 transition"
+                                                title="Lihat Bukti Pendaftaran di Google Drive">
+                                                <i data-lucide="check-circle" class="w-3 h-3 text-emerald-600"></i>
+                                                <span>Bukti GDrive</span>
+                                            </a>
+                                            <button type="button" @click="openUploadProofModal({{ json_encode($p) }})" class="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition" title="Ganti / Upload Ulang Berkas Bukti">
+                                                <i data-lucide="upload" class="w-3 h-3"></i>
+                                            </button>
+                                        @else
+                                            <button type="button" @click="openUploadProofModal({{ json_encode($p) }})"
+                                                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 transition"
+                                                title="Wajib Upload Bukti Pendaftaran Siswa">
+                                                <i data-lucide="cloud-upload" class="w-3 h-3 text-amber-600"></i>
+                                                <span>Upload Bukti</span>
+                                            </button>
+                                        @endif
+                                    </div>
                                 </td>
                                 <td class="py-3.5 px-4 text-center">
                                     <div class="flex items-center justify-center space-x-1.5">
@@ -415,7 +522,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="py-12 text-center text-slate-400">
+                                <td colspan="8" class="py-12 text-center text-slate-400">
                                     <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
                                         <i data-lucide="users" class="w-6 h-6"></i>
                                     </div>
@@ -792,6 +899,92 @@
                             <button type="submit"
                                 class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow transition">
                                 Simpan Prospek
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL UPLOAD BUKTI DAFTAR AKUN KE GOOGLE DRIVE -->
+        <div x-show="proofModalOpen" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+            <div class="flex items-center justify-center min-h-screen p-4 text-center">
+                <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity" @click="proofModalOpen = false"></div>
+                
+                <div class="inline-block w-full max-w-lg p-6 my-8 text-left align-middle transition-all transform bg-white shadow-2xl rounded-3xl border border-slate-200 relative z-10 animate-in fade-in zoom-in-95">
+                    <!-- Modal Header -->
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-inner">
+                                <i data-lucide="cloud-upload" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-base font-extrabold text-slate-900 tracking-tight">Upload Bukti Daftar Akun</h3>
+                                <p class="text-xs text-emerald-700 font-medium" x-text="proofProspect ? proofProspect.name + ' • ' + (proofProspect.school ? proofProspect.school.name : 'Sekolah') : 'Prospek'"></p>
+                            </div>
+                        </div>
+                        <button type="button" @click="proofModalOpen = false" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <!-- Modal Body Form -->
+                    <form :action="'/prospects/' + (proofProspect ? proofProspect.id : '') + '/upload-proof'" method="POST" enctype="multipart/form-data" class="mt-4 space-y-4">
+                        @csrf
+                        
+                        <!-- Info Google Drive Campus Folder -->
+                        <div class="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-300 text-xs space-y-1.5">
+                            <div class="flex items-center justify-between">
+                                <span class="font-extrabold text-emerald-950 flex items-center gap-1.5">
+                                    <i data-lucide="folder-check" class="w-4 h-4 text-emerald-600"></i>
+                                    <span>Folder Tujuan Google Drive</span>
+                                </span>
+                                <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-emerald-600 text-white shadow-xs">Otomatis Terhubung</span>
+                            </div>
+                            <p class="text-[11px] text-emerald-800 leading-snug">
+                                Bukti pendaftaran akun (screenshot bukti login/pendaftaran mahasiswa) akan otomatis diunggah ke Google Drive resmi masing-masing kampus:
+                            </p>
+                            <div class="pt-1 flex flex-col gap-1 text-[10px] text-slate-600 font-mono">
+                                <div>• <strong>UBSI Karawang:</strong> Folder Bukti Daftar Akun Karawang</div>
+                                <div>• <strong>UBSI Cikampek:</strong> Folder Bukti Daftar Akun Cikampek</div>
+                            </div>
+                        </div>
+
+                        <!-- Existing Proof Link if already uploaded -->
+                        <template x-if="proofProspect && (proofProspect.registration_proof_drive_url || proofProspect.registration_proof_path)">
+                            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
+                                <span class="text-slate-700 font-medium flex items-center gap-1.5">
+                                    <i data-lucide="check" class="w-4 h-4 text-emerald-600"></i>
+                                    <span>Sudah ada berkas terunggah sebelumnya</span>
+                                </span>
+                                <a :href="proofProspect.registration_proof_drive_url || ('/storage/' + proofProspect.registration_proof_path)" target="_blank"
+                                    class="text-brand-600 hover:text-brand-700 font-bold underline inline-flex items-center gap-1">
+                                    <span>Buka Berkas</span>
+                                    <i data-lucide="external-link" class="w-3 h-3"></i>
+                                </a>
+                            </div>
+                        </template>
+
+                        <!-- File Input -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-1.5">
+                                Pilih Berkas Bukti (Gambar / PDF) <span class="text-rose-600">*</span>
+                            </label>
+                            <input type="file" name="registration_proof" accept="image/jpeg,image/png,image/jpg,application/pdf" required
+                                class="w-full text-xs text-slate-700 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-extrabold file:bg-emerald-600 file:text-white cursor-pointer border border-slate-300 rounded-2xl p-1.5 bg-slate-50">
+                            <span class="block text-[10px] text-slate-400 mt-1 font-medium">Format: JPG, PNG, atau PDF. Maksimal 10 MB.</span>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100">
+                            <button type="button" @click="proofModalOpen = false"
+                                class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition">
+                                Batal
+                            </button>
+                            <button type="submit"
+                                class="px-5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-xs rounded-xl shadow-md transition flex items-center gap-1.5">
+                                <i data-lucide="cloud-upload" class="w-4 h-4"></i>
+                                <span>Upload ke Google Drive</span>
                             </button>
                         </div>
                     </form>

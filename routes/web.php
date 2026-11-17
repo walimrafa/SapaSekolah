@@ -56,6 +56,7 @@ Route::get('/hasil-support-event/sukses', [\App\Http\Controllers\EventStudentLea
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:10,1');
+    Route::get('/captcha/refresh', [LoginController::class, 'refreshCaptcha'])->name('captcha.refresh');
 });
 
 Route::post('/logout', [LogoutController::class, 'logout'])->name('logout')->middleware('auth');
@@ -125,6 +126,9 @@ Route::middleware(['auth'])->group(function () {
     // Data Prospek / Lead CRM Routes
     Route::get('/prospects', [ProspectController::class, 'index'])->name('prospects.index');
     Route::post('/prospects', [ProspectController::class, 'store'])->name('prospects.store');
+    Route::post('/prospects/bulk-status', [ProspectController::class, 'bulkUpdateStatus'])->name('prospects.bulk-status');
+    Route::post('/prospects/bulk-delete', [ProspectController::class, 'bulkDelete'])->name('prospects.bulk-delete');
+    Route::post('/prospects/{prospect}/upload-proof', [ProspectController::class, 'uploadProof'])->name('prospects.upload-proof');
     Route::get('/prospects/import-template', [ProspectController::class, 'downloadImportTemplate'])->name('prospects.import-template');
     Route::post('/prospects/import', [ProspectController::class, 'import'])->name('prospects.import');
     Route::post('/prospects/{prospect}/validate', [ProspectController::class, 'validateStudent'])->name('prospects.validate');
@@ -140,6 +144,11 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware('role:Admin,Pimpinan,Koordinator Marketing')->group(function () {
         Route::get('/kol-recommendations', [\App\Http\Controllers\KolRecommendationController::class, 'index'])->name('kol-recommendations.index');
         Route::put('/kol-recommendations/{studentQuestionnaire}/status', [\App\Http\Controllers\KolRecommendationController::class, 'updateStatus'])->name('kol-recommendations.update-status');
+        Route::post('/kol-recommendations/{studentQuestionnaire}/verify-followers', [\App\Http\Controllers\KolRecommendationController::class, 'verifyFollowers'])->name('kol-recommendations.verify-followers');
+        Route::post('/kol-recommendations/{studentQuestionnaire}/save-work-links', [\App\Http\Controllers\KolRecommendationController::class, 'saveWorkLinks'])->name('kol-recommendations.save-work-links');
+        Route::post('/kol-recommendations/bulk-status', [\App\Http\Controllers\KolRecommendationController::class, 'bulkUpdateStatus'])->name('kol-recommendations.bulk-status');
+        Route::post('/kol-recommendations/bulk-delete', [\App\Http\Controllers\KolRecommendationController::class, 'bulkDelete'])->name('kol-recommendations.bulk-delete');
+        Route::post('/kol-recommendations/bulk-verify', [\App\Http\Controllers\KolRecommendationController::class, 'bulkVerifyFollowers'])->name('kol-recommendations.bulk-verify');
         Route::get('/kol-recommendations/export', [\App\Http\Controllers\KolRecommendationController::class, 'exportExcel'])->name('kol-recommendations.export');
         Route::post('/kol-recommendations/settings', [\App\Http\Controllers\KolRecommendationController::class, 'updateSettings'])->name('kol-recommendations.settings.update');
 

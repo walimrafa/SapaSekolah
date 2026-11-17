@@ -293,6 +293,7 @@ class StudentFollowUpController extends Controller
             'college_interest_notes' => ['nullable', 'string', 'max:500'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'next_followup_date' => ['nullable', 'date'],
+            'registration_proof' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
         ]);
 
         $statusToSave = ($validated['status'] === 'closing')
@@ -343,6 +344,16 @@ class StudentFollowUpController extends Controller
                 'interest_program' => $validated['college_interest_notes'] ?? null,
                 'scholarship_type' => $validated['scholarship_interest_notes'] ?? null,
             ]);
+
+            // Jika petugas mengunggah berkas bukti pendaftaran akun, otomatis unggah ke Google Drive kampus terkait
+            if ($prospect && $request->hasFile('registration_proof')) {
+                try {
+                    $driveService = app(\App\Services\GoogleDriveService::class);
+                    $driveService->uploadRegistrationProof($request->file('registration_proof'), $prospect);
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning("Upload registration proof failed: " . $e->getMessage());
+                }
+            }
         }
 
         $redirectUrl = route('prospects.index', [
@@ -1036,6 +1047,10 @@ class StudentFollowUpController extends Controller
                 'student_phone' => $studentQuestionnaire->student_phone,
                 'student_email' => $studentQuestionnaire->student_email,
                 'student_social_media' => $studentQuestionnaire->student_social_media,
+                'instagram_handle' => $studentQuestionnaire->instagram_handle ?: $studentQuestionnaire->clean_instagram_handle,
+                'instagram_followers' => (int) $studentQuestionnaire->instagram_followers,
+                'tiktok_handle' => $studentQuestionnaire->tiktok_handle,
+                'tiktok_followers' => (int) $studentQuestionnaire->tiktok_followers,
                 'guardian_name' => $studentQuestionnaire->guardian_name,
                 'guardian_phone' => $studentQuestionnaire->guardian_phone,
                 'guardian_social_media' => $studentQuestionnaire->guardian_social_media,
@@ -1074,6 +1089,10 @@ class StudentFollowUpController extends Controller
             'student_phone' => ['required', 'string', 'max:30'],
             'student_email' => ['nullable', 'email', 'max:150'],
             'student_social_media' => ['nullable', 'string', 'max:255'],
+            'instagram_handle' => ['nullable', 'string', 'max:150'],
+            'instagram_followers' => ['nullable', 'integer', 'min:0'],
+            'tiktok_handle' => ['nullable', 'string', 'max:150'],
+            'tiktok_followers' => ['nullable', 'integer', 'min:0'],
             'guardian_name' => ['nullable', 'string', 'max:150'],
             'guardian_phone' => ['nullable', 'string', 'max:30'],
             'guardian_social_media' => ['nullable', 'string', 'max:255'],
@@ -1105,6 +1124,10 @@ class StudentFollowUpController extends Controller
             'student_phone' => $validated['student_phone'],
             'student_email' => $validated['student_email'] ?? null,
             'student_social_media' => $validated['student_social_media'] ?? null,
+            'instagram_handle' => $validated['instagram_handle'] ?? $studentQuestionnaire->instagram_handle,
+            'instagram_followers' => array_key_exists('instagram_followers', $validated) ? (int)$validated['instagram_followers'] : $studentQuestionnaire->instagram_followers,
+            'tiktok_handle' => $validated['tiktok_handle'] ?? $studentQuestionnaire->tiktok_handle,
+            'tiktok_followers' => array_key_exists('tiktok_followers', $validated) ? (int)$validated['tiktok_followers'] : $studentQuestionnaire->tiktok_followers,
             'guardian_name' => $validated['guardian_name'] ?? null,
             'guardian_phone' => $validated['guardian_phone'] ?? null,
             'guardian_social_media' => $validated['guardian_social_media'] ?? null,
@@ -1239,6 +1262,7 @@ class StudentFollowUpController extends Controller
             'college_interest_notes' => ['nullable', 'string', 'max:500'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'next_followup_date' => ['nullable', 'date'],
+            'registration_proof' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
         ]);
 
         $statusToSave = ($validated['status'] === 'closing')

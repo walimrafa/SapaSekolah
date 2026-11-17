@@ -20,8 +20,13 @@ class StudentQuestionnaire extends Model
     public const KOL_STATUS_KANDIDAT = 'kandidat';
     public const KOL_STATUS_DIHUBUNGI = 'dihubungi';
     public const KOL_STATUS_BERSEDIA = 'bersedia';
-    public const KOL_STATUS_DITOLAK = 'ditolak';
+    public const KOL_STATUS_BRAND_AMBASSADOR = 'brand_ambassador';
     public const KOL_STATUS_AKTIF = 'aktif';
+    public const KOL_STATUS_DITOLAK = 'ditolak';
+
+    public const KOL_VERIFY_UNVERIFIED = 'unverified';
+    public const KOL_VERIFY_VERIFIED = 'verified';
+    public const KOL_VERIFY_REJECTED = 'rejected';
 
     public const KOL_MIN_FOLLOWERS = 1500;
 
@@ -48,6 +53,11 @@ class StudentQuestionnaire extends Model
         'student_social_media',
         'instagram_handle',
         'instagram_followers',
+        'instagram_followers_verified',
+        'kol_verification_status',
+        'kol_verification_notes',
+        'estimated_rate_card',
+        'work_links',
         'tiktok_handle',
         'tiktok_followers',
         'is_kol',
@@ -72,9 +82,12 @@ class StudentQuestionnaire extends Model
 
     protected $casts = [
         'answers' => 'array',
+        'estimated_rate_card' => 'array',
+        'work_links' => 'array',
         'last_followup_at' => 'datetime',
         'assigned_at' => 'datetime',
         'instagram_followers' => 'integer',
+        'instagram_followers_verified' => 'integer',
         'tiktok_followers' => 'integer',
         'is_kol' => 'boolean',
     ];
@@ -168,8 +181,65 @@ class StudentQuestionnaire extends Model
             self::KOL_STATUS_KANDIDAT => 'Kandidat',
             self::KOL_STATUS_DIHUBUNGI => 'Sudah Dihubungi',
             self::KOL_STATUS_BERSEDIA => 'Bersedia / Deal',
-            self::KOL_STATUS_DITOLAK => 'Tidak Bersedia / Menolak',
+            self::KOL_STATUS_BRAND_AMBASSADOR => 'Brand Ambassador (Fix)',
             self::KOL_STATUS_AKTIF => 'Aktif KOL UBSI',
+            self::KOL_STATUS_DITOLAK => 'Tidak Bersedia / Menolak',
+        ];
+    }
+
+    /**
+     * Hitung estimasi Rate Card Pasaran otomatis berdasarkan jumlah followers.
+     */
+    public function getEstimatedRateCardAttribute(): array
+    {
+        if (!empty($this->attributes['estimated_rate_card'])) {
+            $decoded = json_decode($this->attributes['estimated_rate_card'], true);
+            if (is_array($decoded)) {
+                return $decoded;
+            }
+        }
+
+        $followers = (int) ($this->instagram_followers_verified ?: $this->instagram_followers ?: $this->tiktok_followers ?: 0);
+
+        if ($followers < 5000) {
+            $tier = 'Nano Influencer';
+            $feedRange = 'Rp 50.000 - Rp 150.000';
+            $storyRange = 'Rp 35.000 - Rp 75.000';
+            $reelsRange = 'Rp 100.000 - Rp 250.000';
+            $baPackage = 'Rp 500.000 - Rp 1.500.000 / Semester';
+            $er = '5.2% - 8.5%';
+        } elseif ($followers < 20000) {
+            $tier = 'Micro Influencer';
+            $feedRange = 'Rp 150.000 - Rp 500.000';
+            $storyRange = 'Rp 75.000 - Rp 200.000';
+            $reelsRange = 'Rp 300.000 - Rp 750.000';
+            $baPackage = 'Rp 1.500.000 - Rp 3.500.000 / Semester';
+            $er = '3.8% - 6.0%';
+        } elseif ($followers < 100000) {
+            $tier = 'Mid-Tier Influencer';
+            $feedRange = 'Rp 500.000 - Rp 2.000.000';
+            $storyRange = 'Rp 250.000 - Rp 800.000';
+            $reelsRange = 'Rp 1.000.000 - Rp 3.500.000';
+            $baPackage = 'Rp 3.500.000 - Rp 10.000.000 / Semester';
+            $er = '2.5% - 4.5%';
+        } else {
+            $tier = 'Macro Influencer';
+            $feedRange = 'Rp 2.500.000 - Rp 8.000.000';
+            $storyRange = 'Rp 1.000.000 - Rp 3.000.000';
+            $reelsRange = 'Rp 4.000.000 - Rp 15.000.000';
+            $baPackage = 'Rp 10.000.000+ / Semester';
+            $er = '1.8% - 3.2%';
+        }
+
+        return [
+            'tier' => $tier,
+            'followers_used' => $followers,
+            'feed_post' => $feedRange,
+            'story_post' => $storyRange,
+            'reels_tiktok' => $reelsRange,
+            'brand_ambassador_package' => $baPackage,
+            'engagement_benchmark' => $er,
+            'generated_at' => now()->toIso8601String(),
         ];
     }
 

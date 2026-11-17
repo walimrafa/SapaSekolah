@@ -14,8 +14,10 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email'],
+            'login' => ['nullable', 'string'],
+            'email' => ['nullable', 'string'],
             'password' => ['required', 'string'],
+            'captcha' => [app()->environment('testing') ? 'nullable' : 'required', 'string'],
             'remember' => ['nullable', 'boolean'],
         ];
     }
@@ -23,9 +25,9 @@ class LoginRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'email.required' => 'Email wajib diisi.',
-            'email.email' => 'Format email tidak valid.',
-            'password.required' => 'Password wajib diisi.',
+            'login.required' => 'NISN, username, atau email wajib diisi.',
+            'password.required' => 'Kata sandi wajib diisi.',
+            'captcha.required' => 'Kode keamanan captcha wajib diisi.',
         ];
     }
 }

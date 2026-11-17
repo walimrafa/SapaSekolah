@@ -9,7 +9,8 @@
     // Check active states for auto-expanding current menu
     $isSchoolActive = request()->routeIs('map.*', 'schools.*', 'priorities.*');
     $isFieldActive = request()->routeIs('visit-plans.*', 'visits.*', 'follow-ups.*', 'socializations.completed.*', 'marketing-routes.*', 'activities.*');
-    $isCrmActive = request()->routeIs('prospects.*', 'new-students.*', 'student-questionnaires.*', 'student-follow-ups.*', 'study-programs.*', 'kol-recommendations.*');
+    $isCrmActive = request()->routeIs('prospects.*', 'new-students.*', 'student-questionnaires.*', 'student-follow-ups.*', 'study-programs.*');
+    $isKolActive = request()->routeIs('kol-recommendations.*');
     $isEventActive = request()->routeIs('event-proposals.*', 'school-events.*', 'event-students.*');
     $isReportActive = request()->routeIs('reports.*', 'comprehensive-reports.*', 'event-reports.*');
     $isPmbActive = request()->routeIs('pmb.*', 'e-brochures.*');
@@ -18,7 +19,11 @@
         || auth()->user()->isKoordinator() 
         || auth()->user()->isCustomerService();
     $hasPendingPeriodNotice = \App\Services\PeriodClosingService::pendingForUser(auth()->user());
-    $isMasterActive = request()->routeIs('master-data.*', 'users.*', 'settings.*', 'whatsapp-notifications.*', 'period-closing.*', 'activity-logs.*', 'master-questionnaires.*') || (!auth()->user()->isCustomerService() && request()->routeIs('qr-codes.*'));
+    
+    // Master & Sistem Categorized Active States
+    $isMasterDataActive = request()->routeIs('master-data.*') && in_array(request('tab', 'campuses'), ['campuses', 'periods', 'wilayah']);
+    $isPortalActive = (request()->routeIs('master-data.*') && request('tab') === 'portals') || request()->routeIs('master-questionnaires.*', 'qr-codes.*');
+    $isSystemActive = request()->routeIs('users.*', 'settings.*', 'whatsapp-notifications.*', 'database-backups.*', 'activity-logs.*', 'period-closing.*');
 
     // Realtime scoped counts for Prospects and New Students (isolated per active campus and period)
     $sidebarCampus = \App\Services\AppContextService::getActiveCampus();
@@ -276,31 +281,6 @@
                     <span>{{ $lbl('submenu_student_followups', 'Follow Up') }}</span>
                 </a>
 
-                {{-- Rekomendasi KOL (Hanya Administrator, Pimpinan, dan Koordinator) --}}
-                @if(auth()->user()->canAccessKolMenu())
-                <a href="{{ route('kol-recommendations.index') }}"
-                    class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('kol-recommendations.*') ? 'bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-sm shadow-pink-600/30 font-bold' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                    <div class="flex items-center space-x-2.5">
-                        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-pink-400"></i>
-                        <span>{{ $lbl('submenu_kol_recommendations', 'Rekomendasi KOL') }}</span>
-                    </div>
-                    @php
-                        $kolCandidateQuery = \App\Models\StudentQuestionnaire::kolCandidates();
-                        if ($sidebarCampus) {
-                            $kolCandidateQuery->where(function($q) use ($sidebarCampus) {
-                                $q->where('campus_id', $sidebarCampus->id)
-                                  ->orWhereHas('school', fn($sq) => $sq->where('campus_id', $sidebarCampus->id))
-                                  ->orWhereHas('eventProposal', fn($ep) => $ep->where('campus_id', $sidebarCampus->id));
-                            });
-                        }
-                        $kolCandidateCount = $kolCandidateQuery->count();
-                    @endphp
-                    @if($kolCandidateCount > 0)
-                        <span class="px-1.5 py-0.2 text-[9px] font-bold bg-pink-500/20 text-pink-300 border border-pink-500/30 rounded">{{ $kolCandidateCount }}</span>
-                    @endif
-                </a>
-                @endif
-
                 <a href="{{ route('study-programs.index') }}"
                     class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('study-programs.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <i data-lucide="graduation-cap" class="w-3.5 h-3.5"></i>
@@ -308,6 +288,36 @@
                 </a>
             </div>
         </div>
+
+        {{-- 4b. Rekomendasi KOL Siswa (Standalone Sidebar Menu Tersendiri) --}}
+        @if(auth()->user()->canAccessKolMenu())
+        @php
+            $kolCandidateQuery = \App\Models\StudentQuestionnaire::kolCandidates();
+            if ($sidebarCampus) {
+                $kolCandidateQuery->where(function($q) use ($sidebarCampus) {
+                    $q->where('campus_id', $sidebarCampus->id)
+                      ->orWhereHas('school', fn($sq) => $sq->where('campus_id', $sidebarCampus->id))
+                      ->orWhereHas('eventProposal', fn($ep) => $ep->where('campus_id', $sidebarCampus->id));
+                });
+            }
+            $kolCandidateCount = $kolCandidateQuery->count();
+        @endphp
+        <div>
+            <a href="{{ route('kol-recommendations.index') }}"
+                class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition duration-150 {{ $isKolActive ? 'text-white bg-gradient-to-r from-pink-600 to-rose-600 font-bold shadow-md shadow-pink-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
+                <div class="flex items-center space-x-3">
+                    <i data-lucide="sparkles" class="w-4 h-4 {{ $isKolActive ? 'text-white' : 'text-pink-400' }}"></i>
+                    <span>{{ $lbl('menu_kol_recommendations', 'Rekomendasi KOL') }}</span>
+                </div>
+                <div class="flex items-center space-x-1.5">
+                    @if($kolCandidateCount > 0)
+                        <span class="px-1.5 py-0.2 text-[9px] font-bold bg-pink-500/20 text-pink-300 border border-pink-500/30 rounded">{{ $kolCandidateCount }}</span>
+                    @endif
+                    <span class="px-1.5 py-0.2 text-[9px] font-extrabold bg-gradient-to-r from-amber-400 to-orange-400 text-slate-950 rounded">KOL</span>
+                </div>
+            </a>
+        </div>
+        @endif
 
         <!-- Support Event Sekolah (Proposal & Laporan Kegiatan Terintegrasi) -->
         <div x-data="{ expanded: {{ $isEventActive ? 'true' : 'false' }} }" class="space-y-1">
@@ -550,19 +560,17 @@
             </div>
         </div>
 
-        @if(auth()->user()->isAdmin() || auth()->user()->hasRole('Pimpinan') || auth()->user()->hasRole('Koordinator Marketing') || $canAccessPeriodClosing)
-        <!-- 5. Sistem & Master (Admin & Pimpinan & Koordinator & Otorisator Tutup Periode) -->
-        <div x-data="{ expanded: {{ $isMasterActive ? 'true' : 'false' }} }" class="space-y-1">
+        {{-- 8a. Master Data Akademik (Kampus, Periode, Wilayah) --}}
+        @if(auth()->user()->isAdmin() || auth()->user()->hasRole('Pimpinan') || auth()->user()->hasRole('Koordinator Marketing'))
+        <div x-data="{ expanded: {{ $isMasterDataActive ? 'true' : 'false' }} }" class="space-y-1">
             <button @click="expanded = !expanded" type="button"
-                class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition duration-150 {{ $isMasterActive ? 'text-white bg-slate-800/80 font-bold border-l-2 border-brand-500' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
+                class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition duration-150 {{ $isMasterDataActive ? 'text-white bg-slate-800/80 font-bold border-l-2 border-brand-500' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
                 <div class="flex items-center space-x-3">
-                    <i data-lucide="settings-2" class="w-4 h-4 {{ $isMasterActive ? 'text-brand-400' : 'text-slate-400' }}"></i>
-                    <span>{{ $lbl('menu_master', 'Master & Sistem') }}</span>
+                    <i data-lucide="database" class="w-4 h-4 {{ $isMasterDataActive ? 'text-emerald-400' : 'text-slate-400' }}"></i>
+                    <span>{{ $lbl('menu_master_data', 'Master Data') }}</span>
                 </div>
                 <div class="flex items-center space-x-1.5">
-                    @if($hasPendingPeriodNotice)
-                        <span class="px-1.5 py-0.2 text-[9px] font-extrabold bg-amber-400 text-slate-900 rounded-full animate-bounce">1 Aksi</span>
-                    @endif
+                    <span class="px-1.5 py-0.2 text-[9px] font-bold bg-emerald-500/20 text-emerald-300 rounded">Akademik</span>
                     <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform duration-200" :class="expanded ? 'rotate-180 text-amber-400' : ''"></i>
                 </div>
             </button>
@@ -576,7 +584,6 @@
                 x-transition:leave-end="opacity-0 -translate-y-1"
                 class="pl-4 ml-4 border-l border-slate-800 space-y-1 pt-1" style="display: none;">
                 
-                @if(auth()->user()->isAdmin() || auth()->user()->hasRole('Pimpinan') || auth()->user()->hasRole('Koordinator Marketing'))
                 <!-- Master Kampus -->
                 <a href="{{ route('master-data.index', ['tab' => 'campuses']) }}"
                     class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ (request()->routeIs('master-data.*') && request('tab', 'campuses') === 'campuses') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30 font-bold' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
@@ -597,7 +604,34 @@
                     <i data-lucide="map-pin" class="w-3.5 h-3.5 text-amber-400"></i>
                     <span>{{ $lbl('submenu_master_data', 'Master Wilayah') }}</span>
                 </a>
+            </div>
+        </div>
+        @endif
 
+        {{-- 8b. Portal & Kuisioner --}}
+        @if(auth()->user()->isAdmin() || auth()->user()->hasRole('Pimpinan') || auth()->user()->hasRole('Koordinator Marketing'))
+        <div x-data="{ expanded: {{ $isPortalActive ? 'true' : 'false' }} }" class="space-y-1">
+            <button @click="expanded = !expanded" type="button"
+                class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition duration-150 {{ $isPortalActive ? 'text-white bg-slate-800/80 font-bold border-l-2 border-brand-500' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
+                <div class="flex items-center space-x-3">
+                    <i data-lucide="clipboard-check" class="w-4 h-4 {{ $isPortalActive ? 'text-indigo-400' : 'text-slate-400' }}"></i>
+                    <span>{{ $lbl('menu_portals_questionnaires', 'Portal & Kuisioner') }}</span>
+                </div>
+                <div class="flex items-center space-x-1.5">
+                    <span class="px-1.5 py-0.2 text-[9px] font-bold bg-indigo-500/20 text-indigo-300 rounded">Publik</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform duration-200" :class="expanded ? 'rotate-180 text-amber-400' : ''"></i>
+                </div>
+            </button>
+
+            <div x-show="expanded" 
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 -translate-y-1"
+                x-transition:enter-end="opacity-100 translate-y-0"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100 translate-y-0"
+                x-transition:leave-end="opacity-0 -translate-y-1"
+                class="pl-4 ml-4 border-l border-slate-800 space-y-1 pt-1" style="display: none;">
+                
                 <!-- Kontrol Portal Publik -->
                 <a href="{{ route('master-data.index', ['tab' => 'portals']) }}"
                     class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ (request()->routeIs('master-data.*') && request('tab') === 'portals') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30 font-bold' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
@@ -611,21 +645,50 @@
                     <i data-lucide="clipboard-edit" class="w-3.5 h-3.5 text-indigo-400"></i>
                     <span>{{ $lbl('submenu_master_questionnaires', 'Master Kuisioner') }}</span>
                 </a>
-                @endif
 
-                @if(auth()->user()->isAdmin() || auth()->user()->hasRole('Pimpinan'))
-                <a href="{{ route('users.index') }}"
-                    class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('users.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                    <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
-                    <span>{{ $lbl('submenu_users', 'User') }}</span>
-                </a>
-                @endif
-
-                @if(!auth()->user()->isCustomerService() && (auth()->user()->isAdmin() || auth()->user()->hasRole('Pimpinan')))
+                <!-- QR Code Generator -->
+                @if(!auth()->user()->isCustomerService())
                 <a href="{{ route('qr-codes.index') }}"
                     class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('qr-codes.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <i data-lucide="qr-code" class="w-3.5 h-3.5 text-amber-400"></i>
                     <span>{{ $lbl('submenu_qr_codes', 'QR Code') }}</span>
+                </a>
+                @endif
+            </div>
+        </div>
+        @endif
+
+        {{-- 8c. Sistem, Keamanan & Integrasi --}}
+        @if(auth()->user()->isAdmin() || auth()->user()->hasRole('Pimpinan') || auth()->user()->hasRole('Koordinator Marketing') || $canAccessPeriodClosing)
+        <div x-data="{ expanded: {{ $isSystemActive ? 'true' : 'false' }} }" class="space-y-1">
+            <button @click="expanded = !expanded" type="button"
+                class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition duration-150 {{ $isSystemActive ? 'text-white bg-slate-800/80 font-bold border-l-2 border-brand-500' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
+                <div class="flex items-center space-x-3">
+                    <i data-lucide="settings-2" class="w-4 h-4 {{ $isSystemActive ? 'text-sky-400' : 'text-slate-400' }}"></i>
+                    <span>{{ $lbl('menu_system_ops', 'Sistem & Manajemen') }}</span>
+                </div>
+                <div class="flex items-center space-x-1.5">
+                    @if($hasPendingPeriodNotice)
+                        <span class="px-1.5 py-0.2 text-[9px] font-extrabold bg-amber-400 text-slate-900 rounded-full animate-bounce">1 Aksi</span>
+                    @endif
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform duration-200" :class="expanded ? 'rotate-180 text-amber-400' : ''"></i>
+                </div>
+            </button>
+
+            <div x-show="expanded" 
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 -translate-y-1"
+                x-transition:enter-end="opacity-100 translate-y-0"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100 translate-y-0"
+                x-transition:leave-end="opacity-0 -translate-y-1"
+                class="pl-4 ml-4 border-l border-slate-800 space-y-1 pt-1" style="display: none;">
+                
+                @if(auth()->user()->isAdmin() || auth()->user()->hasRole('Pimpinan'))
+                <a href="{{ route('users.index') }}"
+                    class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('users.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <i data-lucide="user-check" class="w-3.5 h-3.5 text-slate-300"></i>
+                    <span>{{ $lbl('submenu_users', 'User & Akun') }}</span>
                 </a>
                 @endif
 
@@ -634,7 +697,7 @@
                     class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('whatsapp-notifications.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <div class="flex items-center space-x-2.5">
                         <i data-lucide="message-square" class="w-3.5 h-3.5 text-emerald-400"></i>
-                        <span>{{ $lbl('submenu_whatsapp', 'WhatsApp') }}</span>
+                        <span>{{ $lbl('submenu_whatsapp', 'WhatsApp Gateway') }}</span>
                     </div>
                     @php
                         $todayWaCount = \App\Models\WhatsAppNotificationLog::whereDate('created_at', now()->toDateString())->count();
@@ -643,23 +706,15 @@
                         <span class="px-1.5 py-0.2 text-[9px] font-bold bg-emerald-500/20 text-emerald-300 rounded">{{ $todayWaCount }}</span>
                     @endif
                 </a>
-                @endif
 
-                @if(auth()->user()->isAdmin())
                 <a href="{{ route('settings.index') }}"
                     class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('settings.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                    <i data-lucide="sliders" class="w-3.5 h-3.5"></i>
-                    <span>{{ $lbl('submenu_settings', 'Pengaturan') }}</span>
+                    <i data-lucide="sliders" class="w-3.5 h-3.5 text-amber-400"></i>
+                    <span>{{ $lbl('submenu_settings', 'Pengaturan Branding') }}</span>
                 </a>
                 @endif
 
                 @if(auth()->user()->isAdmin() || auth()->user()->hasRole('Pimpinan') || auth()->user()->hasRole('Koordinator Marketing'))
-                <a href="{{ route('activity-logs.index') }}"
-                    class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('activity-logs.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                    <i data-lucide="activity" class="w-3.5 h-3.5 text-cyan-400"></i>
-                    <span>{{ $lbl('submenu_activity_logs', 'Log Aktivitas') }}</span>
-                </a>
-
                 <a href="{{ route('database-backups.index') }}"
                     class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('database-backups.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <div class="flex items-center space-x-2.5">
@@ -667,6 +722,12 @@
                         <span>Backup Database</span>
                     </div>
                     <span class="px-1.5 py-0.2 text-[9px] font-bold bg-blue-500/20 text-blue-300 rounded border border-blue-500/30">GDrive</span>
+                </a>
+
+                <a href="{{ route('activity-logs.index') }}"
+                    class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('activity-logs.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <i data-lucide="activity" class="w-3.5 h-3.5 text-cyan-400"></i>
+                    <span>{{ $lbl('submenu_activity_logs', 'Log Aktivitas') }}</span>
                 </a>
                 @endif
 

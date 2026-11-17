@@ -48,6 +48,11 @@ class Prospect extends Model
         'status',
         'marketing_user_id',
         'notes',
+        'registration_proof_path',
+        'registration_proof_drive_url',
+        'registration_proof_drive_id',
+        'registration_proof_uploaded_at',
+        'registration_proof_uploaded_by',
         'validated_at',
         'validated_by',
     ];
@@ -55,13 +60,20 @@ class Prospect extends Model
     protected $casts = [
         'graduation_year' => 'integer',
         'validated_at' => 'datetime',
+        'registration_proof_uploaded_at' => 'datetime',
     ];
 
     protected $appends = [
         'status_label',
         'study_time_label',
         'scholarship_badge',
+        'has_registration_proof',
     ];
+
+    public function getHasRegistrationProofAttribute(): bool
+    {
+        return !empty($this->registration_proof_drive_url) || !empty($this->registration_proof_path);
+    }
 
     /**
      * Prospect belongsTo School.

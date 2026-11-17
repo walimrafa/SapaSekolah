@@ -694,7 +694,7 @@
             </div>
 
             <!-- Modal Body Form -->
-            <form id="followUpForm" method="POST" action="" onsubmit="handleFollowUpSubmit(event)" class="p-6 space-y-4">
+            <form id="followUpForm" method="POST" action="" enctype="multipart/form-data" onsubmit="handleFollowUpSubmit(event)" class="p-6 space-y-4">
                 @csrf
                 <input type="hidden" name="_method" id="formFollowUpMethod" value="">
                 <input type="hidden" id="formStudentId" value="">
@@ -708,28 +708,44 @@
                     <div class="grid grid-cols-2 gap-2 text-xs">
                         <!-- No Respon -->
                         <label class="flex items-center gap-2 p-2.5 rounded-xl border border-rose-200 hover:bg-rose-50/50 cursor-pointer font-bold text-rose-700">
-                            <input type="radio" name="status" value="no_respon" required class="text-rose-600 focus:ring-rose-500">
+                            <input type="radio" name="status" value="no_respon" required onchange="toggleProofUpload(this.value)" class="text-rose-600 focus:ring-rose-500">
                             <span>No Respon</span>
                         </label>
 
                         <!-- Respon -->
                         <label class="flex items-center gap-2 p-2.5 rounded-xl border border-blue-200 hover:bg-blue-50/50 cursor-pointer font-bold text-blue-700">
-                            <input type="radio" name="status" value="respon" required class="text-blue-600 focus:ring-blue-500">
+                            <input type="radio" name="status" value="respon" required onchange="toggleProofUpload(this.value)" class="text-blue-600 focus:ring-blue-500">
                             <span>Respon</span>
                         </label>
 
                         <!-- Berminat -->
                         <label class="flex items-center gap-2 p-2.5 rounded-xl border border-amber-300 hover:bg-amber-50/50 cursor-pointer font-bold text-amber-800">
-                            <input type="radio" name="status" value="berminat" required class="text-amber-600 focus:ring-amber-500">
+                            <input type="radio" name="status" value="berminat" required onchange="toggleProofUpload(this.value)" class="text-amber-600 focus:ring-amber-500">
                             <span>Berminat</span>
                         </label>
 
                         <!-- Daftar Aplikasi -->
                         <label class="flex items-center gap-2 p-2.5 rounded-xl border border-emerald-300 hover:bg-emerald-50/50 cursor-pointer font-bold text-emerald-800 bg-emerald-50/20">
-                            <input type="radio" name="status" value="daftar_aplikasi" required class="text-emerald-600 focus:ring-emerald-500">
+                            <input type="radio" name="status" value="daftar_aplikasi" required onchange="toggleProofUpload(this.value)" class="text-emerald-600 focus:ring-emerald-500">
                             <span>Daftar Aplikasi</span>
                         </label>
                     </div>
+                </div>
+
+                <!-- Wajib Upload Bukti Daftar Akun Siswa (Otomatis Sync ke Google Drive) -->
+                <div id="wrapperProofUpload" class="hidden p-3.5 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-300 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-extrabold text-emerald-950 flex items-center gap-1.5">
+                            <i data-lucide="cloud-upload" class="w-4 h-4 text-emerald-600"></i>
+                            <span>Bukti Siswa Sudah Daftar Akun <span class="text-rose-600">*</span></span>
+                        </span>
+                        <span class="text-[9px] font-black uppercase tracking-wider bg-emerald-600 text-white px-2 py-0.5 rounded-full shadow-xs">Auto Google Drive</span>
+                    </div>
+                    <p class="text-[11px] text-emerald-800 leading-snug">
+                        Petugas follow up wajib melampirkan screenshot bukti akun pendaftaran siswa. Berkas akan otomatis disimpan dan diunggah ke Google Drive resmi kampus terkait.
+                    </p>
+                    <input type="file" name="registration_proof" id="inputRegistrationProof" accept="image/*,.pdf"
+                        class="w-full text-xs text-slate-700 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-600 file:text-white cursor-pointer border border-emerald-200 bg-white rounded-xl">
                 </div>
 
                 <!-- Metode & Tanggal Kontak -->
@@ -956,10 +972,37 @@
                     </div>
                 </div>
 
-                <!-- Medsos Siswa -->
-                <div>
-                    <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Media Sosial Siswa (Instagram/TikTok)</label>
-                    <input type="text" name="student_social_media" id="editStudentSocial" placeholder="@username" class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs">
+                <!-- Media Sosial & Follower Siswa (Instagram & TikTok) -->
+                <div class="p-3.5 rounded-2xl bg-gradient-to-br from-pink-50/60 to-purple-50/60 border border-pink-200/80 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-extrabold text-pink-900 uppercase tracking-wider flex items-center gap-1.5">
+                            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-pink-600"></i>
+                            <span>Media Sosial &amp; Followers (Kandidat KOL)</span>
+                        </span>
+                        <span class="text-[10px] text-pink-700 font-bold">&ge; {{ number_format(\App\Models\StudentQuestionnaire::getKolMinFollowers()) }} Auto KOL</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Akun Instagram (Username)</label>
+                            <input type="text" name="instagram_handle" id="editInstagramHandle" placeholder="@username_ig" class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs bg-white font-medium">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Jumlah Followers Instagram</label>
+                            <input type="number" name="instagram_followers" id="editInstagramFollowers" min="0" placeholder="0" class="w-full py-2 px-3 rounded-xl border border-pink-300 text-xs bg-white font-bold text-slate-900 focus:border-pink-500 focus:ring-pink-500/20">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Akun TikTok (Username)</label>
+                            <input type="text" name="tiktok_handle" id="editTiktokHandle" placeholder="@username_tiktok" class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs bg-white font-medium">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Jumlah Followers TikTok</label>
+                            <input type="number" name="tiktok_followers" id="editTiktokFollowers" min="0" placeholder="0" class="w-full py-2 px-3 rounded-xl border border-purple-300 text-xs bg-white font-bold text-slate-900 focus:border-purple-500 focus:ring-purple-500/20">
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Data Orang Tua / Wali -->
@@ -1595,11 +1638,25 @@
             }
         }
 
+        function toggleProofUpload(status) {
+            const wrapper = document.getElementById('wrapperProofUpload');
+            const fileInput = document.getElementById('inputRegistrationProof');
+            if (!wrapper) return;
+            if (status === 'daftar_aplikasi' || status === 'closing') {
+                wrapper.classList.remove('hidden');
+                if (window.lucide) { window.lucide.createIcons(); }
+            } else {
+                wrapper.classList.add('hidden');
+                if (fileInput) { fileInput.value = ''; }
+            }
+        }
+
         // Modal Follow Up Logic
         function openFollowUpModal(studentId, name, phone, currentStatus, scholarshipNotes, collegeNotes) {
             document.getElementById('formStudentId').value = studentId;
             document.getElementById('modalStudentTitle').textContent = name + ' (' + (phone || '-') + ')';
             document.getElementById('modalFollowUpHeading').textContent = 'Tindak Lanjut Siswa (Follow Up)';
+            toggleProofUpload(currentStatus);
             document.getElementById('btnSubmitFollowUpText').textContent = 'Simpan Hasil Follow Up';
             document.getElementById('formFollowUpMethod').value = '';
             document.getElementById('formFollowUpId').value = '';
@@ -1705,6 +1762,14 @@
             const submitBtn = document.getElementById('btnSubmitFollowUp');
             const studentId = document.getElementById('formStudentId').value;
             const originalText = submitBtn.innerHTML;
+
+            const selectedStatus = form.querySelector('input[name="status"]:checked')?.value;
+            const proofInput = document.getElementById('inputRegistrationProof');
+            if ((selectedStatus === 'daftar_aplikasi' || selectedStatus === 'closing') && (!proofInput || !proofInput.files || proofInput.files.length === 0)) {
+                alert('PENTING: Petugas follow-up wajib melampirkan berkas bukti pendaftaran akun siswa (screenshot / berkas bukti daftar) sebelum mengubah status menjadi "Daftar Aplikasi" untuk sinkronisasi ke Google Drive.');
+                proofInput?.focus();
+                return;
+            }
 
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<span class="animate-spin inline-block mr-1">⌛</span> Menyimpan...';
@@ -2089,7 +2154,18 @@
                     document.getElementById('editStudentEmail').value = s.student_email || '';
                     document.getElementById('editStudentClass').value = s.student_class || '';
                     document.getElementById('editStudentMajor').value = s.student_major || '';
-                    document.getElementById('editStudentSocial').value = s.student_social_media || '';
+                    if (document.getElementById('editInstagramHandle')) {
+                        document.getElementById('editInstagramHandle').value = s.instagram_handle || s.student_social_media || '';
+                    }
+                    if (document.getElementById('editInstagramFollowers')) {
+                        document.getElementById('editInstagramFollowers').value = s.instagram_followers || 0;
+                    }
+                    if (document.getElementById('editTiktokHandle')) {
+                        document.getElementById('editTiktokHandle').value = s.tiktok_handle || '';
+                    }
+                    if (document.getElementById('editTiktokFollowers')) {
+                        document.getElementById('editTiktokFollowers').value = s.tiktok_followers || 0;
+                    }
                     document.getElementById('editGuardianName').value = s.guardian_name || '';
                     document.getElementById('editGuardianPhone').value = s.guardian_phone || '';
                     document.getElementById('editGuardianSocial').value = s.guardian_social_media || '';
