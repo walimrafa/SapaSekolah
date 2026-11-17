@@ -113,6 +113,35 @@ class SettingsController extends Controller
     }
 
     /**
+     * Simpan kustomisasi nama menu & sub-menu navigasi sidebar secara cepat (AJAX / Standalone Form).
+     */
+    public function updateSidebarLabels(Request $request)
+    {
+        $validated = $request->validate([
+            'sidebar_labels' => ['required', 'array'],
+            'sidebar_labels.*' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        AppSettingService::setMany([
+            'sidebar_labels' => $validated['sidebar_labels'],
+        ]);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Nama menu & sub-menu navigasi sidebar berhasil disimpan dan langsung diterapkan!',
+                'sidebar_labels' => AppSettingService::get('sidebar_labels'),
+            ]);
+        }
+
+        return redirect()->route('settings.index')
+            ->with('toast', [
+                'type' => 'success',
+                'message' => 'Nama menu & sub-menu navigasi sidebar berhasil diperbarui!',
+            ]);
+    }
+
+    /**
      * Ajukan Tutup Periode Pemasaran oleh Admin (Menunggu Persetujuan 3 Pihak: Pimpinan, Koordinator, CS).
      */
     public function closePeriod(Request $request): RedirectResponse

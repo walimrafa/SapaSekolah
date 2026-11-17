@@ -298,7 +298,26 @@ class StudentQuestionnaire extends Model
 
     public function prospect()
     {
-        return $this->hasOne(Prospect::class, 'phone', 'student_phone');
+        return $this->hasOne(Prospect::class, 'student_questionnaire_id');
+    }
+
+    public function getProspectAttribute()
+    {
+        $p = $this->getRelationValue('prospect');
+        if ($p) {
+            return $p;
+        }
+        if (!empty($this->student_phone)) {
+            $matched = Prospect::where('phone', $this->student_phone)->first();
+            if ($matched) {
+                if (!$matched->student_questionnaire_id) {
+                    $matched->updateQuietly(['student_questionnaire_id' => $this->id]);
+                }
+                $this->setRelation('prospect', $matched);
+                return $matched;
+            }
+        }
+        return null;
     }
 
     public function assignedUser()

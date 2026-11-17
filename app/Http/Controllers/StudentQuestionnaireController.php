@@ -754,6 +754,10 @@ class StudentQuestionnaireController extends Controller
             'answers' => $answers,
         ]);
 
+        if (in_array($studentQuestionnaire->followup_status, [StudentQuestionnaire::STATUS_DAFTAR_APLIKASI, 'closing', 'daftar_aplikasi'])) {
+            \App\Services\ProspectSyncService::syncStudentQuestionnaire($studentQuestionnaire->fresh());
+        }
+
         \App\Services\ActivityLogService::log(
             'CREATE',
             'student_questionnaire',

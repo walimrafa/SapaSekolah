@@ -31,6 +31,7 @@ class Prospect extends Model
     }
 
     protected $fillable = [
+        'student_questionnaire_id',
         'nim',
         'student_class',
         'school_id',
@@ -73,6 +74,11 @@ class Prospect extends Model
     public function getHasRegistrationProofAttribute(): bool
     {
         return !empty($this->registration_proof_drive_url) || !empty($this->registration_proof_path);
+    }
+
+    public function studentQuestionnaire(): BelongsTo
+    {
+        return $this->belongsTo(StudentQuestionnaire::class, 'student_questionnaire_id');
     }
 
     /**

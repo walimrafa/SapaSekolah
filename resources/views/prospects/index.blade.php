@@ -173,7 +173,7 @@
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2 mb-6">
             <!-- 1. Sudah Daftar Akun -->
             <a href="{{ route('prospects.index', ['status' => 'daftar_akun']) }}"
-                class="p-3 rounded-2xl bg-white border {{ request('status') === 'daftar_akun' ? 'border-blue-600 ring-2 ring-blue-600 bg-blue-50/20' : 'border-slate-200/80' }} hover:border-blue-400 text-center transition block group shadow-sm">
+                class="p-3 rounded-2xl bg-white border {{ in_array(request('status'), ['daftar_akun', 'daftar', 'daftar_aplikasi']) ? 'border-blue-600 ring-2 ring-blue-600 bg-blue-50/20' : 'border-slate-200/80' }} hover:border-blue-400 text-center transition block group shadow-sm">
                 <span class="text-[10px] font-extrabold text-blue-600 block uppercase tracking-tight">1. DAFTAR AKUN</span>
                 <span class="text-xl font-extrabold text-slate-900 mt-0.5 block group-hover:scale-105 transition">{{ $statusCounts['daftar_akun'] }}</span>
                 <span class="text-[9px] text-slate-400 block mt-0.5">Sudah buat akun</span>
@@ -248,7 +248,7 @@
 
                     <select name="status" onchange="this.form.submit()" class="py-2 px-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white">
                         <option value="pipeline" {{ request('status', 'pipeline') === 'pipeline' ? 'selected' : '' }}>Semua Tahap Pipeline Aktif (1 s/d 5)</option>
-                        <option value="daftar_akun" {{ request('status') === 'daftar_akun' ? 'selected' : '' }}>Tahap 1: Sudah Daftar Akun</option>
+                        <option value="daftar_akun" {{ in_array(request('status'), ['daftar_akun', 'daftar', 'daftar_aplikasi']) ? 'selected' : '' }}>Tahap 1: Sudah Daftar Akun</option>
                         <option value="bayar_registrasi" {{ request('status') === 'bayar_registrasi' ? 'selected' : '' }}>Tahap 2: Sudah Bayar Registrasi</option>
                         <option value="ujian_saringan" {{ request('status') === 'ujian_saringan' ? 'selected' : '' }}>Tahap 3: Sudah Ujian Saringan</option>
                         <option value="bayar_daftar_ulang" {{ request('status') === 'bayar_daftar_ulang' ? 'selected' : '' }}>Tahap 4: Sudah Bayar Daftar Ulang</option>

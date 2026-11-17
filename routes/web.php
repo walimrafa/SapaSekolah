@@ -295,6 +295,7 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware('role:Admin')->group(function () {
         Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
         Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
+        Route::post('/settings/sidebar-labels', [SettingsController::class, 'updateSidebarLabels'])->name('settings.sidebar-labels.update');
         Route::post('/settings/close-period', [SettingsController::class, 'closePeriod'])->name('settings.close-period');
 
         // Pengajuan Tutup Periode oleh Admin

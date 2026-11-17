@@ -40,6 +40,13 @@ class ProspectSyncService
             ?: (AppContextService::getActivePeriod()?->id
                 ?: AcademicPeriod::getCurrent()?->id);
 
+        if (!$student->campus_id && $campusId) {
+            $student->updateQuietly(['campus_id' => $campusId]);
+        }
+        if (!$student->academic_period_id && $periodId) {
+            $student->updateQuietly(['academic_period_id' => $periodId]);
+        }
+
         // 3. Resolve School ID
         $schoolId = $student->school_id
             ?: ($student->school?->id
@@ -109,9 +116,12 @@ class ProspectSyncService
             ? 'Support Event Sekolah (Daftar Aplikasi)'
             : 'Kuisioner Siswa (Daftar Aplikasi)';
 
-        // 8. Find existing Prospect by Phone, Email, or Name + School
+        // 8. Find existing Prospect by student_questionnaire_id, Phone, Email, or Name + School
         $prospect = null;
-        if (!empty($student->student_phone)) {
+        if ($student->id) {
+            $prospect = Prospect::where('student_questionnaire_id', $student->id)->first();
+        }
+        if (!$prospect && !empty($student->student_phone)) {
             $prospect = Prospect::where('phone', $student->student_phone)->first();
         }
         if (!$prospect && !empty($student->student_email)) {
@@ -127,6 +137,7 @@ class ProspectSyncService
             ?: ($student->last_followed_up_by ?: auth()->id());
 
         $prospectData = [
+            'student_questionnaire_id' => $student->id,
             'name' => $student->student_name,
             'gender' => $student->gender ?: ($prospect?->gender ?? null),
             'student_class' => $student->student_class ?: ($prospect?->student_class ?? null),

@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class AppSettingService
 {
@@ -53,19 +55,35 @@ class AppSettingService
             'sidebar_labels' => static::defaultSidebarLabels(),
         ];
 
+        $dbData = [];
+        try {
+            if (Schema::hasTable('app_settings')) {
+                $rows = DB::table('app_settings')->get();
+                foreach ($rows as $row) {
+                    $val = $row->value;
+                    $decoded = json_decode($val, true);
+                    $dbData[$row->key] = (json_last_error() === JSON_ERROR_NONE) ? $decoded : $val;
+                }
+            }
+        } catch (\Throwable $e) {
+            // DB not available yet
+        }
+
+        $fileData = [];
         $filePath = static::getFilePath();
         if (file_exists($filePath)) {
             $json = json_decode(file_get_contents($filePath), true);
             if (is_array($json)) {
-                if (isset($json['sidebar_labels']) && is_array($json['sidebar_labels'])) {
-                    $json['sidebar_labels'] = array_merge(static::defaultSidebarLabels(), $json['sidebar_labels']);
-                }
-                static::$cache = array_merge($defaults, $json);
-                return static::$cache;
+                $fileData = $json;
             }
         }
 
-        static::$cache = $defaults;
+        $merged = array_merge($defaults, $fileData, $dbData);
+        if (isset($merged['sidebar_labels']) && is_array($merged['sidebar_labels'])) {
+            $merged['sidebar_labels'] = array_merge(static::defaultSidebarLabels(), $merged['sidebar_labels']);
+        }
+
+        static::$cache = $merged;
         return static::$cache;
     }
 
@@ -224,12 +242,35 @@ class AppSettingService
 
         $updated = array_merge($current, $settings);
 
-        $dir = dirname(static::getFilePath());
-        if (!file_exists($dir)) {
-            mkdir($dir, 0755, true);
+        // Persist each key-value to MySQL database
+        try {
+            if (Schema::hasTable('app_settings')) {
+                foreach ($settings as $key => $val) {
+                    $encodedVal = is_array($val) ? json_encode($val, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : (string) $val;
+                    DB::table('app_settings')->updateOrInsert(
+                        ['key' => $key],
+                        [
+                            'value' => $encodedVal,
+                            'updated_at' => now(),
+                        ]
+                    );
+                }
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("AppSettingService save to DB warning: " . $e->getMessage());
         }
 
-        file_put_contents(static::getFilePath(), json_encode($updated, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        // Also save to JSON file as local cache fallback
+        try {
+            $dir = dirname(static::getFilePath());
+            if (!file_exists($dir)) {
+                mkdir($dir, 0755, true);
+            }
+            file_put_contents(static::getFilePath(), json_encode($updated, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("AppSettingService save to JSON warning: " . $e->getMessage());
+        }
+
         static::$cache = $updated;
     }
 

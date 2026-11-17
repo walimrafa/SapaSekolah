@@ -545,7 +545,7 @@
 
                                 @if($student->followup_status === 'daftar_aplikasi' || $student->followup_status === 'closing')
                                     <div class="mt-1">
-                                        <a href="{{ route('prospects.index', ['search' => $student->student_name, 'status' => 'daftar']) }}" 
+                                        <a href="{{ route('prospects.index', ['search' => $student->student_name, 'status' => 'daftar_akun', 'campus_id' => $student->campus_id ?: $student->school?->campus_id]) }}" 
                                             class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border border-emerald-300 transition" 
                                             title="Buka data siswa ini di Menu Data Prospek untuk follow up intensif">
                                             <i data-lucide="arrow-up-right" class="w-3 h-3 text-emerald-700"></i>

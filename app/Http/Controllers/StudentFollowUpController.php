@@ -28,6 +28,9 @@ class StudentFollowUpController extends Controller
 {
     public function index(Request $request): View
     {
+        // Pastikan seluruh kuisioner siswa berstatus 'daftar_aplikasi' tersinkron otomatis ke prospek
+        \App\Services\ProspectSyncService::syncAllDaftarAplikasi();
+
         $user = auth()->user();
         $canPlot = $user && $user->canPlotFollowUps();
 
@@ -336,7 +339,7 @@ class StudentFollowUpController extends Controller
 
         // Auto-sync into Data Prospek (prospects table) when status is 'daftar_aplikasi'
         $prospect = null;
-        $isDaftarAplikasi = ($statusToSave === StudentQuestionnaire::STATUS_DAFTAR_APLIKASI);
+        $isDaftarAplikasi = in_array($statusToSave, [StudentQuestionnaire::STATUS_DAFTAR_APLIKASI, 'closing', 'daftar_aplikasi']);
 
         if ($isDaftarAplikasi) {
             $prospect = \App\Services\ProspectSyncService::syncStudentQuestionnaire($studentQuestionnaire->fresh(), [
@@ -358,7 +361,8 @@ class StudentFollowUpController extends Controller
 
         $redirectUrl = route('prospects.index', [
             'search' => $studentQuestionnaire->student_name,
-            'status' => Prospect::STATUS_DAFTAR_AKUN
+            'status' => Prospect::STATUS_DAFTAR_AKUN,
+            'campus_id' => $studentQuestionnaire->campus_id ?: $studentQuestionnaire->school?->campus_id,
         ]);
 
         if ($request->wantsJson() || $request->ajax()) {

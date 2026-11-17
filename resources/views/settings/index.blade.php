@@ -5,6 +5,20 @@
     </div>
 
     <div class="max-w-4xl">
+        @if($errors->any())
+            <div class="p-4 mb-6 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs shadow-sm">
+                <div class="flex items-center gap-2 font-bold mb-1.5">
+                    <i data-lucide="alert-circle" class="w-4 h-4 text-rose-600"></i>
+                    <span>Terdapat beberapa kesalahan pengisian formulir pengaturan:</span>
+                </div>
+                <ul class="list-disc list-inside space-y-1 text-rose-700">
+                    @foreach($errors->all() as $err)
+                        <li>{{ $err }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <form method="POST" action="{{ route('settings.update') }}" enctype="multipart/form-data" class="space-y-6">
             @csrf
 
@@ -235,6 +249,9 @@
             <!-- Form Card 3: Kustomisasi Nama Menu & Sub-Menu Navigasi Sidebar -->
             <div x-data="{ 
                 activeTab: 'gis',
+                isSaving: false,
+                saveSuccess: false,
+                saveMessage: '',
                 resetSidebarLabels() {
                     if (confirm('Kembalikan semua nama menu dan sub-menu navigasi sidebar ke nama default sistem?')) {
                         document.querySelectorAll('input[name^=\'sidebar_labels[\']').forEach(input => {
@@ -244,6 +261,44 @@
                             }
                         });
                     }
+                },
+                async saveSidebarLabels() {
+                    this.isSaving = true;
+                    this.saveSuccess = false;
+                    this.saveMessage = '';
+
+                    const formData = new FormData();
+                    formData.append('_token', '{{ csrf_token() }}');
+                    document.querySelectorAll('input[name^=\'sidebar_labels[\']').forEach(input => {
+                        formData.append(input.name, input.value);
+                    });
+
+                    try {
+                        const res = await fetch('{{ route('settings.sidebar-labels.update') }}', {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json'
+                            }
+                        });
+                        const json = await res.json();
+                        if (json.success) {
+                            this.saveSuccess = true;
+                            this.saveMessage = json.message || 'Nama menu & sub-menu navigasi sidebar berhasil disimpan!';
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 800);
+                        } else {
+                            alert('Gagal menyimpan: ' + (json.message || 'Terjadi kesalahan sistem.'));
+                        }
+                    } catch (err) {
+                        console.error('Save sidebar labels error:', err);
+                        // Fallback submit main form
+                        document.querySelector('form').submit();
+                    } finally {
+                        this.isSaving = false;
+                    }
                 }
             }" class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-soft">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-4 border-b border-slate-100 gap-3">
@@ -251,11 +306,36 @@
                         <i data-lucide="menu-square" class="w-4 h-4 text-indigo-600"></i>
                         <span>Kustomisasi Nama Menu &amp; Sub-Menu Navigasi Sidebar</span>
                     </h3>
-                    <button type="button" @click="resetSidebarLabels()"
-                        class="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 transition flex items-center gap-1.5 self-start sm:self-auto">
-                        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
-                        <span>Reset Semua ke Default</span>
-                    </button>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <button type="button" @click="resetSidebarLabels()"
+                            class="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 transition flex items-center gap-1.5">
+                            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                            <span>Reset Default</span>
+                        </button>
+                        <button type="button" @click="saveSidebarLabels()" :disabled="isSaving"
+                            class="px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-60 shadow-md shadow-indigo-600/30 transition flex items-center gap-1.5">
+                            <template x-if="!isSaving">
+                                <span class="flex items-center gap-1.5">
+                                    <i data-lucide="save" class="w-3.5 h-3.5"></i>
+                                    <span>Simpan Nama Sidebar</span>
+                                </span>
+                            </template>
+                            <template x-if="isSaving">
+                                <span class="flex items-center gap-1.5">
+                                    <svg class="animate-spin -ml-0.5 mr-1 h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span>Menyimpan...</span>
+                                </span>
+                            </template>
+                        </button>
+                    </div>
+                </div>
+
+                <div x-show="saveSuccess" x-transition class="p-3 mb-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2" style="display: none;">
+                    <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 shrink-0"></i>
+                    <span x-text="saveMessage"></span>
                 </div>
 
                 <p class="text-xs text-slate-500 mb-5">
@@ -967,6 +1047,31 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Action Bar Bawah Card 3 -->
+                <div class="mt-6 pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <p class="text-[11px] text-slate-500 flex items-center gap-1.5">
+                        <i data-lucide="info" class="w-3.5 h-3.5 text-indigo-500 shrink-0"></i>
+                        <span>Perubahan nama menu dan sub-menu akan langsung diterapkan ke seluruh pengguna di bilah sidebar.</span>
+                    </p>
+                    <button type="button" @click="saveSidebarLabels()" :disabled="isSaving"
+                        class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-60 shadow-md shadow-indigo-600/30 transition flex items-center gap-1.5 shrink-0 w-full sm:w-auto justify-center">
+                        <template x-if="!isSaving">
+                            <span class="flex items-center gap-1.5">
+                                <i data-lucide="check" class="w-4 h-4"></i>
+                                <span>Simpan Perubahan Nama Sidebar</span>
+                            </span>
+                        </template>
+                        <template x-if="isSaving">
+                            <span class="flex items-center gap-1.5">
+                                <svg class="animate-spin -ml-0.5 mr-1 h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span>Menyimpan Perubahan...</span>
+                            </span>
+                        </template>
+                    </button>
                 </div>
             </div>
 

@@ -22,13 +22,23 @@ class ProspectController extends Controller
      */
     public function index(Request $request): View
     {
+        // Pastikan seluruh kuisioner siswa berstatus 'daftar_aplikasi' tersinkron otomatis ke prospek
+        \App\Services\ProspectSyncService::syncAllDaftarAplikasi();
+
+        if ($request->filled('campus_id') && \App\Services\AppContextService::canSwitchCampus()) {
+            \App\Services\AppContextService::setActiveCampus($request->campus_id);
+        }
+
         $query = Prospect::with(['school.district', 'marketingUser']);
 
         if ($request->filled('status')) {
-            if ($request->status === 'pipeline') {
+            $statusVal = $request->status;
+            if (in_array($statusVal, ['daftar', 'daftar_aplikasi', Prospect::STATUS_DAFTAR_AKUN])) {
+                $query->where('status', Prospect::STATUS_DAFTAR_AKUN);
+            } elseif ($statusVal === 'pipeline') {
                 $query->where('status', '!=', Prospect::STATUS_MAHASISWA);
-            } elseif ($request->status !== 'all') {
-                $query->where('status', $request->status);
+            } elseif ($statusVal !== 'all') {
+                $query->where('status', $statusVal);
             }
         } else {
             // Default: exclude validated mahasiswa baru so they move to Menu Mahasiswa Baru
@@ -65,13 +75,25 @@ class ProspectController extends Controller
 
         $activeCampus = \App\Services\AppContextService::getActiveCampus();
         if ($activeCampus) {
-            $query->where(function ($q) use ($activeCampus) {
+            $campusFilterClosure = function ($q) use ($activeCampus) {
                 $q->where('campus_id', $activeCampus->id)
                   ->orWhere(function ($sub) use ($activeCampus) {
                       $sub->whereNull('campus_id')
                           ->whereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id));
                   });
-            });
+            };
+
+            // Jika mencari nama/kontak tertentu namun tidak ditemukan di kampus aktif, izinkan user multi-kampus menemukannya
+            if ($request->filled('search') && \App\Services\AppContextService::canSwitchCampus()) {
+                $hasInActiveCampus = (clone $query)->where($campusFilterClosure)->exists();
+                if (!$hasInActiveCampus && (clone $query)->exists()) {
+                    // Jangan kunci filter kampus agar calon siswa yang dicari tetap dapat dibuka
+                } else {
+                    $query->where($campusFilterClosure);
+                }
+            } else {
+                $query->where($campusFilterClosure);
+            }
         }
         $activePeriod = \App\Services\AppContextService::getActivePeriod();
         if ($activePeriod) {
