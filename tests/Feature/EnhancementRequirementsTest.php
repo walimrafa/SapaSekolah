@@ -223,4 +223,44 @@ class EnhancementRequirementsTest extends TestCase
         $this->assertNotNull($freshProspect->registration_proof_uploaded_at);
         $this->assertTrue($freshProspect->has_registration_proof);
     }
+
+    public function test_kol_documentation_page_loads_and_scopes_by_campus()
+    {
+        $this->actingAs($this->superAdmin);
+
+        $school = School::create([
+            'npsn' => '20998877',
+            'name' => 'SMA Negeri 1 Karawang',
+            'campus_id' => $this->karawangCampus->id,
+        ]);
+
+        $ambassador = StudentQuestionnaire::create([
+            'campus_id' => $this->karawangCampus->id,
+            'period_id' => $this->period->id,
+            'school_id' => $school->id,
+            'student_name' => 'Brand Ambassador Krw',
+            'student_phone' => '081299988877',
+            'instagram_handle' => 'ambassador_krw',
+            'instagram_followers' => 12500,
+            'is_kol' => true,
+            'kol_status' => 'brand_ambassador',
+            'work_links' => [
+                'instagram' => 'https://www.instagram.com/reel/Doc12345/',
+                'tiktok' => 'https://www.tiktok.com/@ambassador_krw/video/12345',
+                'notes' => 'Tayang video PMB Gelombang 1',
+            ],
+        ]);
+
+        // Request documentation page
+        $response = $this->get(route('kol-recommendations.documentation'));
+        $response->assertOk()
+            ->assertViewIs('kol-recommendations.documentation')
+            ->assertSee('Hasil Dokumentasi &amp; Karya Brand Ambassador', false)
+            ->assertSee('Brand Ambassador Krw');
+
+        // Filter by platform instagram
+        $filterResponse = $this->get(route('kol-recommendations.documentation', ['platform' => 'instagram']));
+        $filterResponse->assertOk()
+            ->assertSee('Brand Ambassador Krw');
+    }
 }

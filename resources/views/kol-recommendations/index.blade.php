@@ -33,6 +33,13 @@
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2.5 shrink-0">
+                    <a href="{{ route('kol-recommendations.documentation') }}"
+                        class="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg shadow-purple-600/30 transition hover:scale-105"
+                        title="Buka Portofolio & Hasil Dokumentasi Karya Brand Ambassador">
+                        <i data-lucide="video" class="w-4 h-4 text-amber-300"></i>
+                        <span>Hasil Dokumentasi KOL</span>
+                    </a>
+
                     <button type="button" @click="openSettingModal = true"
                         class="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-white border border-white/20 shadow-lg backdrop-blur-sm transition hover:scale-105"
                         title="Atur Syarat Minimal Follower Instagram untuk Rekomendasi KOL">

@@ -156,6 +156,96 @@ class KolRecommendationController extends Controller
     }
 
     /**
+     * Tampilan Sub-Menu: Hasil Dokumentasi & Karya Brand Ambassador KOL (Instagram, TikTok, FB, YouTube)
+     */
+    public function documentation(Request $request): View
+    {
+        $this->authorizeAccess();
+
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $user = auth()->user();
+        $canSwitchCampus = \App\Services\AppContextService::canSwitchCampus($user);
+
+        // Menampilkan siswa KOL yang sudah menjadi Brand Ambassador, aktif, bersedia, atau sudah melampirkan link karya
+        $baseQuery = StudentQuestionnaire::query()
+            ->with(['school.district', 'campus', 'eventProposal'])
+            ->where('is_kol', true)
+            ->where(function ($q) {
+                $q->whereIn('kol_status', [
+                    StudentQuestionnaire::KOL_STATUS_BRAND_AMBASSADOR,
+                    'aktif',
+                    'bersedia',
+                ])->orWhereNotNull('work_links');
+            });
+
+        // Filter Kampus Isolasi
+        if ($activeCampus) {
+            $baseQuery->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)
+                    ->orWhereHas('school', function ($sq) use ($activeCampus) {
+                        $sq->where('campus_id', $activeCampus->id);
+                    })
+                    ->orWhereHas('eventProposal', function ($ep) use ($activeCampus) {
+                        $ep->where('campus_id', $activeCampus->id);
+                    });
+            });
+        }
+
+        // Summary metrics
+        $allDocs = (clone $baseQuery)->get();
+        $totalAmbassadors = $allDocs->whereIn('kol_status', [StudentQuestionnaire::KOL_STATUS_BRAND_AMBASSADOR, 'aktif'])->count();
+        $totalIgWorks = $allDocs->filter(fn($c) => !empty($c->work_links['instagram']))->count();
+        $totalTiktokWorks = $allDocs->filter(fn($c) => !empty($c->work_links['tiktok']))->count();
+        $totalYtFbWorks = $allDocs->filter(fn($c) => !empty($c->work_links['youtube']) || !empty($c->work_links['facebook']))->count();
+
+        $stats = [
+            'total_ambassadors' => $totalAmbassadors,
+            'total_ig_works' => $totalIgWorks,
+            'total_tiktok_works' => $totalTiktokWorks,
+            'total_yt_fb_works' => $totalYtFbWorks,
+        ];
+
+        // Search Filter
+        if ($request->filled('search')) {
+            $search = trim($request->string('search')->toString());
+            $baseQuery->where(function ($q) use ($search) {
+                $q->where('student_name', 'like', "%{$search}%")
+                    ->orWhere('student_phone', 'like', "%{$search}%")
+                    ->orWhere('student_social_media', 'like', "%{$search}%")
+                    ->orWhere('instagram_handle', 'like', "%{$search}%")
+                    ->orWhere('tiktok_handle', 'like', "%{$search}%")
+                    ->orWhere('kol_notes', 'like', "%{$search}%")
+                    ->orWhereHas('school', function ($sq) use ($search) {
+                        $sq->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        // Platform Filter
+        if ($request->filled('platform') && $request->platform !== 'all') {
+            $p = $request->platform;
+            if (in_array($p, ['instagram', 'tiktok', 'facebook', 'youtube'])) {
+                $baseQuery->whereNotNull("work_links->{$p}");
+            }
+        }
+
+        // Status Filter
+        if ($request->filled('status') && $request->status !== 'all') {
+            $baseQuery->where('kol_status', $request->status);
+        }
+
+        $items = $baseQuery->latest('updated_at')->paginate(12)->withQueryString();
+        $campuses = Campus::where('is_active', true)->get();
+
+        return view('kol-recommendations.documentation', compact(
+            'items',
+            'stats',
+            'activeCampus',
+            'campuses'
+        ));
+    }
+
+    /**
      * Update Status Rekrutmen KOL & Catatan Follow Up Duta Kampus
      */
     public function updateStatus(Request $request, StudentQuestionnaire $studentQuestionnaire): RedirectResponse|JsonResponse

@@ -143,6 +143,7 @@ Route::middleware(['auth'])->group(function () {
     // Rekomendasi KOL & Master Kuisioner (Khusus Admin, Pimpinan, dan Koordinator Marketing)
     Route::middleware('role:Admin,Pimpinan,Koordinator Marketing')->group(function () {
         Route::get('/kol-recommendations', [\App\Http\Controllers\KolRecommendationController::class, 'index'])->name('kol-recommendations.index');
+        Route::get('/kol-recommendations/documentation', [\App\Http\Controllers\KolRecommendationController::class, 'documentation'])->name('kol-recommendations.documentation');
         Route::put('/kol-recommendations/{studentQuestionnaire}/status', [\App\Http\Controllers\KolRecommendationController::class, 'updateStatus'])->name('kol-recommendations.update-status');
         Route::post('/kol-recommendations/{studentQuestionnaire}/verify-followers', [\App\Http\Controllers\KolRecommendationController::class, 'verifyFollowers'])->name('kol-recommendations.verify-followers');
         Route::post('/kol-recommendations/{studentQuestionnaire}/save-work-links', [\App\Http\Controllers\KolRecommendationController::class, 'saveWorkLinks'])->name('kol-recommendations.save-work-links');

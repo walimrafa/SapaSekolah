@@ -289,24 +289,39 @@
             </div>
         </div>
 
-        {{-- 4b. Rekomendasi KOL Siswa (Standalone Sidebar Menu Tersendiri) --}}
+        {{-- 4b. Rekomendasi KOL Siswa (Accordion dengan Sub-Menu Daftar Calon & Hasil Dokumentasi) --}}
         @if(auth()->user()->canAccessKolMenu())
         @php
             $kolCandidateQuery = \App\Models\StudentQuestionnaire::kolCandidates();
+            $kolDocumentationQuery = \App\Models\StudentQuestionnaire::where('is_kol', true)
+                ->where(function($q) {
+                    $q->whereIn('kol_status', [
+                        \App\Models\StudentQuestionnaire::KOL_STATUS_BRAND_AMBASSADOR,
+                        'aktif',
+                        'bersedia',
+                    ])->orWhereNotNull('work_links');
+                });
+
             if ($sidebarCampus) {
                 $kolCandidateQuery->where(function($q) use ($sidebarCampus) {
                     $q->where('campus_id', $sidebarCampus->id)
                       ->orWhereHas('school', fn($sq) => $sq->where('campus_id', $sidebarCampus->id))
                       ->orWhereHas('eventProposal', fn($ep) => $ep->where('campus_id', $sidebarCampus->id));
                 });
+                $kolDocumentationQuery->where(function($q) use ($sidebarCampus) {
+                    $q->where('campus_id', $sidebarCampus->id)
+                      ->orWhereHas('school', fn($sq) => $sq->where('campus_id', $sidebarCampus->id))
+                      ->orWhereHas('eventProposal', fn($ep) => $ep->where('campus_id', $sidebarCampus->id));
+                });
             }
             $kolCandidateCount = $kolCandidateQuery->count();
+            $kolDocCount = $kolDocumentationQuery->count();
         @endphp
-        <div>
-            <a href="{{ route('kol-recommendations.index') }}"
-                class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition duration-150 {{ $isKolActive ? 'text-white bg-gradient-to-r from-pink-600 to-rose-600 font-bold shadow-md shadow-pink-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
+        <div x-data="{ expanded: {{ $isKolActive ? 'true' : 'false' }} }" class="space-y-1">
+            <button @click="expanded = !expanded" type="button"
+                class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition duration-150 {{ $isKolActive ? 'text-white bg-slate-800/80 font-bold border-l-2 border-pink-500' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
                 <div class="flex items-center space-x-3">
-                    <i data-lucide="sparkles" class="w-4 h-4 {{ $isKolActive ? 'text-white' : 'text-pink-400' }}"></i>
+                    <i data-lucide="sparkles" class="w-4 h-4 {{ $isKolActive ? 'text-pink-400' : 'text-slate-400' }}"></i>
                     <span>{{ $lbl('menu_kol_recommendations', 'Rekomendasi KOL') }}</span>
                 </div>
                 <div class="flex items-center space-x-1.5">
@@ -314,8 +329,41 @@
                         <span class="px-1.5 py-0.2 text-[9px] font-bold bg-pink-500/20 text-pink-300 border border-pink-500/30 rounded">{{ $kolCandidateCount }}</span>
                     @endif
                     <span class="px-1.5 py-0.2 text-[9px] font-extrabold bg-gradient-to-r from-amber-400 to-orange-400 text-slate-950 rounded">KOL</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform duration-200" :class="expanded ? 'rotate-180 text-pink-400' : ''"></i>
                 </div>
-            </a>
+            </button>
+
+            <div x-show="expanded" 
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 -translate-y-1"
+                x-transition:enter-end="opacity-100 translate-y-0"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100 translate-y-0"
+                x-transition:leave-end="opacity-0 -translate-y-1"
+                class="pl-4 ml-4 border-l border-slate-800 space-y-1 pt-1" style="display: none;">
+                
+                {{-- Submenu 1: Daftar Calon KOL --}}
+                <a href="{{ route('kol-recommendations.index') }}"
+                    class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('kol-recommendations.index') ? 'bg-gradient-to-r from-pink-600 to-rose-600 text-white font-bold shadow-sm shadow-pink-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <div class="flex items-center space-x-2.5">
+                        <i data-lucide="users" class="w-3.5 h-3.5 {{ request()->routeIs('kol-recommendations.index') ? 'text-white' : 'text-pink-400' }}"></i>
+                        <span>{{ $lbl('submenu_kol_candidates', 'Daftar Calon KOL') }}</span>
+                    </div>
+                    <span class="px-1.5 py-0.2 text-[9px] font-bold bg-pink-500/20 text-pink-300 rounded">{{ $kolCandidateCount }}</span>
+                </a>
+
+                {{-- Submenu 2: Hasil Dokumentasi KOL --}}
+                <a href="{{ route('kol-recommendations.documentation') }}"
+                    class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('kol-recommendations.documentation') ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold shadow-sm shadow-purple-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <div class="flex items-center space-x-2.5">
+                        <i data-lucide="video" class="w-3.5 h-3.5 {{ request()->routeIs('kol-recommendations.documentation') ? 'text-white' : 'text-purple-400' }}"></i>
+                        <span>{{ $lbl('submenu_kol_documentation', 'Hasil Dokumentasi KOL') }}</span>
+                    </div>
+                    @if($kolDocCount > 0)
+                        <span class="px-1.5 py-0.2 text-[9px] font-bold bg-purple-500/20 text-purple-300 rounded">{{ $kolDocCount }}</span>
+                    @endif
+                </a>
+            </div>
         </div>
         @endif
 
