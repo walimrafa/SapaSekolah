@@ -339,7 +339,7 @@
                 </div>
 
                 <p class="text-xs text-slate-500 mb-5">
-                    Kustomisasi penamaan judul menu utama (accordion) dan seluruh sub-menu navigasi di bilah sidebar samping sesuai kebutuhan institusi atau terminologi internal kampus Anda.
+                    Kustomisasi penamaan judul menu dan seluruh sub-menu navigasi pada bilah sidebar (7 menu inti harian) serta panel <strong>Pusat Layanan &amp; Administrasi</strong> di Beranda Utama &amp; Navbar (Info PMB, Master Data, Portal &amp; Kuisioner, Sistem).
                 </p>
 
                 <!-- Navigation Tabs for Menu Groups -->

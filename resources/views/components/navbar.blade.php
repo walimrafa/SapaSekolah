@@ -193,7 +193,104 @@
             $navbarUser = auth()->user();
             $unreadNotifCount = \App\Services\NotificationService::getUnreadCount($navbarUser);
             $recentNotifs = \App\Services\NotificationService::getRecentForUser($navbarUser, 6);
+            $navCanManageMaster = $navbarUser && ($navbarUser->isAdmin() || $navbarUser->hasRole('Pimpinan') || $navbarUser->hasRole('Koordinator Marketing'));
+            $navCanPeriodClosing = $navbarUser && ($navbarUser->isAdmin() || $navbarUser->isPimpinan() || $navbarUser->isKoordinator() || $navbarUser->isAnyCustomerService());
+            $navPendingPeriod = $navbarUser ? \App\Services\PeriodClosingService::pendingForUser($navbarUser) : false;
+            $navLbl = fn(string $k, string $def = '') => \App\Services\AppSettingService::getSidebarLabel($k, $def);
         @endphp
+
+        <!-- Quick Settings & Modules Launcher (Info PMB, Master, Akses Publik, Sistem) -->
+        <div x-data="{ open: false }" class="relative">
+            <button @click="open = !open" @click.away="open = false"
+                class="p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 relative transition duration-150"
+                title="Pusat Layanan, Master Data &amp; Pengaturan Sistem">
+                <i data-lucide="settings" class="w-5 h-5"></i>
+                @if($navPendingPeriod)
+                    <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-amber-500 rounded-full ring-2 ring-white animate-pulse"></span>
+                @endif
+            </button>
+
+            <div x-show="open" x-transition:enter="transition ease-out duration-100"
+                x-transition:enter-start="transform opacity-0 scale-95"
+                x-transition:enter-end="transform opacity-100 scale-100"
+                x-transition:leave="transition ease-in duration-75"
+                x-transition:leave-start="transform opacity-100 scale-100"
+                x-transition:leave-end="transform opacity-0 scale-95"
+                class="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-200/80 py-2 z-50 max-h-[80vh] overflow-y-auto"
+                style="display: none;">
+
+                <!-- Info PMB & Publik -->
+                <div class="px-3.5 py-1.5 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Info PMB &amp; Akses Publik</div>
+                <a href="{{ route('pmb.index') }}" class="flex items-center space-x-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-amber-700">
+                    <i data-lucide="graduation-cap" class="w-4 h-4 text-amber-500"></i>
+                    <span>{{ $navLbl('menu_pmb', 'Info PMB') }} &amp; {{ $navLbl('submenu_ebrochures', 'E-Brosur') }}</span>
+                </a>
+                <a href="{{ route('qr-codes.index') }}" class="flex items-center space-x-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-amber-700">
+                    <i data-lucide="qr-code" class="w-4 h-4 text-amber-500"></i>
+                    <span>{{ $navLbl('submenu_qr_codes', 'QR Code') }} Generator</span>
+                </a>
+                @if($navCanManageMaster)
+                    <a href="{{ route('master-data.index', ['tab' => 'portals']) }}" class="flex items-center space-x-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-rose-700">
+                        <i data-lucide="shield-alert" class="w-4 h-4 text-rose-500"></i>
+                        <span>{{ $navLbl('submenu_portals', 'Portal Publik') }}</span>
+                    </a>
+                    <a href="{{ route('master-questionnaires.index') }}" class="flex items-center space-x-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-indigo-700">
+                        <i data-lucide="clipboard-edit" class="w-4 h-4 text-indigo-500"></i>
+                        <span>{{ $navLbl('submenu_master_questionnaires', 'Master Kuisioner') }}</span>
+                    </a>
+
+                    <div class="my-1.5 border-t border-slate-100"></div>
+                    <div class="px-3.5 py-1.5 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">{{ $navLbl('menu_master_data', 'Master Data') }}</div>
+                    <a href="{{ route('master-data.index', ['tab' => 'campuses']) }}" class="flex items-center space-x-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-700">
+                        <i data-lucide="database" class="w-4 h-4 text-emerald-500"></i>
+                        <span>{{ $navLbl('submenu_campuses', 'Master Kampus') }}, Periode &amp; Wilayah</span>
+                    </a>
+                @endif
+
+                @if($navCanManageMaster || $navCanPeriodClosing)
+                    <div class="my-1.5 border-t border-slate-100"></div>
+                    <div class="px-3.5 py-1.5 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">{{ $navLbl('menu_system_ops', 'Sistem & Manajemen') }}</div>
+
+                    @if($navbarUser->isAdmin() || $navbarUser->hasRole('Pimpinan'))
+                        <a href="{{ route('users.index') }}" class="flex items-center space-x-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                            <i data-lucide="user-check" class="w-4 h-4 text-slate-500"></i>
+                            <span>{{ $navLbl('submenu_users', 'User & Akun') }}</span>
+                        </a>
+                    @endif
+                    @if($navbarUser->isAdmin())
+                        <a href="{{ route('whatsapp-notifications.index') }}" class="flex items-center space-x-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-700">
+                            <i data-lucide="message-square" class="w-4 h-4 text-emerald-500"></i>
+                            <span>{{ $navLbl('submenu_whatsapp', 'WhatsApp Gateway') }}</span>
+                        </a>
+                        <a href="{{ route('settings.index') }}" class="flex items-center space-x-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-amber-700">
+                            <i data-lucide="sliders" class="w-4 h-4 text-amber-500"></i>
+                            <span>{{ $navLbl('submenu_settings', 'Pengaturan Branding') }}</span>
+                        </a>
+                    @endif
+                    @if($navCanManageMaster)
+                        <a href="{{ route('database-backups.index') }}" class="flex items-center space-x-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-700">
+                            <i data-lucide="database" class="w-4 h-4 text-blue-500"></i>
+                            <span>{{ $navLbl('submenu_database_backups', 'Cadangan Database GDrive') }}</span>
+                        </a>
+                        <a href="{{ route('activity-logs.index') }}" class="flex items-center space-x-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-cyan-700">
+                            <i data-lucide="activity" class="w-4 h-4 text-cyan-500"></i>
+                            <span>{{ $navLbl('submenu_activity_logs', 'Log Aktivitas') }}</span>
+                        </a>
+                    @endif
+                    @if($navCanPeriodClosing)
+                        <a href="{{ route('period-closing.index') }}" class="flex items-center justify-between px-3.5 py-2 text-xs font-semibold text-red-700 hover:bg-red-50">
+                            <span class="flex items-center space-x-2.5">
+                                <i data-lucide="shield-alert" class="w-4 h-4 text-red-500"></i>
+                                <span>{{ $navLbl('submenu_period_closing', 'Tutup Periode') }}</span>
+                            </span>
+                            @if($navPendingPeriod)
+                                <span class="px-1.5 py-0.2 text-[9px] font-extrabold bg-amber-400 text-slate-900 rounded-full">1 Aksi</span>
+                            @endif
+                        </a>
+                    @endif
+                @endif
+            </div>
+        </div>
         <div x-data="{
                 open: false,
                 unreadCount: {{ $unreadNotifCount }},
