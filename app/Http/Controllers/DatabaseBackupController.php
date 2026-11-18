@@ -398,7 +398,10 @@ class DatabaseBackupController extends Controller
 
         foreach ($validated as $key => $val) {
             if ($key !== 'gdrive_service_account_file' && $val !== null) {
-                AppSettingService::set($key, trim($val));
+                $cleanVal = in_array($key, ['gdrive_webhook_url', 'gdrive_cikampek_webhook_url', 'gdrive_karawang_webhook_url'], true)
+                    ? GoogleDriveService::sanitizeWebhookUrl($val)
+                    : trim($val);
+                AppSettingService::set($key, $cleanVal);
             }
         }
 

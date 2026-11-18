@@ -242,7 +242,7 @@ class GoogleDriveService
         $webhookUrl = $this->getWebhookUrl($campus);
         if (!empty($webhookUrl) && !str_contains($webhookUrl, 'test-webhook')) {
             try {
-                $response = Http::timeout(60)->post($webhookUrl, [
+                $response = self::postToAppsScriptWebhook($webhookUrl, [
                     'action' => 'registration_proof_upload',
                     'folder_id' => $folderId,
                     'root_folder_id' => $folderId,
@@ -250,7 +250,7 @@ class GoogleDriveService
                     'mime_type' => $mimeType,
                     'file_base64' => base64_encode($fileContent),
                     'description' => $description,
-                ]);
+                ], 60);
 
                 if ($response->successful()) {
                     $json = $response->json();
@@ -399,7 +399,7 @@ class GoogleDriveService
         if (!empty($webhookUrl) && !str_contains($webhookUrl, 'test-webhook')) {
             try {
                 $fileContent = base64_encode(file_get_contents($file->getRealPath()));
-                $response = Http::timeout(45)->post($webhookUrl, [
+                $response = self::postToAppsScriptWebhook($webhookUrl, [
                     'action' => 'visit_documentation_upload',
                     'folder_id' => $rootFolderId,
                     'root_folder_id' => $rootFolderId,
@@ -410,7 +410,7 @@ class GoogleDriveService
                     'filename' => $file->getClientOriginalName(),
                     'mime_type' => $file->getMimeType(),
                     'file_base64' => $fileContent,
-                ]);
+                ], 45);
 
                 if ($response->successful()) {
                     $json = $response->json();
@@ -485,6 +485,53 @@ class GoogleDriveService
     }
 
     /**
+     * Normalisasi URL Webhook Google Apps Script (memperbaiki salah tempel URL ganda, spasi, dsb.).
+     */
+    public static function sanitizeWebhookUrl(?string $url): string
+    {
+        $url = trim((string) $url);
+        if ($url === '') {
+            return '';
+        }
+
+        if (preg_match('#https?://script\.google\.com/macros/(?:u/\d+/)?s/[A-Za-z0-9_-]+/exec#i', $url, $matches)) {
+            return $matches[0];
+        }
+
+        return $url;
+    }
+
+    /**
+     * Kirim POST JSON ke Google Apps Script Webhook dengan penanganan redirect 302 yang benar.
+     * Google Apps Script membalas POST dengan HTTP 302 ke script.googleusercontent.com/macros/echo
+     * yang harus diikuti dengan GET bersih (tanpa body/Content-Type POST) agar tidak ditolak HTTP 401.
+     */
+    public static function postToAppsScriptWebhook(string $webhookUrl, array $payload, int $timeout = 60): \Illuminate\Http\Client\Response
+    {
+        $cleanUrl = self::sanitizeWebhookUrl($webhookUrl);
+
+        $response = Http::withoutRedirecting()
+            ->timeout($timeout)
+            ->acceptJson()
+            ->post($cleanUrl, $payload);
+
+        $hops = 0;
+        while (in_array($response->status(), [301, 302, 303, 307, 308], true) && $hops < 5) {
+            $location = $response->header('Location');
+            if (empty($location)) {
+                break;
+            }
+            $response = Http::withoutRedirecting()
+                ->timeout($timeout)
+                ->acceptJson()
+                ->get($location);
+            $hops++;
+        }
+
+        return $response;
+    }
+
+    /**
      * Dapatkan Webhook URL Google Apps Script jika ada (bisa per kampus atau umum).
      */
     public function getWebhookUrl(?Campus $campus = null): ?string
@@ -492,20 +539,20 @@ class GoogleDriveService
         if ($campus) {
             $isCkp = self::isCikampekCampus($campus);
             $key = $isCkp ? 'gdrive_cikampek_webhook_url' : 'gdrive_karawang_webhook_url';
-            $campusWebhook = trim((string) AppSettingService::get($key, ''));
+            $campusWebhook = self::sanitizeWebhookUrl(AppSettingService::get($key, ''));
             if (!empty($campusWebhook)) {
                 return $campusWebhook;
             }
         }
 
-        $generalWebhook = trim((string)(AppSettingService::get('gdrive_webhook_url') ?? env('GOOGLE_DRIVE_WEBHOOK_URL', '')));
+        $generalWebhook = self::sanitizeWebhookUrl(AppSettingService::get('gdrive_webhook_url') ?? env('GOOGLE_DRIVE_WEBHOOK_URL', ''));
         if (!empty($generalWebhook)) {
             return $generalWebhook;
         }
 
         // Jika salah satu dari webhook kampus terisi
-        $ckpWebhook = trim((string) AppSettingService::get('gdrive_cikampek_webhook_url', ''));
-        $krwWebhook = trim((string) AppSettingService::get('gdrive_karawang_webhook_url', ''));
+        $ckpWebhook = self::sanitizeWebhookUrl(AppSettingService::get('gdrive_cikampek_webhook_url', ''));
+        $krwWebhook = self::sanitizeWebhookUrl(AppSettingService::get('gdrive_karawang_webhook_url', ''));
 
         return !empty($ckpWebhook) ? $ckpWebhook : (!empty($krwWebhook) ? $krwWebhook : null);
     }
@@ -554,13 +601,13 @@ class GoogleDriveService
         $webhookUrl = $this->getWebhookUrl($backup->campus);
         if (!empty($webhookUrl)) {
             try {
-                $response = Http::timeout(60)->post($webhookUrl, [
+                $response = self::postToAppsScriptWebhook($webhookUrl, [
                     'action' => 'backup_upload',
                     'folder_id' => $folderId,
                     'filename' => $fileName,
                     'mime_type' => $mimeType,
                     'file_base64' => base64_encode($fileContent),
-                ]);
+                ], 60);
 
                 if ($response->successful()) {
                     $json = $response->json();
@@ -717,10 +764,10 @@ class GoogleDriveService
         $webhookUrl = $this->getWebhookUrl($targetCampus);
         if (!empty($webhookUrl)) {
             try {
-                $response = Http::timeout(15)->post($webhookUrl, [
+                $response = self::postToAppsScriptWebhook($webhookUrl, [
                     'action' => 'test',
                     'folder_id' => $folderId,
-                ]);
+                ], 20);
 
                 if ($response->successful()) {
                     $json = $response->json();
