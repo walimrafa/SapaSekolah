@@ -116,21 +116,34 @@ class ProspectSyncService
             ? 'Support Event Sekolah (Daftar Aplikasi)'
             : 'Kuisioner Siswa (Daftar Aplikasi)';
 
-        // 8. Find existing Prospect by student_questionnaire_id, Phone, Email, or Name + School
+        // 8. Find existing Prospect by student_questionnaire_id (1-to-1 primary link).
+        // Hanya cocokkan prospek lama yang BELUM tertaut (student_questionnaire_id IS NULL)
+        // DAN memiliki nama yang sama persis agar 2 siswa berbeda dengan nomor HP/email sama tidak saling menimpa!
         $prospect = null;
         if ($student->id) {
             $prospect = Prospect::where('student_questionnaire_id', $student->id)->first();
         }
-        if (!$prospect && !empty($student->student_phone)) {
-            $prospect = Prospect::where('phone', $student->student_phone)->first();
-        }
-        if (!$prospect && !empty($student->student_email)) {
-            $prospect = Prospect::where('email', $student->student_email)->first();
-        }
         if (!$prospect && !empty($student->student_name)) {
-            $prospect = Prospect::where('name', $student->student_name)
-                ->when($schoolId, fn($q) => $q->where('school_id', $schoolId))
-                ->first();
+            $normalizedName = strtolower(trim($student->student_name));
+
+            if (!empty($student->student_phone)) {
+                $prospect = Prospect::whereNull('student_questionnaire_id')
+                    ->where('phone', $student->student_phone)
+                    ->whereRaw('LOWER(TRIM(name)) = ?', [$normalizedName])
+                    ->first();
+            }
+            if (!$prospect && !empty($student->student_email)) {
+                $prospect = Prospect::whereNull('student_questionnaire_id')
+                    ->where('email', $student->student_email)
+                    ->whereRaw('LOWER(TRIM(name)) = ?', [$normalizedName])
+                    ->first();
+            }
+            if (!$prospect) {
+                $prospect = Prospect::whereNull('student_questionnaire_id')
+                    ->whereRaw('LOWER(TRIM(name)) = ?', [$normalizedName])
+                    ->when($schoolId, fn($q) => $q->where('school_id', $schoolId))
+                    ->first();
+            }
         }
 
         $marketingUserId = $student->assigned_to
@@ -163,6 +176,27 @@ class ProspectSyncService
         }
 
         return $prospect;
+    }
+
+    /**
+     * Sync only student questionnaires with status daftar_aplikasi that don't yet have a linked Prospect.
+     * Lightweight and fast for real-time auto-sync on page render.
+     */
+    public static function syncMissingDaftarAplikasi(): int
+    {
+        $missingStudents = StudentQuestionnaire::whereIn('followup_status', [
+            StudentQuestionnaire::STATUS_DAFTAR_APLIKASI,
+            'closing',
+            'daftar_aplikasi',
+        ])->whereDoesntHave('prospect')->get();
+
+        $count = 0;
+        foreach ($missingStudents as $student) {
+            self::syncStudentQuestionnaire($student);
+            $count++;
+        }
+
+        return $count;
     }
 
     /**

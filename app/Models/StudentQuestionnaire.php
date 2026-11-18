@@ -307,12 +307,13 @@ class StudentQuestionnaire extends Model
         if ($p) {
             return $p;
         }
-        if (!empty($this->student_phone)) {
-            $matched = Prospect::where('phone', $this->student_phone)->first();
+        if (!empty($this->student_phone) && !empty($this->student_name)) {
+            $matched = Prospect::whereNull('student_questionnaire_id')
+                ->where('phone', $this->student_phone)
+                ->whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($this->student_name))])
+                ->first();
             if ($matched) {
-                if (!$matched->student_questionnaire_id) {
-                    $matched->updateQuietly(['student_questionnaire_id' => $this->id]);
-                }
+                $matched->updateQuietly(['student_questionnaire_id' => $this->id]);
                 $this->setRelation('prospect', $matched);
                 return $matched;
             }

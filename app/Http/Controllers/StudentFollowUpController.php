@@ -29,7 +29,7 @@ class StudentFollowUpController extends Controller
     public function index(Request $request): View
     {
         // Pastikan seluruh kuisioner siswa berstatus 'daftar_aplikasi' tersinkron otomatis ke prospek
-        \App\Services\ProspectSyncService::syncAllDaftarAplikasi();
+        \App\Services\ProspectSyncService::syncMissingDaftarAplikasi();
 
         $user = auth()->user();
         $canPlot = $user && $user->canPlotFollowUps();

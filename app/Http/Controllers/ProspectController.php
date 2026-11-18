@@ -23,7 +23,7 @@ class ProspectController extends Controller
     public function index(Request $request): View
     {
         // Pastikan seluruh kuisioner siswa berstatus 'daftar_aplikasi' tersinkron otomatis ke prospek
-        \App\Services\ProspectSyncService::syncAllDaftarAplikasi();
+        \App\Services\ProspectSyncService::syncMissingDaftarAplikasi();
 
         if ($request->filled('campus_id') && \App\Services\AppContextService::canSwitchCampus()) {
             \App\Services\AppContextService::setActiveCampus($request->campus_id);

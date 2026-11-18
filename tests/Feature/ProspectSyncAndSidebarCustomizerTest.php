@@ -226,4 +226,41 @@ class ProspectSyncAndSidebarCustomizerTest extends TestCase
         $dashResponse->assertSee('Talent Influencer');
         $dashResponse->assertSee('KOL TOP');
     }
+
+    public function test_two_distinct_students_sharing_phone_and_email_sync_as_two_distinct_prospects(): void
+    {
+        $studentA = StudentQuestionnaire::create([
+            'student_name' => 'WL Ali',
+            'student_phone' => '+6285695662714',
+            'student_email' => 'walimsaja@gmail.com',
+            'school_id' => $this->school->id,
+            'campus_id' => $this->campus->id,
+            'academic_period_id' => $this->period->id,
+            'scholarship_interest' => 'ya',
+            'followup_status' => StudentQuestionnaire::STATUS_DAFTAR_APLIKASI,
+        ]);
+
+        $studentB = StudentQuestionnaire::create([
+            'student_name' => 'Tania',
+            'student_phone' => '+6285695662714',
+            'student_email' => 'walimsaja@gmail.com',
+            'school_id' => $this->school->id,
+            'campus_id' => $this->campus->id,
+            'academic_period_id' => $this->period->id,
+            'scholarship_interest' => 'ya',
+            'followup_status' => StudentQuestionnaire::STATUS_DAFTAR_APLIKASI,
+        ]);
+
+        ProspectSyncService::syncMissingDaftarAplikasi();
+
+        $this->assertEquals(2, Prospect::whereIn('student_questionnaire_id', [$studentA->id, $studentB->id])->count());
+        $this->assertDatabaseHas('prospects', [
+            'student_questionnaire_id' => $studentA->id,
+            'name' => 'WL Ali',
+        ]);
+        $this->assertDatabaseHas('prospects', [
+            'student_questionnaire_id' => $studentB->id,
+            'name' => 'Tania',
+        ]);
+    }
 }

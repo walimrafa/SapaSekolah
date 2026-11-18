@@ -26,6 +26,7 @@
     $isSystemActive = request()->routeIs('users.*', 'settings.*', 'whatsapp-notifications.*', 'database-backups.*', 'activity-logs.*', 'period-closing.*');
 
     // Realtime scoped counts for Prospects and New Students (isolated per active campus and period)
+    \App\Services\ProspectSyncService::syncMissingDaftarAplikasi();
     $sidebarCampus = \App\Services\AppContextService::getActiveCampus();
     $sidebarPeriod = \App\Services\AppContextService::getActivePeriod();
 
