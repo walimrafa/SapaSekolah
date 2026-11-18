@@ -269,7 +269,11 @@ class GoogleDriveService
                     $lastError = $json['message'] ?? $json['error'] ?? ('Respon Webhook tidak valid (HTTP ' . $response->status() . ').');
                     Log::warning('Google Drive Proof Webhook invalid response: ' . $lastError);
                 } else {
-                    $lastError = 'Webhook Google Apps Script mengembalikan HTTP ' . $response->status() . '.';
+                    if ($response->status() === 403 || $response->status() === 401) {
+                        $lastError = 'Akses Webhook Google Apps Script ditolak (HTTP ' . $response->status() . '). Di Google Apps Script, buka Deploy → Manage deployments → Edit (ikon pensil) → ubah "Who has access / Yang memiliki akses" menjadi "Anyone (Siapa saja)", lalu klik Deploy.';
+                    } else {
+                        $lastError = 'Webhook Google Apps Script mengembalikan HTTP ' . $response->status() . '.';
+                    }
                     Log::warning('Google Drive Proof Webhook HTTP error: ' . $lastError);
                 }
             } catch (\Throwable $e) {
