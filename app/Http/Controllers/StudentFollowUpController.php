@@ -339,6 +339,7 @@ class StudentFollowUpController extends Controller
 
         // Auto-sync into Data Prospek (prospects table) when status is 'daftar_aplikasi'
         $prospect = null;
+        $proofResult = null;
         $isDaftarAplikasi = in_array($statusToSave, [StudentQuestionnaire::STATUS_DAFTAR_APLIKASI, 'closing', 'daftar_aplikasi']);
 
         if ($isDaftarAplikasi) {
@@ -352,9 +353,13 @@ class StudentFollowUpController extends Controller
             if ($prospect && $request->hasFile('registration_proof')) {
                 try {
                     $driveService = app(\App\Services\GoogleDriveService::class);
-                    $driveService->uploadRegistrationProof($request->file('registration_proof'), $prospect);
+                    $proofResult = $driveService->uploadRegistrationProof($request->file('registration_proof'), $prospect);
                 } catch (\Throwable $e) {
                     \Illuminate\Support\Facades\Log::warning("Upload registration proof failed: " . $e->getMessage());
+                    $proofResult = [
+                        'uploaded_to_gdrive' => false,
+                        'message' => 'Gagal mengunggah bukti ke Google Drive: ' . $e->getMessage(),
+                    ];
                 }
             }
         }
@@ -365,17 +370,28 @@ class StudentFollowUpController extends Controller
             'campus_id' => $studentQuestionnaire->campus_id ?: $studentQuestionnaire->school?->campus_id,
         ]);
 
+        $daftarAplikasiMessage = "Status berhasil diubah ke 'Daftar Aplikasi' dan otomatis tersinkron ke Data Prospek!";
+        if ($proofResult !== null) {
+            if (!empty($proofResult['uploaded_to_gdrive'])) {
+                $daftarAplikasiMessage .= ' Bukti pendaftaran berhasil diunggah otomatis ke Google Drive.';
+            } else {
+                $daftarAplikasiMessage .= ' Catatan bukti: ' . ($proofResult['message'] ?? 'Tersimpan lokal, belum masuk Google Drive (periksa Webhook GDrive).');
+            }
+        }
+
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
                 'success' => true,
                 'message' => $isDaftarAplikasi
-                    ? "Status berhasil diubah ke 'Daftar Aplikasi' dan otomatis tersinkron ke Data Prospek!"
+                    ? $daftarAplikasiMessage
                     : 'Hasil follow up siswa berhasil disimpan!',
                 'follow_up' => $followUp->load('user'),
                 'student' => $studentQuestionnaire->fresh(['lastFollowedUpBy']),
                 'status_label' => $studentQuestionnaire->fresh()->followup_status_label,
                 'badge_class' => $studentQuestionnaire->fresh()->followup_badge_class,
                 'is_daftar_aplikasi' => $isDaftarAplikasi,
+                'proof_uploaded_to_gdrive' => $proofResult['uploaded_to_gdrive'] ?? null,
+                'proof_drive_url' => $proofResult['drive_url'] ?? null,
                 'redirect_url' => $redirectUrl,
                 'prospect_id' => $prospect?->id,
             ]);
@@ -383,8 +399,8 @@ class StudentFollowUpController extends Controller
 
         if ($isDaftarAplikasi) {
             return redirect($redirectUrl)->with('toast', [
-                'type' => 'success',
-                'message' => "Siswa {$studentQuestionnaire->student_name} berhasil berstatus Daftar Aplikasi dan otomatis masuk ke Data Prospek untuk follow up intensif!",
+                'type' => ($proofResult !== null && empty($proofResult['uploaded_to_gdrive'])) ? 'warning' : 'success',
+                'message' => "Siswa {$studentQuestionnaire->student_name}: {$daftarAplikasiMessage}",
             ]);
         }
 

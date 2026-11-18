@@ -308,6 +308,11 @@ class ProspectController extends Controller
      */
     public function uploadProof(Request $request, Prospect $prospect, \App\Services\GoogleDriveService $driveService): RedirectResponse
     {
+        $user = auth()->user();
+        if ($user && !$user->canAccessAllCampuses() && $prospect->campus_id && $user->campus_id && (int) $prospect->campus_id !== (int) $user->campus_id) {
+            abort(403, 'Anda tidak memiliki akses untuk mengunggah bukti prospek kampus lain.');
+        }
+
         $request->validate([
             'registration_proof' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
         ], [
@@ -322,14 +327,55 @@ class ProspectController extends Controller
             'UPLOAD_PROOF',
             'prospect',
             $prospect->id,
-            "Mengunggah bukti daftar akun untuk prospek {$prospect->name} ke Google Drive",
+            $result['uploaded_to_gdrive']
+                ? "Mengunggah bukti daftar akun untuk prospek {$prospect->name} ke Google Drive"
+                : "Mengunggah bukti daftar akun untuk prospek {$prospect->name} ke penyimpanan lokal (Google Drive belum tersinkron)",
             null,
-            ['drive_url' => $result['drive_url']]
+            [
+                'uploaded_to_gdrive' => $result['uploaded_to_gdrive'],
+                'drive_url' => $result['drive_url'],
+                'local_path' => $result['local_path'],
+                'error' => $result['error'] ?? null,
+            ]
         );
 
         return redirect()->back()->with('toast', [
-            'type' => 'success',
-            'message' => "Bukti daftar akun untuk {$prospect->name} berhasil diunggah ke Google Drive!",
+            'type' => $result['uploaded_to_gdrive'] ? 'success' : 'warning',
+            'message' => $result['uploaded_to_gdrive']
+                ? "Bukti daftar akun untuk {$prospect->name} berhasil diunggah otomatis ke Google Drive!"
+                : $result['message'],
+        ]);
+    }
+
+    /**
+     * Sinkronkan ulang bukti pendaftaran lokal yang belum masuk ke Google Drive (1-klik).
+     */
+    public function syncProofToGdrive(Prospect $prospect, \App\Services\GoogleDriveService $driveService): RedirectResponse
+    {
+        $user = auth()->user();
+        if ($user && !$user->canAccessAllCampuses() && $prospect->campus_id && $user->campus_id && (int) $prospect->campus_id !== (int) $user->campus_id) {
+            abort(403, 'Anda tidak memiliki akses untuk menyinkronkan bukti prospek kampus lain.');
+        }
+
+        $result = $driveService->syncLocalProofToDrive($prospect);
+
+        if ($result['uploaded_to_gdrive']) {
+            \App\Services\ActivityLogService::log(
+                'SYNC_PROOF_GDRIVE',
+                'prospect',
+                $prospect->id,
+                "Menyinkronkan bukti daftar akun prospek {$prospect->name} ke Google Drive",
+                null,
+                [
+                    'drive_url' => $result['drive_url'] ?? null,
+                    'drive_file_id' => $result['drive_file_id'] ?? null,
+                ]
+            );
+        }
+
+        return redirect()->back()->with('toast', [
+            'type' => $result['uploaded_to_gdrive'] ? 'success' : 'warning',
+            'message' => $result['message'],
         ]);
     }
 

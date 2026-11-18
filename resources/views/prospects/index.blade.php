@@ -468,15 +468,34 @@
                                         </select>
                                     </form>
 
-                                    <!-- Bukti Pendaftaran Akun (Google Drive) -->
-                                    <div class="mt-1.5 flex items-center justify-center gap-1">
-                                        @if($p->has_registration_proof)
-                                            <a href="{{ $p->registration_proof_drive_url ?: asset('storage/' . $p->registration_proof_path) }}" target="_blank"
+                                    <!-- Bukti Pendaftaran Akun (Google Drive / Lokal) -->
+                                    <div class="mt-1.5 flex flex-wrap items-center justify-center gap-1">
+                                        @if($p->is_proof_synced_to_drive)
+                                            <a href="{{ $p->registration_proof_drive_url }}" target="_blank"
                                                 class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200 transition"
                                                 title="Lihat Bukti Pendaftaran di Google Drive">
                                                 <i data-lucide="check-circle" class="w-3 h-3 text-emerald-600"></i>
                                                 <span>Bukti GDrive</span>
                                             </a>
+                                            <button type="button" @click="openUploadProofModal({{ json_encode($p) }})" class="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition" title="Ganti / Upload Ulang Berkas Bukti">
+                                                <i data-lucide="upload" class="w-3 h-3"></i>
+                                            </button>
+                                        @elseif(!empty($p->registration_proof_path))
+                                            <a href="{{ asset('storage/' . $p->registration_proof_path) }}" target="_blank"
+                                                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-sky-50 text-sky-800 border border-sky-300 hover:bg-sky-100 transition"
+                                                title="Berkas tersimpan di server lokal (belum terunggah ke Google Drive)">
+                                                <i data-lucide="file-image" class="w-3 h-3 text-sky-600"></i>
+                                                <span>Bukti Lokal</span>
+                                            </a>
+                                            <form method="POST" action="{{ route('prospects.sync-proof-gdrive', $p->id) }}" class="inline">
+                                                @csrf
+                                                <button type="submit"
+                                                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200 transition"
+                                                    title="Kirim berkas bukti lokal ini ke Google Drive sekarang">
+                                                    <i data-lucide="cloud-upload" class="w-3 h-3 text-amber-700"></i>
+                                                    <span>Sync GDrive</span>
+                                                </button>
+                                            </form>
                                             <button type="button" @click="openUploadProofModal({{ json_encode($p) }})" class="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition" title="Ganti / Upload Ulang Berkas Bukti">
                                                 <i data-lucide="upload" class="w-3 h-3"></i>
                                             </button>
@@ -951,13 +970,15 @@
                         </div>
 
                         <!-- Existing Proof Link if already uploaded -->
-                        <template x-if="proofProspect && (proofProspect.registration_proof_drive_url || proofProspect.registration_proof_path)">
-                            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
-                                <span class="text-slate-700 font-medium flex items-center gap-1.5">
-                                    <i data-lucide="check" class="w-4 h-4 text-emerald-600"></i>
-                                    <span>Sudah ada berkas terunggah sebelumnya</span>
+                        <template x-if="proofProspect && (proofProspect.is_proof_synced_to_drive || proofProspect.registration_proof_path)">
+                            <div class="p-3 rounded-xl border flex items-center justify-between text-xs"
+                                :class="proofProspect.is_proof_synced_to_drive ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'">
+                                <span class="font-medium flex items-center gap-1.5"
+                                    :class="proofProspect.is_proof_synced_to_drive ? 'text-emerald-800' : 'text-amber-900'">
+                                    <i data-lucide="check" class="w-4 h-4" :class="proofProspect.is_proof_synced_to_drive ? 'text-emerald-600' : 'text-amber-600'"></i>
+                                    <span x-text="proofProspect.is_proof_synced_to_drive ? 'Berkas sudah terunggah di Google Drive' : 'Berkas tersimpan lokal (belum masuk Google Drive)'"></span>
                                 </span>
-                                <a :href="proofProspect.registration_proof_drive_url || ('/storage/' + proofProspect.registration_proof_path)" target="_blank"
+                                <a :href="proofProspect.is_proof_synced_to_drive ? proofProspect.registration_proof_drive_url : ('/storage/' + proofProspect.registration_proof_path)" target="_blank"
                                     class="text-brand-600 hover:text-brand-700 font-bold underline inline-flex items-center gap-1">
                                     <span>Buka Berkas</span>
                                     <i data-lucide="external-link" class="w-3 h-3"></i>

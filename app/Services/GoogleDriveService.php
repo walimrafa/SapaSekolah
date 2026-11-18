@@ -134,38 +134,165 @@ class GoogleDriveService
 
     /**
      * Upload Bukti Pendaftaran Akun Mahasiswa ke Google Drive folder kampus terkait.
+     * Mendukung Opsi A (Google Apps Script Webhook per Kampus) dan Opsi B (Google Drive v3 API).
      */
     public function uploadRegistrationProof(UploadedFile $file, \App\Models\Prospect $prospect): array
     {
         $campusId = $prospect->campus_id ?: ($prospect->school?->campus_id);
+        $campusModel = $campusId ? Campus::find($campusId) : null;
         $folderId = self::getProofFolderIdForCampus($campusId, $prospect->school?->name);
-        $folderUrl = self::getProofFolderUrlForCampus($campusId, $prospect->school?->name);
 
         $ext = $file->getClientOriginalExtension() ?: 'png';
         $safeName = Str::slug($prospect->name ?: 'prospek') . '-bukti-daftar-' . date('Ymd-His') . '.' . $ext;
+        $mimeType = $file->getMimeType() ?: 'image/jpeg';
+        $fileContent = file_get_contents($file->getRealPath());
 
         // 1. Simpan salinan lokal di public storage untuk keandalan & preview instan
         $localPath = $file->storeAs('registration-proofs', $safeName, 'public');
 
-        // 2. Coba upload langsung ke Google Drive API
-        $gdriveFileUrl = $folderUrl;
-        $gdriveFileId = null;
+        // 2. Unggah ke Google Drive (Opsi A: Apps Script Webhook per kampus, Opsi B: Drive v3 API)
+        $description = "Bukti Pendaftaran Akun PMB untuk {$prospect->name} (" . ($prospect->school?->name ?? 'SLTA') . ")";
+        $cloudResult = $this->pushContentToGoogleDrive($fileContent, $safeName, $mimeType, $folderId, $campusModel, $description);
 
+        // Simpan data di database prospect (hanya set drive_url & drive_id jika benar-benar berhasil masuk Google Drive)
+        $prospect->update([
+            'registration_proof_path' => $localPath,
+            'registration_proof_drive_url' => $cloudResult['uploaded'] ? $cloudResult['drive_url'] : null,
+            'registration_proof_drive_id' => $cloudResult['uploaded'] ? $cloudResult['drive_file_id'] : null,
+            'registration_proof_uploaded_at' => now(),
+            'registration_proof_uploaded_by' => auth()->id(),
+        ]);
+
+        return [
+            'success' => true,
+            'uploaded_to_gdrive' => $cloudResult['uploaded'],
+            'local_path' => $localPath,
+            'drive_url' => $cloudResult['drive_url'],
+            'drive_file_id' => $cloudResult['drive_file_id'],
+            'folder_id' => $folderId,
+            'error' => $cloudResult['error'],
+            'message' => $cloudResult['uploaded']
+                ? 'Bukti pendaftaran akun berhasil diunggah otomatis ke Google Drive!'
+                : 'Bukti tersimpan aman di server lokal, namun belum terunggah ke Google Drive: ' . ($cloudResult['error'] ?: 'Webhook / Kredensial Google Drive belum dikonfigurasi.'),
+        ];
+    }
+
+    /**
+     * Sinkronkan ulang bukti pendaftaran yang sudah tersimpan lokal ke Google Drive kampus terkait.
+     */
+    public function syncLocalProofToDrive(\App\Models\Prospect $prospect): array
+    {
+        if (empty($prospect->registration_proof_path) || !Storage::disk('public')->exists($prospect->registration_proof_path)) {
+            return [
+                'success' => false,
+                'uploaded_to_gdrive' => false,
+                'message' => 'Berkas bukti lokal tidak ditemukan. Silakan unggah ulang berkas bukti.',
+            ];
+        }
+
+        $campusId = $prospect->campus_id ?: ($prospect->school?->campus_id);
+        $campusModel = $campusId ? Campus::find($campusId) : null;
+        $folderId = self::getProofFolderIdForCampus($campusId, $prospect->school?->name);
+
+        $fullPath = Storage::disk('public')->path($prospect->registration_proof_path);
+        $fileContent = file_get_contents($fullPath);
+        $fileName = basename($prospect->registration_proof_path);
+        $mimeType = mime_content_type($fullPath) ?: 'image/jpeg';
+        $description = "Bukti Pendaftaran Akun PMB untuk {$prospect->name} (" . ($prospect->school?->name ?? 'SLTA') . ")";
+
+        $cloudResult = $this->pushContentToGoogleDrive($fileContent, $fileName, $mimeType, $folderId, $campusModel, $description);
+
+        if ($cloudResult['uploaded']) {
+            $prospect->update([
+                'registration_proof_drive_url' => $cloudResult['drive_url'],
+                'registration_proof_drive_id' => $cloudResult['drive_file_id'],
+            ]);
+
+            return [
+                'success' => true,
+                'uploaded_to_gdrive' => true,
+                'drive_url' => $cloudResult['drive_url'],
+                'drive_file_id' => $cloudResult['drive_file_id'],
+                'message' => "Bukti pendaftaran {$prospect->name} berhasil disinkronkan ke Google Drive!",
+            ];
+        }
+
+        return [
+            'success' => false,
+            'uploaded_to_gdrive' => false,
+            'message' => 'Gagal sinkron ke Google Drive: ' . ($cloudResult['error'] ?: 'Pastikan URL Google Apps Script Webhook asli sudah dipasang di menu Cadangan Database GDrive → Kredensial GDrive.'),
+        ];
+    }
+
+    /**
+     * Helper internal untuk mengunggah konten biner file ke folder Google Drive tertentu
+     * menggunakan Opsi A (Google Apps Script Webhook per kampus) atau Opsi B (Google Drive v3 REST API).
+     */
+    protected function pushContentToGoogleDrive(
+        string $fileContent,
+        string $fileName,
+        string $mimeType,
+        string $folderId,
+        ?Campus $campus = null,
+        string $description = ''
+    ): array {
+        $lastError = null;
+
+        // OPSI A: Google Apps Script Webhook (per kampus atau global)
+        $webhookUrl = $this->getWebhookUrl($campus);
+        if (!empty($webhookUrl) && !str_contains($webhookUrl, 'test-webhook')) {
+            try {
+                $response = Http::timeout(60)->post($webhookUrl, [
+                    'action' => 'registration_proof_upload',
+                    'folder_id' => $folderId,
+                    'root_folder_id' => $folderId,
+                    'filename' => $fileName,
+                    'mime_type' => $mimeType,
+                    'file_base64' => base64_encode($fileContent),
+                    'description' => $description,
+                ]);
+
+                if ($response->successful()) {
+                    $json = $response->json();
+                    if (!empty($json['success']) && (!empty($json['file_id']) || !empty($json['file_url']) || !empty($json['url']))) {
+                        $fileId = $json['file_id'] ?? ('webhook_' . md5($fileName . microtime()));
+                        $fileUrl = $json['file_url'] ?? ($json['url'] ?? "https://drive.google.com/file/d/{$fileId}/view");
+
+                        return [
+                            'uploaded' => true,
+                            'drive_file_id' => $fileId,
+                            'drive_url' => $fileUrl,
+                            'error' => null,
+                        ];
+                    }
+
+                    $lastError = $json['message'] ?? $json['error'] ?? ('Respon Webhook tidak valid (HTTP ' . $response->status() . ').');
+                    Log::warning('Google Drive Proof Webhook invalid response: ' . $lastError);
+                } else {
+                    $lastError = 'Webhook Google Apps Script mengembalikan HTTP ' . $response->status() . '.';
+                    Log::warning('Google Drive Proof Webhook HTTP error: ' . $lastError);
+                }
+            } catch (\Throwable $e) {
+                $lastError = 'Koneksi Webhook gagal: ' . $e->getMessage();
+                Log::warning('Google Drive Proof Webhook Exception: ' . $e->getMessage());
+            }
+        } elseif (!empty($webhookUrl) && str_contains($webhookUrl, 'test-webhook')) {
+            $lastError = 'URL Webhook Google Drive masih berupa URL uji coba (test-webhook). Silakan masukkan URL Web App Google Apps Script asli di menu Cadangan Database GDrive → Kredensial GDrive.';
+        }
+
+        // OPSI B: Google Drive v3 REST API (Service Account / OAuth2 Refresh Token)
         try {
             $accessToken = $this->getAccessToken();
             if ($accessToken) {
                 $metadata = [
-                    'name' => $safeName,
+                    'name' => $fileName,
                     'parents' => [$folderId],
-                    'description' => "Bukti Pendaftaran Akun PMB untuk {$prospect->name} (" . ($prospect->school?->name ?? 'SLTA') . ")",
+                    'description' => $description,
                 ];
 
                 $boundary = '-------' . md5(microtime());
                 $delimiter = "\r\n--" . $boundary . "\r\n";
                 $closeDelimiter = "\r\n--" . $boundary . "--";
-
-                $fileContent = file_get_contents($file->getRealPath());
-                $mimeType = $file->getMimeType() ?: 'image/jpeg';
 
                 $multipartBody = $delimiter
                     . "Content-Type: application/json; charset=UTF-8\r\n\r\n"
@@ -176,7 +303,7 @@ class GoogleDriveService
                     . $fileContent
                     . $closeDelimiter;
 
-                $response = $this->httpClient->post('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink', [
+                $response = $this->httpClient->post('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true&fields=id,name,webViewLink', [
                     'headers' => [
                         'Authorization' => 'Bearer ' . $accessToken,
                         'Content-Type' => 'multipart/related; boundary=' . $boundary,
@@ -187,30 +314,29 @@ class GoogleDriveService
 
                 $result = json_decode($response->getBody()->getContents(), true);
                 if (!empty($result['id'])) {
-                    $gdriveFileId = $result['id'];
-                    $gdriveFileUrl = $result['webViewLink'] ?? "https://drive.google.com/file/d/{$gdriveFileId}/view";
+                    $fileId = $result['id'];
+                    $fileUrl = $result['webViewLink'] ?? "https://drive.google.com/file/d/{$fileId}/view";
+
+                    return [
+                        'uploaded' => true,
+                        'drive_file_id' => $fileId,
+                        'drive_url' => $fileUrl,
+                        'error' => null,
+                    ];
                 }
+            } elseif (!$lastError) {
+                $lastError = 'URL Webhook Google Apps Script atau Kredensial Google Drive belum diatur di menu Cadangan Database GDrive → Kredensial GDrive.';
             }
         } catch (\Throwable $e) {
-            Log::warning("Upload proof to Google Drive warning: " . $e->getMessage());
+            $lastError = 'Google Drive API Error: ' . $e->getMessage();
+            Log::warning("Upload proof to Google Drive API warning: " . $e->getMessage());
         }
 
-        // Simpan data di database prospect
-        $prospect->update([
-            'registration_proof_path' => $localPath,
-            'registration_proof_drive_url' => $gdriveFileUrl,
-            'registration_proof_drive_id' => $gdriveFileId,
-            'registration_proof_uploaded_at' => now(),
-            'registration_proof_uploaded_by' => auth()->id(),
-        ]);
-
         return [
-            'success' => true,
-            'local_path' => $localPath,
-            'drive_url' => $gdriveFileUrl,
-            'drive_file_id' => $gdriveFileId,
-            'folder_id' => $folderId,
-            'message' => 'Bukti pendaftaran akun berhasil diunggah ke Google Drive!',
+            'uploaded' => false,
+            'drive_file_id' => null,
+            'drive_url' => null,
+            'error' => $lastError,
         ];
     }
 
@@ -257,14 +383,21 @@ class GoogleDriveService
         $driveFolderUrl = $rootFolderUrl;
         $driveFileUrl = $rootFolderUrl;
 
-        // 2. Check if automated Google Apps Script Webhook / Google Service is configured
+        // 2. Check if automated Google Apps Script Webhook / Google Service is configured (per kampus atau global)
         $appSettings = AppSettingService::all();
-        $webhookUrl = trim((string)($appSettings['gdrive_webhook_url'] ?? env('GOOGLE_DRIVE_WEBHOOK_URL', '')));
+        $campusWebhookKey = $isCikampek ? 'gdrive_cikampek_webhook_url' : 'gdrive_karawang_webhook_url';
+        $webhookUrl = trim((string)(
+            $appSettings[$campusWebhookKey]
+            ?? $appSettings['gdrive_webhook_url']
+            ?? env('GOOGLE_DRIVE_WEBHOOK_URL', '')
+        ));
 
-        if (!empty($webhookUrl)) {
+        if (!empty($webhookUrl) && !str_contains($webhookUrl, 'test-webhook')) {
             try {
                 $fileContent = base64_encode(file_get_contents($file->getRealPath()));
-                $response = Http::timeout(30)->post($webhookUrl, [
+                $response = Http::timeout(45)->post($webhookUrl, [
+                    'action' => 'visit_documentation_upload',
+                    'folder_id' => $rootFolderId,
                     'root_folder_id' => $rootFolderId,
                     'campus' => $campusName,
                     'campus_folder_id' => $rootFolderId,

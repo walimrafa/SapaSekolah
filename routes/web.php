@@ -142,6 +142,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/prospects/bulk-status', [ProspectController::class, 'bulkUpdateStatus'])->name('prospects.bulk-status');
     Route::post('/prospects/bulk-delete', [ProspectController::class, 'bulkDelete'])->name('prospects.bulk-delete');
     Route::post('/prospects/{prospect}/upload-proof', [ProspectController::class, 'uploadProof'])->name('prospects.upload-proof');
+    Route::post('/prospects/{prospect}/sync-proof-gdrive', [ProspectController::class, 'syncProofToGdrive'])->name('prospects.sync-proof-gdrive');
     Route::get('/prospects/import-template', [ProspectController::class, 'downloadImportTemplate'])->name('prospects.import-template');
     Route::post('/prospects/import', [ProspectController::class, 'import'])->name('prospects.import');
     Route::post('/prospects/{prospect}/validate', [ProspectController::class, 'validateStudent'])->name('prospects.validate');

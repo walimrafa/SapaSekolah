@@ -801,6 +801,7 @@
                                         <li>UBSI Karawang: <code class="font-mono bg-white px-1 py-0.5 rounded text-blue-900 font-bold">karawangmarkom@gmail.com</code></li>
                                         <li>UBSI Cikampek: <code class="font-mono bg-white px-1 py-0.5 rounded text-emerald-900 font-bold">markomubsicikampek@gmail.com</code></li>
                                     </ul>
+                                    <p class="text-[10px] text-blue-800 mt-1.5">✨ URL Webhook yang sama otomatis dipakai untuk unggah <strong>Cadangan Database</strong>, <strong>Bukti Pendaftaran / Follow Up</strong>, dan <strong>Dokumentasi Kunjungan</strong> ke folder Google Drive masing-masing kampus.</p>
                                 </div>
 
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">

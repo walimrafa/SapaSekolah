@@ -69,11 +69,17 @@ class Prospect extends Model
         'study_time_label',
         'scholarship_badge',
         'has_registration_proof',
+        'is_proof_synced_to_drive',
     ];
 
     public function getHasRegistrationProofAttribute(): bool
     {
-        return !empty($this->registration_proof_drive_url) || !empty($this->registration_proof_path);
+        return !empty($this->registration_proof_drive_id) || !empty($this->registration_proof_path);
+    }
+
+    public function getIsProofSyncedToDriveAttribute(): bool
+    {
+        return !empty($this->registration_proof_drive_id) && !empty($this->registration_proof_drive_url);
     }
 
     public function studentQuestionnaire(): BelongsTo
