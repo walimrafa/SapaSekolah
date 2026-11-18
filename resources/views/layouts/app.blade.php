@@ -189,7 +189,7 @@
             x-transition:leave="transition-opacity ease-linear duration-300"
             x-transition:leave-start="opacity-100"
             x-transition:leave-end="opacity-0"
-            class="fixed inset-0 z-20 bg-slate-900/60 backdrop-blur-sm lg:hidden" style="display: none;"></div>
+            class="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm lg:hidden" style="display: none;"></div>
 
         <!-- Main Wrapper -->
         <div class="flex-1 flex flex-col min-w-0 lg:pl-64">

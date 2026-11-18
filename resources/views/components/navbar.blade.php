@@ -9,7 +9,7 @@
 @endphp
 
 <header
-    class="h-16 bg-white border-b border-slate-200/80 sticky top-0 z-20 shadow-sm flex items-center justify-between px-4 lg:px-8">
+    class="h-16 bg-white border-b border-slate-200/80 sticky top-0 z-30 shadow-sm flex items-center justify-between px-4 lg:px-8">
     <div class="flex items-center space-x-3">
         <!-- Sidebar Mobile Toggle -->
         <button @click="sidebarOpen = !sidebarOpen"
@@ -156,7 +156,8 @@
                 x-transition:leave="transition ease-in duration-75"
                 x-transition:leave-start="transform opacity-100 scale-100"
                 x-transition:leave-end="transform opacity-0 scale-95"
-                class="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50">
+                class="fixed inset-x-3 top-[4.25rem] sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-56 bg-white rounded-2xl shadow-2xl border border-slate-200/80 py-2 z-50 max-h-[70vh] overflow-y-auto"
+                style="display: none;">
                 <div class="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Aksi Cepat
                     Marketing</div>
                 <a href="{{ route('schools.index') }}"
@@ -216,7 +217,7 @@
                 x-transition:leave="transition ease-in duration-75"
                 x-transition:leave-start="transform opacity-100 scale-100"
                 x-transition:leave-end="transform opacity-0 scale-95"
-                class="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-200/80 py-2 z-50 max-h-[80vh] overflow-y-auto"
+                class="fixed inset-x-3 top-[4.25rem] sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-72 bg-white rounded-2xl shadow-2xl border border-slate-200/80 py-2 z-50 max-h-[70vh] overflow-y-auto"
                 style="display: none;">
 
                 <!-- Info PMB & Publik -->
@@ -348,7 +349,8 @@
 
             <!-- Notifications Panel -->
             <div x-show="open" x-transition
-                class="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-slate-100 py-3 z-50">
+                class="fixed inset-x-3 top-[4.25rem] sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200/80 py-3 z-50 max-h-[70vh] overflow-y-auto"
+                style="display: none;">
                 <div class="px-4 py-2 border-b border-slate-100 flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <span class="text-xs font-bold text-slate-800">Notifikasi Sistem</span>
@@ -422,7 +424,8 @@
 
             <!-- Dropdown -->
             <div x-show="open" x-transition
-                class="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50">
+                class="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-200/80 py-2 z-50"
+                style="display: none;">
                 <div class="px-4 py-2 border-b border-slate-100">
                     <p class="text-xs font-bold text-slate-800">{{ auth()->user()->name }}</p>
                     <p class="text-[10px] text-slate-500 truncate">{{ auth()->user()->email }}</p>

@@ -1,6 +1,6 @@
 <aside x-data="{ open: true }" 
     :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0 lg:w-64'"
-    class="fixed inset-y-0 left-0 z-30 w-64 theme-sidebar bg-slate-900 text-slate-300 flex flex-col transition-all duration-300 ease-in-out border-r border-slate-800 shadow-2xl">
+    class="fixed inset-y-0 left-0 z-50 w-64 theme-sidebar bg-slate-900 text-slate-300 flex flex-col transition-all duration-300 ease-in-out border-r border-slate-800 shadow-2xl">
 
 @php
     $appSettings = \App\Services\AppSettingService::all();
