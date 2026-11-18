@@ -1082,6 +1082,269 @@
                 </div>
             </div>
 
+            <!-- Form Card 3B: Pengaturan Penamaan & Teks Halaman Login -->
+            @php
+                $loginDefaults = \App\Services\AppSettingService::defaultLoginLabels();
+                $loginLabels = $settings['login_labels'] ?? $loginDefaults;
+            @endphp
+            <div x-data="{
+                loginTab: 'form',
+                isSavingLogin: false,
+                saveLoginSuccess: false,
+                saveLoginMessage: '',
+                resetLoginLabels() {
+                    if (confirm('Kembalikan seluruh penamaan teks & label halaman Login ke default sistem?')) {
+                        document.querySelectorAll('input[name^=\'login_labels[\'], textarea[name^=\'login_labels[\']').forEach(el => {
+                            const def = el.getAttribute('data-default');
+                            if (def !== null) el.value = def;
+                        });
+                    }
+                },
+                async saveLoginLabels() {
+                    this.isSavingLogin = true;
+                    this.saveLoginSuccess = false;
+                    this.saveLoginMessage = '';
+
+                    const formData = new FormData();
+                    formData.append('_token', '{{ csrf_token() }}');
+                    document.querySelectorAll('input[name^=\'login_labels[\'], textarea[name^=\'login_labels[\']').forEach(el => {
+                        formData.append(el.name, el.value);
+                    });
+
+                    try {
+                        const res = await fetch('{{ route('settings.login-labels.update') }}', {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json'
+                            }
+                        });
+                        const json = await res.json();
+                        if (json.success) {
+                            this.saveLoginSuccess = true;
+                            this.saveLoginMessage = json.message || 'Penamaan Form Login berhasil disimpan!';
+                            setTimeout(() => { this.saveLoginSuccess = false; }, 5000);
+                        } else {
+                            alert('Gagal menyimpan: ' + (json.message || 'Terjadi kesalahan.'));
+                        }
+                    } catch (err) {
+                        console.error('Save login labels error:', err);
+                        document.querySelector('form').submit();
+                    } finally {
+                        this.isSavingLogin = false;
+                    }
+                }
+            }" class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-soft">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-4 border-b border-slate-100 gap-3">
+                    <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                        <i data-lucide="log-in" class="w-4 h-4 text-rose-600"></i>
+                        <span>Pengaturan Penamaan &amp; Teks Halaman Login</span>
+                    </h3>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <button type="button" @click="resetLoginLabels()"
+                            class="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 transition flex items-center gap-1.5">
+                            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                            <span>Reset Default</span>
+                        </button>
+                        <button type="button" @click="saveLoginLabels()" :disabled="isSavingLogin"
+                            class="px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:bg-rose-800 disabled:opacity-60 shadow-md shadow-rose-600/25 transition flex items-center gap-1.5">
+                            <template x-if="!isSavingLogin">
+                                <span class="flex items-center gap-1.5">
+                                    <i data-lucide="save" class="w-3.5 h-3.5"></i>
+                                    <span>Simpan Form Login</span>
+                                </span>
+                            </template>
+                            <template x-if="isSavingLogin">
+                                <span class="flex items-center gap-1.5">
+                                    <svg class="animate-spin -ml-0.5 mr-1 h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span>Menyimpan...</span>
+                                </span>
+                            </template>
+                        </button>
+                    </div>
+                </div>
+
+                <div x-show="saveLoginSuccess" x-transition class="p-3 mb-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2" style="display: none;">
+                    <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 shrink-0"></i>
+                    <span x-text="saveLoginMessage"></span>
+                </div>
+
+                <p class="text-xs text-slate-500 mb-4">
+                    Sesuaikan judul, sub-judul, label input (misal ubah <em>NISN / Username</em> menjadi <em>Email / NIP / Username</em>), tombol, dan teks sambutan pada halaman Login aplikasi.
+                </p>
+
+                <!-- Tabs Panel Form Login -->
+                <div class="flex flex-wrap gap-2 border-b border-slate-200 pb-3 mb-5 text-xs">
+                    <button type="button" @click="loginTab = 'form'"
+                        :class="loginTab === 'form' ? 'bg-slate-900 text-white font-bold shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 font-semibold'"
+                        class="px-3.5 py-1.5 rounded-xl transition flex items-center gap-1.5">
+                        <i data-lucide="key-round" class="w-3.5 h-3.5 text-rose-400"></i>
+                        <span>Label Formulir Login (Kanan)</span>
+                    </button>
+                    <button type="button" @click="loginTab = 'hero'"
+                        :class="loginTab === 'hero' ? 'bg-slate-900 text-white font-bold shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 font-semibold'"
+                        class="px-3.5 py-1.5 rounded-xl transition flex items-center gap-1.5">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i>
+                        <span>Teks Hero &amp; Footer (Kiri)</span>
+                    </button>
+                </div>
+
+                <!-- Tab 1: Label Formulir Login -->
+                <div x-show="loginTab === 'form'" class="space-y-4 text-xs">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block font-semibold text-slate-600 mb-1">Judul Utama Form Login</label>
+                            <input type="text" name="login_labels[login_title]"
+                                value="{{ old('login_labels.login_title', $loginLabels['login_title'] ?? $loginDefaults['login_title']) }}"
+                                data-default="{{ $loginDefaults['login_title'] }}"
+                                class="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-600 mb-1">Judul Tab Browser Halaman Login</label>
+                            <input type="text" name="login_labels[login_page_title]"
+                                value="{{ old('login_labels.login_page_title', $loginLabels['login_page_title'] ?? $loginDefaults['login_page_title']) }}"
+                                data-default="{{ $loginDefaults['login_page_title'] }}"
+                                class="w-full px-3 py-2 rounded-xl border border-slate-300">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold text-slate-600 mb-1">Sub-Judul / Instruksi di Bawah Judul Form</label>
+                        <input type="text" name="login_labels[login_subtitle]"
+                            value="{{ old('login_labels.login_subtitle', $loginLabels['login_subtitle'] ?? $loginDefaults['login_subtitle']) }}"
+                            data-default="{{ $loginDefaults['login_subtitle'] }}"
+                            class="w-full px-3 py-2 rounded-xl border border-slate-300">
+                    </div>
+
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block font-semibold text-slate-600 mb-1">Label Input Akun (Email / Username / NISN)</label>
+                            <input type="text" name="login_labels[login_identifier_label]"
+                                value="{{ old('login_labels.login_identifier_label', $loginLabels['login_identifier_label'] ?? $loginDefaults['login_identifier_label']) }}"
+                                data-default="{{ $loginDefaults['login_identifier_label'] }}"
+                                class="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-600 mb-1">Placeholder Input Akun</label>
+                            <input type="text" name="login_labels[login_identifier_placeholder]"
+                                value="{{ old('login_labels.login_identifier_placeholder', $loginLabels['login_identifier_placeholder'] ?? $loginDefaults['login_identifier_placeholder']) }}"
+                                data-default="{{ $loginDefaults['login_identifier_placeholder'] }}"
+                                class="w-full px-3 py-2 rounded-xl border border-slate-300">
+                        </div>
+
+                        <div>
+                            <label class="block font-semibold text-slate-600 mb-1">Label Input Kata Sandi</label>
+                            <input type="text" name="login_labels[login_password_label]"
+                                value="{{ old('login_labels.login_password_label', $loginLabels['login_password_label'] ?? $loginDefaults['login_password_label']) }}"
+                                data-default="{{ $loginDefaults['login_password_label'] }}"
+                                class="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-600 mb-1">Placeholder Kata Sandi</label>
+                            <input type="text" name="login_labels[login_password_placeholder]"
+                                value="{{ old('login_labels.login_password_placeholder', $loginLabels['login_password_placeholder'] ?? $loginDefaults['login_password_placeholder']) }}"
+                                data-default="{{ $loginDefaults['login_password_placeholder'] }}"
+                                class="w-full px-3 py-2 rounded-xl border border-slate-300">
+                        </div>
+
+                        <div>
+                            <label class="block font-semibold text-slate-600 mb-1">Label Kode Keamanan (Captcha)</label>
+                            <input type="text" name="login_labels[login_captcha_label]"
+                                value="{{ old('login_labels.login_captcha_label', $loginLabels['login_captcha_label'] ?? $loginDefaults['login_captcha_label']) }}"
+                                data-default="{{ $loginDefaults['login_captcha_label'] }}"
+                                class="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-600 mb-1">Placeholder Kode Keamanan</label>
+                            <input type="text" name="login_labels[login_captcha_placeholder]"
+                                value="{{ old('login_labels.login_captcha_placeholder', $loginLabels['login_captcha_placeholder'] ?? $loginDefaults['login_captcha_placeholder']) }}"
+                                data-default="{{ $loginDefaults['login_captcha_placeholder'] }}"
+                                class="w-full px-3 py-2 rounded-xl border border-slate-300">
+                        </div>
+
+                        <div>
+                            <label class="block font-semibold text-slate-600 mb-1">Teks Tautan Lupa Password</label>
+                            <input type="text" name="login_labels[login_forgot_label]"
+                                value="{{ old('login_labels.login_forgot_label', $loginLabels['login_forgot_label'] ?? $loginDefaults['login_forgot_label']) }}"
+                                data-default="{{ $loginDefaults['login_forgot_label'] }}"
+                                class="w-full px-3 py-2 rounded-xl border border-slate-300">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-600 mb-1">Label Checkbox Ingat Saya</label>
+                            <input type="text" name="login_labels[login_remember_label]"
+                                value="{{ old('login_labels.login_remember_label', $loginLabels['login_remember_label'] ?? $loginDefaults['login_remember_label']) }}"
+                                data-default="{{ $loginDefaults['login_remember_label'] }}"
+                                class="w-full px-3 py-2 rounded-xl border border-slate-300">
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="block font-semibold text-slate-600 mb-1">Teks Tombol Utama Masuk (Submit)</label>
+                            <input type="text" name="login_labels[login_button_label]"
+                                value="{{ old('login_labels.login_button_label', $loginLabels['login_button_label'] ?? $loginDefaults['login_button_label']) }}"
+                                data-default="{{ $loginDefaults['login_button_label'] }}"
+                                class="w-full px-3 py-2 rounded-xl border border-slate-300 font-extrabold">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Teks Hero & Footer Panel Kiri -->
+                <div x-show="loginTab === 'hero'" class="space-y-4 text-xs" style="display: none;">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block font-semibold text-slate-600 mb-1">Teks Badge Atas Panel Kiri</label>
+                            <input type="text" name="login_labels[login_hero_badge]"
+                                value="{{ old('login_labels.login_hero_badge', $loginLabels['login_hero_badge'] ?? $loginDefaults['login_hero_badge']) }}"
+                                data-default="{{ $loginDefaults['login_hero_badge'] }}"
+                                class="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-600 mb-1">Teks Footer Halaman Login</label>
+                            <input type="text" name="login_labels[login_footer_text]"
+                                value="{{ old('login_labels.login_footer_text', $loginLabels['login_footer_text'] ?? $loginDefaults['login_footer_text']) }}"
+                                data-default="{{ $loginDefaults['login_footer_text'] }}"
+                                class="w-full px-3 py-2 rounded-xl border border-slate-300">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-600 mb-1">Judul Hero Baris 1 (Putih)</label>
+                            <input type="text" name="login_labels[login_hero_title_line1]"
+                                value="{{ old('login_labels.login_hero_title_line1', $loginLabels['login_hero_title_line1'] ?? $loginDefaults['login_hero_title_line1']) }}"
+                                data-default="{{ $loginDefaults['login_hero_title_line1'] }}"
+                                class="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-600 mb-1">Judul Hero Baris 2 (Highlight Gradient)</label>
+                            <input type="text" name="login_labels[login_hero_title_line2]"
+                                value="{{ old('login_labels.login_hero_title_line2', $loginLabels['login_hero_title_line2'] ?? $loginDefaults['login_hero_title_line2']) }}"
+                                data-default="{{ $loginDefaults['login_hero_title_line2'] }}"
+                                class="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-600 mb-1">Deskripsi Singkat Panel Kiri</label>
+                        <textarea name="login_labels[login_hero_description]" rows="2"
+                            data-default="{{ $loginDefaults['login_hero_description'] }}"
+                            class="w-full px-3 py-2 rounded-xl border border-slate-300">{{ old('login_labels.login_hero_description', $loginLabels['login_hero_description'] ?? $loginDefaults['login_hero_description']) }}</textarea>
+                    </div>
+                </div>
+
+                <!-- Action Bar Bawah Card 3B -->
+                <div class="mt-6 pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <p class="text-[11px] text-slate-500 flex items-center gap-1.5">
+                        <i data-lucide="info" class="w-3.5 h-3.5 text-rose-500 shrink-0"></i>
+                        <span>Perubahan langsung diterapkan pada halaman Login &amp; Lupa Password.</span>
+                    </p>
+                    <button type="button" @click="saveLoginLabels()" :disabled="isSavingLogin"
+                        class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:bg-rose-800 disabled:opacity-60 shadow-md shadow-rose-600/25 transition flex items-center gap-1.5 shrink-0 w-full sm:w-auto justify-center">
+                        <i data-lucide="check" class="w-4 h-4"></i>
+                        <span>Simpan Penamaan Form Login</span>
+                    </button>
+                </div>
+            </div>
+
             <!-- Form Card 4: Pengaturan Header & Footer Dashboard -->
             <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-soft">
                 <h3 class="text-sm font-bold text-slate-900 pb-3 mb-4 border-b border-slate-100 flex items-center gap-2">

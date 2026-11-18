@@ -1,9 +1,10 @@
 @php
     $appSettings = \App\Services\AppSettingService::all();
+    $loginLbl = fn(string $k, string $def = '') => \App\Services\AppSettingService::getLoginLabel($k, $def);
     $campuses = \App\Models\Campus::where('is_active', true)->orderBy('is_default', 'desc')->orderBy('id')->get();
     $firstCampusBuilding = $campuses->first()?->building_image_url ?? ($appSettings['campus_building_url'] ?? null);
 @endphp
-<x-guest-layout title="Login Marketing Command Center">
+<x-guest-layout :title="$loginLbl('login_page_title', 'Login Marketing Command Center')">
     <div class="min-h-screen grid grid-cols-1 lg:grid-cols-12 bg-white">
         <!-- Left Side: Branding & Visuals (Desktop & Tablet) -->
         <div class="hidden lg:flex lg:col-span-7 bg-gradient-to-br from-slate-950 via-slate-900 to-brand-navy text-white p-12 lg:p-16 flex-col justify-between relative overflow-hidden">
@@ -31,18 +32,18 @@
             <div class="relative z-10 my-auto py-8">
                 <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold mb-5">
                     <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i>
-                    <span>Command Center PMB</span>
+                    <span>{{ $loginLbl('login_hero_badge', 'Command Center PMB') }}</span>
                 </div>
 
                 <h2 class="text-3xl lg:text-4xl font-extrabold text-white tracking-tight leading-tight mb-4">
-                    Digital Mapping &amp;<br>
+                    {{ $loginLbl('login_hero_title_line1', 'Digital Mapping &') }}<br>
                     <span class="bg-gradient-to-r from-brand-300 via-sky-300 to-amber-300 bg-clip-text text-transparent">
-                        Monitoring PMB Realtime
+                        {{ $loginLbl('login_hero_title_line2', 'Monitoring PMB Realtime') }}
                     </span>
                 </h2>
 
                 <p class="text-slate-300 text-sm max-w-lg leading-relaxed mb-8">
-                    Pemetaan digital sekolah SLTA, agenda kunjungan lapangan, dan integrasi prospek PMB multi-kampus Universitas BSI.
+                    {{ $loginLbl('login_hero_description', 'Pemetaan digital sekolah SLTA, agenda kunjungan lapangan, dan integrasi prospek PMB multi-kampus Universitas BSI.') }}
                 </p>
 
                 <!-- Showcase Gedung Kampus Operasional (Karawang & Cikampek) -->
@@ -82,7 +83,7 @@
 
             <!-- Footer Info -->
             <div class="relative z-10 text-xs text-slate-400 flex items-center justify-between border-t border-slate-800/80 pt-5">
-                <p>&copy; {{ date('Y') }} SAPA Sekolah • Universitas BSI</p>
+                <p>&copy; {{ date('Y') }} {{ $loginLbl('login_footer_text', 'SAPA Sekolah • Universitas BSI') }}</p>
                 <span class="text-slate-500 font-mono text-[11px]">v1.0.0</span>
             </div>
         </div>
@@ -102,9 +103,16 @@
                 </div>
 
                 <div class="mb-6">
-                    <h2 class="text-2xl font-black text-slate-900 mb-1 tracking-tight">Masuk ke Akun 👋</h2>
-                    <p class="text-slate-500 text-xs sm:text-sm">Silakan masukkan NISN/Username, kata sandi, dan kode keamanan.</p>
+                    <h2 class="text-2xl font-black text-slate-900 mb-1 tracking-tight">{{ $loginLbl('login_title', 'Masuk ke Akun 👋') }}</h2>
+                    <p class="text-slate-500 text-xs sm:text-sm">{{ $loginLbl('login_subtitle', 'Silakan masukkan Email/Username, kata sandi, dan kode keamanan.') }}</p>
                 </div>
+
+                @if (session('status'))
+                    <div class="mb-5 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-start space-x-2">
+                        <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5"></i>
+                        <span class="font-semibold">{{ session('status') }}</span>
+                    </div>
+                @endif
 
                 @if ($errors->any())
                     <div class="mb-5 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
@@ -142,22 +150,22 @@
 
                     <!-- NISN / Username / Email -->
                     <div>
-                        <label for="login" class="block text-xs font-bold text-slate-700 mb-1.5">NISN / Username</label>
+                        <label for="login" class="block text-xs font-bold text-slate-700 mb-1.5">{{ $loginLbl('login_identifier_label', 'Email / Username / NISN') }}</label>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                                 <i data-lucide="user" class="w-4 h-4 text-slate-400"></i>
                             </div>
                             <input type="text" name="login" id="login" value="{{ old('login') ?: old('email') }}" required autofocus
                                 class="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 text-slate-800 text-sm font-medium transition duration-150 placeholder-slate-400"
-                                placeholder="Masukkan NISN atau username">
+                                placeholder="{{ $loginLbl('login_identifier_placeholder', 'Masukkan email, username, atau NISN') }}">
                         </div>
                     </div>
 
                     <!-- Kata Sandi dengan Tombol Toggle Eye -->
                     <div>
                         <div class="flex items-center justify-between mb-1.5">
-                            <label for="password" class="block text-xs font-bold text-slate-700">Kata Sandi</label>
-                            <a href="#" class="text-xs font-semibold text-brand-600 hover:text-brand-700">Lupa password?</a>
+                            <label for="password" class="block text-xs font-bold text-slate-700">{{ $loginLbl('login_password_label', 'Kata Sandi') }}</label>
+                            <a href="{{ route('password.request') }}" class="text-xs font-semibold text-brand-600 hover:text-brand-700 hover:underline transition">{{ $loginLbl('login_forgot_label', 'Lupa password?') }}</a>
                         </div>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -165,7 +173,7 @@
                             </div>
                             <input :type="showPassword ? 'text' : 'password'" name="password" id="password" required
                                 class="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 text-slate-800 text-sm font-medium transition duration-150 placeholder-slate-400"
-                                placeholder="Masukkan kata sandi">
+                                placeholder="{{ $loginLbl('login_password_placeholder', 'Masukkan kata sandi') }}">
                             <button type="button" @click="showPassword = !showPassword"
                                 class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition"
                                 title="Lihat/Sembunyikan Kata Sandi">
@@ -177,7 +185,7 @@
 
                     <!-- Kode Keamanan (Captcha) -->
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1.5">Kode Keamanan</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">{{ $loginLbl('login_captcha_label', 'Kode Keamanan') }}</label>
                         <div class="flex items-center gap-2 mb-2">
                             <!-- Visual Box Captcha -->
                             <div id="captcha-container" class="rounded-xl overflow-hidden border border-slate-300 shadow-inner bg-slate-900 inline-flex items-center justify-center h-[42px] px-1 select-none">
@@ -196,20 +204,20 @@
                             </div>
                             <input type="text" name="captcha" id="captcha" required autocomplete="off"
                                 class="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 text-slate-800 text-sm font-semibold uppercase tracking-wider transition duration-150 placeholder-slate-400"
-                                placeholder="Ketik kode">
+                                placeholder="{{ $loginLbl('login_captcha_placeholder', 'Ketik kode') }}">
                         </div>
                     </div>
 
                     <div class="flex items-center justify-between pt-1">
                         <label class="flex items-center cursor-pointer">
                             <input type="checkbox" name="remember" class="w-4 h-4 rounded text-brand-600 border-slate-300 focus:ring-brand-500">
-                            <span class="ml-2 text-xs font-medium text-slate-600">Ingat saya</span>
+                            <span class="ml-2 text-xs font-medium text-slate-600">{{ $loginLbl('login_remember_label', 'Ingat saya') }}</span>
                         </label>
                     </div>
 
                     <button type="submit"
                         class="w-full py-3 px-4 bg-gradient-to-r from-brand-navy to-brand-700 hover:from-brand-900 hover:to-brand-800 text-white font-extrabold rounded-xl shadow-md shadow-brand-900/20 transition duration-200 flex items-center justify-center space-x-2 text-sm cursor-pointer hover:shadow-lg">
-                        <span>Masuk</span>
+                        <span>{{ $loginLbl('login_button_label', 'Masuk') }}</span>
                         <i data-lucide="arrow-right" class="w-4 h-4"></i>
                     </button>
                 </form>

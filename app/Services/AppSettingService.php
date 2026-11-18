@@ -53,6 +53,7 @@ class AppSettingService
             'last_period_closed_at' => null,
             'last_period_closed_by' => null,
             'sidebar_labels' => static::defaultSidebarLabels(),
+            'login_labels' => static::defaultLoginLabels(),
         ];
 
         $dbData = [];
@@ -81,6 +82,9 @@ class AppSettingService
         $merged = array_merge($defaults, $fileData, $dbData);
         if (isset($merged['sidebar_labels']) && is_array($merged['sidebar_labels'])) {
             $merged['sidebar_labels'] = array_merge(static::defaultSidebarLabels(), $merged['sidebar_labels']);
+        }
+        if (isset($merged['login_labels']) && is_array($merged['login_labels'])) {
+            $merged['login_labels'] = array_merge(static::defaultLoginLabels(), $merged['login_labels']);
         }
 
         static::$cache = $merged;
@@ -189,6 +193,48 @@ class AppSettingService
     }
 
     /**
+     * Daftar label default untuk kustomisasi teks halaman & formulir Login.
+     */
+    public static function defaultLoginLabels(): array
+    {
+        return [
+            'login_page_title' => 'Login Marketing Command Center',
+            'login_title' => 'Masuk ke Akun 👋',
+            'login_subtitle' => 'Silakan masukkan Email/Username, kata sandi, dan kode keamanan.',
+            'login_identifier_label' => 'Email / Username / NISN',
+            'login_identifier_placeholder' => 'Masukkan email, username, atau NISN',
+            'login_password_label' => 'Kata Sandi',
+            'login_password_placeholder' => 'Masukkan kata sandi',
+            'login_forgot_label' => 'Lupa password?',
+            'login_captcha_label' => 'Kode Keamanan',
+            'login_captcha_placeholder' => 'Ketik kode',
+            'login_remember_label' => 'Ingat saya',
+            'login_button_label' => 'Masuk',
+            'login_hero_badge' => 'Command Center PMB',
+            'login_hero_title_line1' => 'Digital Mapping &',
+            'login_hero_title_line2' => 'Monitoring PMB Realtime',
+            'login_hero_description' => 'Pemetaan digital sekolah SLTA, agenda kunjungan lapangan, dan integrasi prospek PMB multi-kampus Universitas BSI.',
+            'login_footer_text' => 'SAPA Sekolah • Universitas BSI',
+        ];
+    }
+
+    /**
+     * Dapatkan label halaman login berdasarkan key (dengan fallback ke default).
+     */
+    public static function getLoginLabel(string $key, ?string $fallback = null): string
+    {
+        $defaults = static::defaultLoginLabels();
+        $all = static::all();
+        $custom = $all['login_labels'][$key] ?? null;
+
+        if (!empty($custom) && trim($custom) !== '') {
+            return trim($custom);
+        }
+
+        return $defaults[$key] ?? ($fallback ?? $key);
+    }
+
+    /**
      * Dapatkan label sidebar berdasarkan key (dengan fallback ke default).
      */
     public static function getSidebarLabel(string $key, ?string $fallback = null): string
@@ -239,6 +285,19 @@ class AppSettingService
                 }
             }
             $settings['sidebar_labels'] = $mergedLabels;
+        }
+
+        if (isset($settings['login_labels']) && is_array($settings['login_labels'])) {
+            $defaultLoginLabels = static::defaultLoginLabels();
+            $mergedLoginLabels = $current['login_labels'] ?? $defaultLoginLabels;
+
+            foreach ($settings['login_labels'] as $k => $v) {
+                if (array_key_exists($k, $defaultLoginLabels)) {
+                    $trimmed = is_string($v) ? trim($v) : '';
+                    $mergedLoginLabels[$k] = $trimmed !== '' ? $trimmed : $defaultLoginLabels[$k];
+                }
+            }
+            $settings['login_labels'] = $mergedLoginLabels;
         }
 
         $updated = array_merge($current, $settings);

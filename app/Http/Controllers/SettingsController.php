@@ -56,6 +56,8 @@ class SettingsController extends Controller
             'kol_min_followers' => ['nullable', 'integer', 'min:1', 'max:10000000'],
             'sidebar_labels' => ['nullable', 'array'],
             'sidebar_labels.*' => ['nullable', 'string', 'max:100'],
+            'login_labels' => ['nullable', 'array'],
+            'login_labels.*' => ['nullable', 'string', 'max:300'],
         ]);
 
         if ($request->hasFile('logo_file')) {
@@ -138,6 +140,35 @@ class SettingsController extends Controller
             ->with('toast', [
                 'type' => 'success',
                 'message' => 'Nama menu & sub-menu navigasi sidebar berhasil diperbarui!',
+            ]);
+    }
+
+    /**
+     * Simpan kustomisasi teks & penamaan halaman Form Login secara cepat (AJAX / Standalone Form).
+     */
+    public function updateLoginLabels(Request $request)
+    {
+        $validated = $request->validate([
+            'login_labels' => ['required', 'array'],
+            'login_labels.*' => ['nullable', 'string', 'max:300'],
+        ]);
+
+        AppSettingService::setMany([
+            'login_labels' => $validated['login_labels'],
+        ]);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Penamaan teks & label Halaman Login berhasil disimpan dan langsung aktif!',
+                'login_labels' => AppSettingService::get('login_labels'),
+            ]);
+        }
+
+        return redirect()->route('settings.index')
+            ->with('toast', [
+                'type' => 'success',
+                'message' => 'Penamaan teks & label Halaman Login berhasil diperbarui!',
             ]);
     }
 

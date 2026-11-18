@@ -57,6 +57,13 @@ Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:10,1');
     Route::get('/captcha/refresh', [LoginController::class, 'refreshCaptcha'])->name('captcha.refresh');
+
+    // Lupa Password & Reset Kata Sandi
+    Route::get('/forgot-password', [\App\Http\Controllers\Auth\ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
+    Route::post('/forgot-password', [\App\Http\Controllers\Auth\ForgotPasswordController::class, 'sendResetLink'])->name('password.email')->middleware('throttle:5,1');
+    Route::post('/forgot-password/verify-phone', [\App\Http\Controllers\Auth\ForgotPasswordController::class, 'verifyPhoneAndProceed'])->name('password.verify-phone')->middleware('throttle:5,1');
+    Route::get('/reset-password/{token}', [\App\Http\Controllers\Auth\ForgotPasswordController::class, 'showResetForm'])->name('password.reset');
+    Route::post('/reset-password', [\App\Http\Controllers\Auth\ForgotPasswordController::class, 'reset'])->name('password.update')->middleware('throttle:5,1');
 });
 
 Route::post('/logout', [LogoutController::class, 'logout'])->name('logout')->middleware('auth');
@@ -302,6 +309,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
         Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
         Route::post('/settings/sidebar-labels', [SettingsController::class, 'updateSidebarLabels'])->name('settings.sidebar-labels.update');
+        Route::post('/settings/login-labels', [SettingsController::class, 'updateLoginLabels'])->name('settings.login-labels.update');
         Route::post('/settings/close-period', [SettingsController::class, 'closePeriod'])->name('settings.close-period');
 
         // Pengajuan Tutup Periode oleh Admin
