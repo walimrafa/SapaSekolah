@@ -157,11 +157,27 @@ class User extends Authenticatable
     }
 
     /**
-     * Cek apakah user adalah Customer Service.
+     * Cek apakah user adalah Customer Service (staf).
      */
     public function isCustomerService(): bool
     {
         return $this->hasRole('Customer Service');
+    }
+
+    /**
+     * Cek apakah user adalah Koordinator Customer Service.
+     */
+    public function isKoordinatorCs(): bool
+    {
+        return $this->hasRole('Koordinator Customer Service');
+    }
+
+    /**
+     * Cek apakah user berada di divisi Customer Service (staf CS maupun Koordinator CS).
+     */
+    public function isAnyCustomerService(): bool
+    {
+        return $this->isCustomerService() || $this->isKoordinatorCs();
     }
 
     /**
@@ -241,16 +257,25 @@ class User extends Authenticatable
             return false;
         }
 
-        return $this->isPimpinan() || $this->isKoordinator() || $this->hasRole('Koordinator Marketing');
+        return $this->isPimpinan() || $this->isKoordinator() || $this->isKoordinatorCs() || $this->hasRole('Koordinator Marketing');
     }
 
     /**
      * Cek apakah user berwenang melakukan ploting / pembagian data follow up.
-     * Ploting data siswa (kuisioner & hasil support event) dikelola oleh Pimpinan dan Koordinator Marketing.
+     * Ploting data siswa (kuisioner & hasil support event) dikelola oleh Admin, Pimpinan,
+     * Koordinator Marketing, dan Koordinator Customer Service.
      */
     public function canPlotFollowUps(): bool
     {
-        return $this->isAdmin() || $this->isPimpinan() || $this->isKoordinator();
+        return $this->isAdmin() || $this->isPimpinan() || $this->isKoordinator() || $this->isKoordinatorCs();
+    }
+
+    /**
+     * Cek apakah user berwenang memantau dan mengontrol progres tim Customer Service.
+     */
+    public function canMonitorCsProgress(): bool
+    {
+        return $this->isAdmin() || $this->isPimpinan() || $this->isKoordinator() || $this->isKoordinatorCs();
     }
 
     /**

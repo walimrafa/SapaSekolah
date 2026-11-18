@@ -311,7 +311,7 @@ class EventStudentLeadController extends Controller
 
         $assignableOfficersQuery = \App\Models\User::query()
             ->whereHas('role', function ($q) {
-                $q->whereIn('name', ['Marketing', 'Customer Service', 'Koordinator Marketing']);
+                $q->whereIn('name', ['Marketing', 'Customer Service', 'Koordinator Marketing', 'Koordinator Customer Service']);
             })
             ->active();
 

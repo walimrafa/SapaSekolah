@@ -44,6 +44,7 @@
                                             'Admin' => 'bg-purple-100 text-purple-700 border-purple-200',
                                             'Pimpinan' => 'bg-amber-100 text-amber-800 border-amber-200',
                                             'Koordinator Marketing' => 'bg-blue-100 text-blue-700 border-blue-200',
+                                            'Koordinator Customer Service' => 'bg-teal-100 text-teal-800 border-teal-200',
                                             'Marketing' => 'bg-emerald-100 text-emerald-700 border-emerald-200',
                                             'Customer Service' => 'bg-cyan-100 text-cyan-800 border-cyan-200',
                                         ];

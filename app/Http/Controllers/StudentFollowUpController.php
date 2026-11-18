@@ -203,7 +203,7 @@ class StudentFollowUpController extends Controller
 
         $assignableOfficersQuery = User::query()
             ->whereHas('role', function ($q) {
-                $q->whereIn('name', ['Marketing', 'Customer Service', 'Koordinator Marketing']);
+                $q->whereIn('name', ['Marketing', 'Customer Service', 'Koordinator Marketing', 'Koordinator Customer Service']);
             })
             ->active();
 
@@ -725,7 +725,7 @@ class StudentFollowUpController extends Controller
     public function distributePage(Request $request): View
     {
         if (!auth()->user() || !auth()->user()->canPlotFollowUps()) {
-            abort(403, 'Akses ditolak. Pengaturan pembagian data follow up hanya dapat dilakukan oleh Pimpinan dan Koordinator Marketing.');
+            abort(403, 'Akses ditolak. Pengaturan pembagian data follow up hanya dapat dilakukan oleh Admin, Pimpinan, Koordinator Marketing, dan Koordinator Customer Service.');
         }
 
         $activeCampus = \App\Services\AppContextService::getActiveCampus();
@@ -763,7 +763,7 @@ class StudentFollowUpController extends Controller
 
         $assignableOfficersQuery = User::query()
             ->whereHas('role', function ($q) {
-                $q->whereIn('name', ['Marketing', 'Customer Service', 'Koordinator Marketing']);
+                $q->whereIn('name', ['Marketing', 'Customer Service', 'Koordinator Marketing', 'Koordinator Customer Service']);
             })
             ->active();
 
@@ -807,7 +807,7 @@ class StudentFollowUpController extends Controller
     {
         $user = auth()->user();
         if (!$user || !$user->canPlotFollowUps()) {
-            abort(403, 'Akses ditolak. Pengaturan pembagian data follow up hanya dapat dilakukan oleh Pimpinan dan Koordinator Marketing.');
+            abort(403, 'Akses ditolak. Pengaturan pembagian data follow up hanya dapat dilakukan oleh Admin, Pimpinan, Koordinator Marketing, dan Koordinator Customer Service.');
         }
 
         $validated = $request->validate([
@@ -959,7 +959,7 @@ class StudentFollowUpController extends Controller
     public function bulkAssign(Request $request): RedirectResponse
     {
         if (!auth()->user() || !auth()->user()->canPlotFollowUps()) {
-            abort(403, 'Akses ditolak. Pengaturan pembagian data follow up hanya dapat dilakukan oleh Pimpinan dan Koordinator Marketing.');
+            abort(403, 'Akses ditolak. Pengaturan pembagian data follow up hanya dapat dilakukan oleh Admin, Pimpinan, Koordinator Marketing, dan Koordinator Customer Service.');
         }
 
         $validated = $request->validate([

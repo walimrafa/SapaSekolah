@@ -740,7 +740,7 @@ class FollowUpController extends Controller
     public function destroy(FollowUp $followUp): RedirectResponse
     {
         $user = auth()->user();
-        if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator())) {
+        if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator() && !$user->isKoordinatorCs())) {
             abort(403, 'Akses ditolak. Penghapusan histori follow up hanya dapat dilakukan oleh Admin, Pimpinan, dan Koordinator.');
         }
 

@@ -369,7 +369,7 @@ class ProspectController extends Controller
     public function bulkDelete(Request $request): RedirectResponse
     {
         $user = auth()->user();
-        if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator())) {
+        if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator() && !$user->isKoordinatorCs())) {
             abort(403, 'Akses ditolak. Anda tidak berhak menghapus data prospek calon mahasiswa.');
         }
 
@@ -453,7 +453,7 @@ class ProspectController extends Controller
     public function destroy(Prospect $prospect): RedirectResponse
     {
         $user = auth()->user();
-        if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator())) {
+        if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator() && !$user->isKoordinatorCs())) {
             abort(403, 'Akses ditolak. Anda tidak berhak menghapus data prospek calon mahasiswa.');
         }
 

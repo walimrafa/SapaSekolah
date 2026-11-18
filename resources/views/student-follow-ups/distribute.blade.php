@@ -38,7 +38,7 @@
                 <div class="space-y-1.5">
                     <div class="flex flex-wrap items-center gap-2">
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-400/20 text-amber-300 border border-amber-400/30">
-                            <i data-lucide="shield-check" class="w-3.5 h-3.5 mr-1 text-amber-400"></i> Hak Akses Pimpinan &amp; Koordinator
+                            <i data-lucide="shield-check" class="w-3.5 h-3.5 mr-1 text-amber-400"></i> Hak Akses Pimpinan, Koord. Marketing &amp; Koord. CS
                         </span>
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">
                             {{ $activeCampus ? $activeCampus->name : 'Semua Kampus' }}

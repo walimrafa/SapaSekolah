@@ -106,11 +106,17 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/student-follow-ups/import', [StudentFollowUpController::class, 'import'])->name('student-follow-ups.import');
     Route::get('/student-follow-ups', [StudentFollowUpController::class, 'index'])->name('student-follow-ups.index');
 
-    // Ploting & Pembagian Jumlah Data Follow Up (Pimpinan, Koordinator Marketing, & Admin)
+    // Ploting & Pembagian Jumlah Data Follow Up (Pimpinan, Koordinator Marketing, Koordinator CS, & Admin)
     Route::get('/student-follow-ups/distribute', [StudentFollowUpController::class, 'distributePage'])->name('student-follow-ups.distribute.page');
     Route::post('/student-follow-ups/distribute', [StudentFollowUpController::class, 'distribute'])->name('student-follow-ups.distribute');
     Route::post('/student-follow-ups/bulk-assign', [StudentFollowUpController::class, 'bulkAssign'])->name('student-follow-ups.bulk-assign');
     Route::post('/student-follow-ups/bulk-destroy', [StudentFollowUpController::class, 'bulkDestroy'])->name('student-follow-ups.bulk-destroy');
+
+    // Kontrol & Monitoring Progres Tim Customer Service (Admin, Pimpinan, Koordinator Marketing, Koordinator Customer Service)
+    Route::middleware('role:Admin,Pimpinan,Koordinator Marketing,Koordinator Customer Service')->group(function () {
+        Route::get('/cs-progress', [\App\Http\Controllers\CsProgressController::class, 'index'])->name('cs-progress.index');
+        Route::get('/cs-progress/export', [\App\Http\Controllers\CsProgressController::class, 'export'])->name('cs-progress.export');
+    });
 
     Route::post('/student-follow-ups/{studentQuestionnaire}/assign', [StudentFollowUpController::class, 'assignSingle'])->whereNumber('studentQuestionnaire')->name('student-follow-ups.assign-single');
     Route::post('/student-follow-ups/{studentQuestionnaire}', [StudentFollowUpController::class, 'store'])->whereNumber('studentQuestionnaire')->name('student-follow-ups.store');
@@ -309,8 +315,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/whatsapp-notifications/trigger-reminders', [\App\Http\Controllers\WhatsAppNotificationController::class, 'triggerReminders'])->name('whatsapp-notifications.trigger-reminders');
     });
 
-    // 7. Multi-Stakeholder Tutup Periode Review & Keputusan (Admin, Pimpinan, Koordinator Marketing, Customer Service)
-    Route::middleware('role:Admin,Pimpinan,Koordinator Marketing,Customer Service')->group(function () {
+    // 7. Multi-Stakeholder Tutup Periode Review & Keputusan (Admin, Pimpinan, Koordinator Marketing, Customer Service, Koordinator CS)
+    Route::middleware('role:Admin,Pimpinan,Koordinator Marketing,Customer Service,Koordinator Customer Service')->group(function () {
         Route::get('/period-closing', [\App\Http\Controllers\PeriodClosingController::class, 'index'])->name('period-closing.index');
         Route::post('/period-closing/{periodClosingRequest}/respond', [\App\Http\Controllers\PeriodClosingController::class, 'respond'])->name('period-closing.respond');
     });

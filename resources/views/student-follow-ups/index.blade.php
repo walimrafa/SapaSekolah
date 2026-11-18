@@ -85,9 +85,9 @@
                     <div>
                         <div class="flex items-center gap-2 flex-wrap">
                             <span class="text-xs font-black text-amber-400 tracking-wide uppercase">Panel Ploting Follow Up Siswa</span>
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/10 text-slate-200 border border-white/10">Pimpinan & Koordinator</span>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/10 text-slate-200 border border-white/10">Pimpinan, Koord. Marketing &amp; Koord. CS</span>
                         </div>
-                        <p class="text-xs text-slate-300 mt-0.5">Kelola dan distribusikan kuota data follow up siswa (kuisioner & hasil support event) ke staf marketing.</p>
+                        <p class="text-xs text-slate-300 mt-0.5">Kelola dan distribusikan kuota data follow up siswa (kuisioner &amp; hasil support event) ke staf Customer Service &amp; Marketing serta pantau progresnya.</p>
                     </div>
                 </div>
                 <div class="flex flex-wrap items-center gap-2.5 text-xs">
@@ -105,6 +105,10 @@
                             <span class="text-[10px] text-slate-400">Siswa Aktif</span>
                         </div>
                     </div>
+                    <a href="{{ route('cs-progress.index') }}" class="px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-extrabold shadow-md flex items-center gap-2 transition">
+                        <i data-lucide="activity" class="w-4 h-4"></i>
+                        <span>Kontrol Progres CS</span>
+                    </a>
                     <a href="{{ route('student-follow-ups.distribute.page') }}" onclick="if(!event.ctrlKey && !event.metaKey && event.button === 0){ event.preventDefault(); openPlotingModal(); }" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black shadow-md flex items-center gap-2 transition transform hover:scale-105">
                         <i data-lucide="shuffle" class="w-4 h-4"></i>
                         <span>Bagi Data Sekarang</span>

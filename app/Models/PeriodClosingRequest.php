@@ -113,7 +113,7 @@ class PeriodClosingRequest extends Model
             return true;
         }
 
-        if ($user->isCustomerService() && $this->cs_status === 'pending') {
+        if ($user->isAnyCustomerService() && $this->cs_status === 'pending') {
             return true;
         }
 
@@ -126,7 +126,7 @@ class PeriodClosingRequest extends Model
 
         if ($user->isPimpinan()) return 'pimpinan';
         if ($user->isKoordinator()) return 'koordinator';
-        if ($user->isCustomerService()) return 'cs';
+        if ($user->isAnyCustomerService()) return 'cs';
 
         return null;
     }

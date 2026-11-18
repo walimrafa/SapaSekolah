@@ -58,6 +58,11 @@ class StudentFollowUp extends Model
         return $this->belongsTo(StudentQuestionnaire::class, 'student_questionnaire_id');
     }
 
+    public function studentQuestionnaire()
+    {
+        return $this->belongsTo(StudentQuestionnaire::class, 'student_questionnaire_id');
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');

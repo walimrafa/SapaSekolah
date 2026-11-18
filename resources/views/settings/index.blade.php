@@ -624,6 +624,13 @@
                                         class="w-full px-3 py-2 rounded-xl border border-slate-300">
                                 </div>
                                 <div>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Kontrol Progres CS</label>
+                                    <input type="text" name="sidebar_labels[submenu_cs_progress]"
+                                        value="{{ old('sidebar_labels.submenu_cs_progress', $settings['sidebar_labels']['submenu_cs_progress'] ?? 'Kontrol Progres CS') }}"
+                                        data-default="Kontrol Progres CS" placeholder="Kontrol Progres CS"
+                                        class="w-full px-3 py-2 rounded-xl border border-slate-300">
+                                </div>
+                                <div>
                                     <label class="block text-[11px] font-semibold text-slate-600 mb-1">Prodi</label>
                                     <input type="text" name="sidebar_labels[submenu_study_programs]"
                                         value="{{ old('sidebar_labels.submenu_study_programs', $settings['sidebar_labels']['submenu_study_programs'] ?? 'Prodi') }}"

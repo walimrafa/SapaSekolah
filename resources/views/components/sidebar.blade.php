@@ -9,7 +9,7 @@
     // Check active states for auto-expanding current menu
     $isSchoolActive = request()->routeIs('map.*', 'schools.*', 'priorities.*');
     $isFieldActive = request()->routeIs('visit-plans.*', 'visits.*', 'follow-ups.*', 'socializations.completed.*', 'marketing-routes.*', 'activities.*');
-    $isCrmActive = request()->routeIs('prospects.*', 'new-students.*', 'student-questionnaires.*', 'student-follow-ups.*', 'study-programs.*');
+    $isCrmActive = request()->routeIs('prospects.*', 'new-students.*', 'student-questionnaires.*', 'student-follow-ups.*', 'cs-progress.*', 'study-programs.*');
     $isKolActive = request()->routeIs('kol-recommendations.*');
     $isEventActive = request()->routeIs('event-proposals.*', 'school-events.*', 'event-students.*');
     $isReportActive = request()->routeIs('reports.*', 'comprehensive-reports.*', 'event-reports.*');
@@ -17,7 +17,7 @@
     $canAccessPeriodClosing = auth()->user()->isAdmin() 
         || auth()->user()->isPimpinan() 
         || auth()->user()->isKoordinator() 
-        || auth()->user()->isCustomerService();
+        || auth()->user()->isAnyCustomerService();
     $hasPendingPeriodNotice = \App\Services\PeriodClosingService::pendingForUser(auth()->user());
     
     // Master & Sistem Categorized Active States
@@ -125,7 +125,7 @@
                     <span>{{ $lbl('submenu_schools', 'Daftar Sekolah') }}</span>
                 </a>
 
-                @if(!auth()->user()->isCustomerService())
+                @if(!auth()->user()->isAnyCustomerService())
                 <a href="{{ route('priorities.index') }}"
                     class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('priorities.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <i data-lucide="award" class="w-3.5 h-3.5 text-amber-400"></i>
@@ -135,7 +135,7 @@
             </div>
         </div>
 
-        @if(auth()->user()->isCustomerService())
+        @if(auth()->user()->isAnyCustomerService())
         <!-- Customer Service Follow Up Group -->
         <div x-data="{ expanded: {{ request()->routeIs('follow-ups.*', 'qr-codes.*') ? 'true' : 'false' }} }" class="space-y-1">
             <button @click="expanded = !expanded" type="button"
@@ -281,6 +281,17 @@
                     <i data-lucide="user-check" class="w-3.5 h-3.5 text-emerald-400"></i>
                     <span>{{ $lbl('submenu_student_followups', 'Follow Up') }}</span>
                 </a>
+
+                @if(auth()->user()->canMonitorCsProgress())
+                <a href="{{ route('cs-progress.index') }}"
+                    class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('cs-progress.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <div class="flex items-center space-x-2.5">
+                        <i data-lucide="activity" class="w-3.5 h-3.5 text-teal-400"></i>
+                        <span>{{ $lbl('submenu_cs_progress', 'Kontrol Progres CS') }}</span>
+                    </div>
+                    <span class="px-1.5 py-0.2 text-[9px] font-bold bg-teal-500/20 text-teal-300 rounded">CS</span>
+                </a>
+                @endif
 
                 <a href="{{ route('study-programs.index') }}"
                     class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('study-programs.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
@@ -696,7 +707,7 @@
                 </a>
 
                 <!-- QR Code Generator -->
-                @if(!auth()->user()->isCustomerService())
+                @if(!auth()->user()->isAnyCustomerService())
                 <a href="{{ route('qr-codes.index') }}"
                     class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('qr-codes.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <i data-lucide="qr-code" class="w-3.5 h-3.5 text-amber-400"></i>

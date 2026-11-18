@@ -124,6 +124,7 @@ class AppSettingService
             'submenu_new_students' => 'Mahasiswa Baru',
             'submenu_questionnaires' => 'Kuisioner',
             'submenu_student_followups' => 'Follow Up',
+            'submenu_cs_progress' => 'Kontrol Progres CS',
             'submenu_study_programs' => 'Prodi',
 
             // 6. Rekomendasi KOL & Brand Ambassador
