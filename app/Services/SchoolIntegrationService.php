@@ -306,6 +306,23 @@ class SchoolIntegrationService
             default => ['SMK', 'SMA', 'MA'], // ALL SLTA sederajat
         };
 
+        // Ensure baseline reference records exist (prevent FK constraint violation on fresh DB)
+        foreach (['SMA', 'SMK', 'MA', 'SLB'] as $defaultTypeName) {
+            SchoolType::firstOrCreate(['name' => $defaultTypeName]);
+        }
+        $defaultAccList = [
+            ['code' => 'A', 'name' => 'Akreditasi A', 'description' => 'Akreditasi A - Unggul'],
+            ['code' => 'B', 'name' => 'Akreditasi B', 'description' => 'Akreditasi B - Baik'],
+            ['code' => 'C', 'name' => 'Akreditasi C', 'description' => 'Akreditasi C - Cukup'],
+            ['code' => 'BT', 'name' => 'Belum Terakreditasi', 'description' => 'Belum Terakreditasi'],
+        ];
+        foreach ($defaultAccList as $accDef) {
+            Accreditation::firstOrCreate(
+                ['code' => $accDef['code']],
+                ['name' => $accDef['name'], 'description' => $accDef['description']]
+            );
+        }
+
         // Preload Reference Maps
         $schoolTypes = SchoolType::all()->keyBy(fn($st) => strtoupper($st->name));
         $accreditations = Accreditation::all()->keyBy(fn($acc) => strtoupper($acc->code));
@@ -424,11 +441,11 @@ class SchoolIntegrationService
                 default => 'SMA',
             };
 
-            $schoolTypeId = $schoolTypes[$levelKey]->id ?? ($schoolTypes['SMA']->id ?? 1);
+            $schoolTypeId = $schoolTypes[$levelKey]->id ?? ($schoolTypes['SMA']->id ?? $schoolTypes->first()?->id);
 
             // Determine Accreditation
             $rawAcc = strtoupper(trim($item['akreditasi'] ?? ''));
-            $accId = $accreditations[$rawAcc]->id ?? ($defaultAccreditation?->id ?? 4);
+            $accId = $accreditations[$rawAcc]->id ?? ($defaultAccreditation?->id ?? $accreditations->first()?->id);
 
             // Determine Status (Negeri / Swasta)
             $statusRaw = strtoupper(trim($item['statusSatuanPendidikan'] ?? ''));

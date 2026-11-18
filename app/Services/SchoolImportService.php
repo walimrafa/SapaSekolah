@@ -156,14 +156,18 @@ class SchoolImportService
                 ->orWhere('name', 'like', "%{$name}%")
                 ->first();
 
+            $defaultSchoolTypeId = SchoolType::firstOrCreate(['name' => 'SMA'])->id;
+            $defaultDistrict = District::first();
+            $defaultRegencyId = $defaultDistrict?->regency_id ?? \App\Models\Regency::first()?->id;
+
             $data = [
                 'campus_id' => $activeCampus?->id,
                 'npsn' => $npsn,
                 'name' => strtoupper($name),
                 'status' => $status,
-                'school_type_id' => $schoolTypeId ?? 1,
-                'district_id' => $districtId ?? 1,
-                'regency_id' => 1,
+                'school_type_id' => $schoolTypeId ?? $defaultSchoolTypeId,
+                'district_id' => $districtId ?? $defaultDistrict?->id,
+                'regency_id' => $defaultRegencyId,
                 'address' => $address,
                 'latitude' => $lat,
                 'longitude' => $lng,
