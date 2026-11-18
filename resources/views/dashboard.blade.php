@@ -98,25 +98,36 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
             <!-- Kelompok 1: Info PMB (UBSI) -->
-            <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-soft flex flex-col justify-between">
-                <div>
-                    <div class="flex items-center justify-between pb-3 mb-3.5 border-b border-slate-100">
-                        <div class="flex items-center gap-2.5">
-                            <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 border border-amber-200/60 flex items-center justify-center shrink-0">
-                                <i data-lucide="graduation-cap" class="w-4 h-4"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-sm font-extrabold text-slate-900">{{ $lbl('menu_pmb', 'Info PMB') }}</h3>
-                                <p class="text-[11px] text-slate-500">Referensi resmi, brosur, biaya &amp; beasiswa</p>
-                            </div>
+            <div x-data="{ open: false }"
+                class="bg-white rounded-3xl border border-slate-200/80 shadow-soft overflow-hidden transition hover:border-amber-300/80">
+                <button type="button" @click="open = !open"
+                    class="w-full p-5 flex items-center justify-between text-left hover:bg-slate-50/70 transition cursor-pointer">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 border border-amber-200/60 flex items-center justify-center shrink-0">
+                            <i data-lucide="graduation-cap" class="w-5 h-5"></i>
                         </div>
+                        <div class="min-w-0">
+                            <h3 class="text-sm font-extrabold text-slate-900 truncate">{{ $lbl('menu_pmb', 'Info PMB') }}</h3>
+                            <p class="text-[11px] text-slate-500 truncate">Referensi resmi, brosur, biaya &amp; beasiswa</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0 ml-2">
                         <span class="px-2 py-0.5 text-[10px] font-extrabold bg-amber-100 text-amber-800 rounded-lg border border-amber-200">
                             {{ $lbl('badge_pmb', 'UBSI') }}
                         </span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform duration-200" :class="open ? 'rotate-180 text-amber-600' : ''"></i>
                     </div>
+                </button>
 
+                <div x-show="open" x-transition:enter="transition ease-out duration-200"
+                    x-transition:enter-start="opacity-0 -translate-y-1"
+                    x-transition:enter-end="opacity-100 translate-y-0"
+                    x-transition:leave="transition ease-in duration-150"
+                    x-transition:leave-start="opacity-100 translate-y-0"
+                    x-transition:leave-end="opacity-0 -translate-y-1"
+                    class="px-5 pb-5 pt-3 border-t border-slate-100" style="display: none;">
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
                         <a href="{{ route('pmb.index') }}"
                             class="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-50 hover:bg-amber-50 text-slate-700 hover:text-amber-800 border border-slate-100 hover:border-amber-200 font-semibold transition">
@@ -182,23 +193,34 @@
             </div>
 
             <!-- Kelompok 2: Akses Publik & Kuisioner -->
-            <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-soft flex flex-col justify-between">
-                <div>
-                    <div class="flex items-center justify-between pb-3 mb-3.5 border-b border-slate-100">
-                        <div class="flex items-center gap-2.5">
-                            <div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200/60 flex items-center justify-center shrink-0">
-                                <i data-lucide="clipboard-check" class="w-4 h-4"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-sm font-extrabold text-slate-900">{{ $lbl('menu_portals_questionnaires', 'Portal & Kuisioner') }}</h3>
-                                <p class="text-[11px] text-slate-500">Kontrol formulir publik, pertanyaan &amp; QR Code</p>
-                            </div>
+            <div x-data="{ open: false }"
+                class="bg-white rounded-3xl border border-slate-200/80 shadow-soft overflow-hidden transition hover:border-indigo-300/80">
+                <button type="button" @click="open = !open"
+                    class="w-full p-5 flex items-center justify-between text-left hover:bg-slate-50/70 transition cursor-pointer">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200/60 flex items-center justify-center shrink-0">
+                            <i data-lucide="clipboard-check" class="w-5 h-5"></i>
                         </div>
+                        <div class="min-w-0">
+                            <h3 class="text-sm font-extrabold text-slate-900 truncate">{{ $lbl('menu_portals_questionnaires', 'Portal & Kuisioner') }}</h3>
+                            <p class="text-[11px] text-slate-500 truncate">Kontrol formulir publik, pertanyaan &amp; QR Code</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0 ml-2">
                         <span class="px-2 py-0.5 text-[10px] font-extrabold bg-indigo-100 text-indigo-800 rounded-lg border border-indigo-200">
                             {{ $lbl('badge_portals', 'Publik') }}
                         </span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform duration-200" :class="open ? 'rotate-180 text-indigo-600' : ''"></i>
                     </div>
+                </button>
 
+                <div x-show="open" x-transition:enter="transition ease-out duration-200"
+                    x-transition:enter-start="opacity-0 -translate-y-1"
+                    x-transition:enter-end="opacity-100 translate-y-0"
+                    x-transition:leave="transition ease-in duration-150"
+                    x-transition:leave-start="opacity-100 translate-y-0"
+                    x-transition:leave-end="opacity-0 -translate-y-1"
+                    class="px-5 pb-5 pt-3 border-t border-slate-100" style="display: none;">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
                         @if($canManageMasterAndPortal)
                             <a href="{{ route('master-data.index', ['tab' => 'portals']) }}"
@@ -225,7 +247,7 @@
                         @endif
 
                         <a href="{{ route('qr-codes.index') }}"
-                            class="flex items-center gap-2.5 p-3 rounded-xl bg-slate-50 hover:bg-amber-50 text-slate-700 hover:text-amber-800 border border-slate-100 hover:border-amber-200 font-semibold transition {{ $canManageMasterAndPortal ? 'sm:col-span-2' : 'sm:col-span-2' }}">
+                            class="flex items-center gap-2.5 p-3 rounded-xl bg-slate-50 hover:bg-amber-50 text-slate-700 hover:text-amber-800 border border-slate-100 hover:border-amber-200 font-semibold transition sm:col-span-2">
                             <div class="w-8 h-8 rounded-lg bg-amber-100/80 text-amber-600 flex items-center justify-center shrink-0">
                                 <i data-lucide="qr-code" class="w-4 h-4"></i>
                             </div>
@@ -240,23 +262,34 @@
 
             <!-- Kelompok 3: Master Data Akademik (Admin, Pimpinan, Koordinator Marketing) -->
             @if($canManageMasterAndPortal)
-            <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-soft flex flex-col justify-between">
-                <div>
-                    <div class="flex items-center justify-between pb-3 mb-3.5 border-b border-slate-100">
-                        <div class="flex items-center gap-2.5">
-                            <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200/60 flex items-center justify-center shrink-0">
-                                <i data-lucide="database" class="w-4 h-4"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-sm font-extrabold text-slate-900">{{ $lbl('menu_master_data', 'Master Data') }}</h3>
-                                <p class="text-[11px] text-slate-500">Data induk kampus, tahun ajaran &amp; wilayah</p>
-                            </div>
+            <div x-data="{ open: false }"
+                class="bg-white rounded-3xl border border-slate-200/80 shadow-soft overflow-hidden transition hover:border-emerald-300/80">
+                <button type="button" @click="open = !open"
+                    class="w-full p-5 flex items-center justify-between text-left hover:bg-slate-50/70 transition cursor-pointer">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200/60 flex items-center justify-center shrink-0">
+                            <i data-lucide="database" class="w-5 h-5"></i>
                         </div>
+                        <div class="min-w-0">
+                            <h3 class="text-sm font-extrabold text-slate-900 truncate">{{ $lbl('menu_master_data', 'Master Data') }}</h3>
+                            <p class="text-[11px] text-slate-500 truncate">Data induk kampus, tahun ajaran &amp; wilayah</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0 ml-2">
                         <span class="px-2 py-0.5 text-[10px] font-extrabold bg-emerald-100 text-emerald-800 rounded-lg border border-emerald-200">
                             {{ $lbl('badge_master_data', 'Akademik') }}
                         </span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform duration-200" :class="open ? 'rotate-180 text-emerald-600' : ''"></i>
                     </div>
+                </button>
 
+                <div x-show="open" x-transition:enter="transition ease-out duration-200"
+                    x-transition:enter-start="opacity-0 -translate-y-1"
+                    x-transition:enter-end="opacity-100 translate-y-0"
+                    x-transition:leave="transition ease-in duration-150"
+                    x-transition:leave-start="opacity-100 translate-y-0"
+                    x-transition:leave-end="opacity-0 -translate-y-1"
+                    class="px-5 pb-5 pt-3 border-t border-slate-100" style="display: none;">
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
                         <a href="{{ route('master-data.index', ['tab' => 'campuses']) }}"
                             class="flex flex-col gap-2 p-3.5 rounded-xl bg-slate-50 hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 border border-slate-100 hover:border-emerald-200 font-semibold transition">
@@ -297,28 +330,37 @@
 
             <!-- Kelompok 4: Sistem & Manajemen -->
             @if($canManageMasterAndPortal || $canAccessPeriodClosing)
-            <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-soft flex flex-col justify-between {{ !$canManageMasterAndPortal ? 'md:col-span-2' : '' }}">
-                <div>
-                    <div class="flex items-center justify-between pb-3 mb-3.5 border-b border-slate-100">
-                        <div class="flex items-center gap-2.5">
-                            <div class="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 border border-sky-200/60 flex items-center justify-center shrink-0">
-                                <i data-lucide="settings-2" class="w-4 h-4"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-sm font-extrabold text-slate-900">{{ $lbl('menu_system_ops', 'Sistem & Manajemen') }}</h3>
-                                <p class="text-[11px] text-slate-500">Akun pengguna, branding, backup cloud &amp; audit</p>
-                            </div>
+            <div x-data="{ open: false }"
+                class="bg-white rounded-3xl border border-slate-200/80 shadow-soft overflow-hidden transition hover:border-sky-300/80 {{ !$canManageMasterAndPortal ? 'md:col-span-2' : '' }}">
+                <button type="button" @click="open = !open"
+                    class="w-full p-5 flex items-center justify-between text-left hover:bg-slate-50/70 transition cursor-pointer">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 border border-sky-200/60 flex items-center justify-center shrink-0">
+                            <i data-lucide="settings-2" class="w-5 h-5"></i>
                         </div>
-                        <div class="flex items-center gap-1.5">
-                            @if($hasPendingPeriodNotice)
-                                <span class="px-2 py-0.5 text-[10px] font-extrabold bg-amber-400 text-slate-900 rounded-full animate-pulse">1 Aksi</span>
-                            @endif
-                            <span class="px-2 py-0.5 text-[10px] font-extrabold bg-sky-100 text-sky-800 rounded-lg border border-sky-200">
-                                {{ $lbl('badge_system_ops', 'Admin') }}
-                            </span>
+                        <div class="min-w-0">
+                            <h3 class="text-sm font-extrabold text-slate-900 truncate">{{ $lbl('menu_system_ops', 'Sistem & Manajemen') }}</h3>
+                            <p class="text-[11px] text-slate-500 truncate">Akun pengguna, branding, backup cloud &amp; audit</p>
                         </div>
                     </div>
+                    <div class="flex items-center gap-2 shrink-0 ml-2">
+                        @if($hasPendingPeriodNotice)
+                            <span class="px-2 py-0.5 text-[10px] font-extrabold bg-amber-400 text-slate-900 rounded-full animate-pulse">1 Aksi</span>
+                        @endif
+                        <span class="px-2 py-0.5 text-[10px] font-extrabold bg-sky-100 text-sky-800 rounded-lg border border-sky-200">
+                            {{ $lbl('badge_system_ops', 'Admin') }}
+                        </span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform duration-200" :class="open ? 'rotate-180 text-sky-600' : ''"></i>
+                    </div>
+                </button>
 
+                <div x-show="open" x-transition:enter="transition ease-out duration-200"
+                    x-transition:enter-start="opacity-0 -translate-y-1"
+                    x-transition:enter-end="opacity-100 translate-y-0"
+                    x-transition:leave="transition ease-in duration-150"
+                    x-transition:leave-start="opacity-100 translate-y-0"
+                    x-transition:leave-end="opacity-0 -translate-y-1"
+                    class="px-5 pb-5 pt-3 border-t border-slate-100" style="display: none;">
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
                         @if($dashUser->isAdmin() || $dashUser->hasRole('Pimpinan'))
                             <a href="{{ route('users.index') }}"
