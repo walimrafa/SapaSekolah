@@ -464,6 +464,155 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Panel: Analisis Sebaran, Kategori Jenjang, Top 10 Potensial & Rekomendasi Kunjungan -->
+            @php
+                $schoolMapping = $chartsData['school_mapping'] ?? [];
+                $reportSchoolsPerDistrict = $schoolMapping['per_district'] ?? collect();
+                $reportSchoolsPerType = $schoolMapping['per_type'] ?? collect();
+                $reportTopPotential = $schoolMapping['top_potential'] ?? collect();
+                $reportSuggestedSchools = $schoolMapping['suggested'] ?? collect();
+            @endphp
+            <div class="space-y-6">
+                <!-- Baris 1: Distribusi Sekolah per Kecamatan & Kategori Jenjang -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- Distribusi Sekolah per Kecamatan (8 Cols) -->
+                    <div class="lg:col-span-8 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-soft">
+                        <div class="flex items-center justify-between mb-6">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-900">Distribusi Sekolah per Kecamatan</h3>
+                                <p class="text-xs text-slate-500">Jumlah sekolah SLTA {{ $activeCampus ? 'wilayah ' . $activeCampus->name : 'seluruh wilayah' }}</p>
+                            </div>
+                            <span class="px-2.5 py-1 bg-brand-50 text-brand-700 text-xs font-bold rounded-lg border border-brand-100">
+                                {{ count($reportSchoolsPerDistrict) }} Kecamatan
+                            </span>
+                        </div>
+                        <div class="h-72">
+                            <canvas id="reportDistrictSchoolsChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Kategori Jenjang (4 Cols) -->
+                    <div class="lg:col-span-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-soft flex flex-col justify-between">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-900">Kategori Jenjang</h3>
+                                <p class="text-xs text-slate-500">SMA, SMK, MA, SLB</p>
+                            </div>
+                        </div>
+                        <div class="h-64 flex items-center justify-center">
+                            <canvas id="reportSchoolTypeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Baris 2: Top 10 Sekolah Potensial & Rekomendasi Kunjungan Berikutnya -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- Top 10 Sekolah Potensial (7 Cols) -->
+                    <div class="lg:col-span-7 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-soft">
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
+                                    <i data-lucide="trophy" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-base font-bold text-slate-900">Top 10 Sekolah Potensial</h3>
+                                    <p class="text-xs text-slate-500">Peringkat skor potensi konversi PMB</p>
+                                </div>
+                            </div>
+                            @if(!auth()->user()->isAnyCustomerService())
+                                <a href="{{ route('priorities.index') }}" class="text-xs font-bold text-brand-600 hover:text-brand-700">Lihat Semua &rarr;</a>
+                            @endif
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead>
+                                    <tr class="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider">
+                                        <th class="pb-3 px-2">Rank</th>
+                                        <th class="pb-3">Nama Sekolah</th>
+                                        <th class="pb-3">Kecamatan</th>
+                                        <th class="pb-3 text-center">Kelas XII</th>
+                                        <th class="pb-3 text-center">Score</th>
+                                        <th class="pb-3 text-center">Prioritas</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    @forelse($reportTopPotential as $index => $school)
+                                        <tr class="hover:bg-slate-50/80 transition">
+                                            <td class="py-3 px-2 font-bold text-slate-500">#{{ $index + 1 }}</td>
+                                            <td class="py-3 font-semibold text-slate-800">
+                                                <span class="block truncate max-w-xs">{{ $school->name }}</span>
+                                                <span class="text-[10px] text-slate-400 font-normal">
+                                                    {{ $school->schoolType ? $school->schoolType->name : '' }} &bull; {{ strtoupper($school->status) }}
+                                                </span>
+                                            </td>
+                                            <td class="py-3 text-slate-600">{{ $school->district ? $school->district->name : '-' }}</td>
+                                            <td class="py-3 text-center font-semibold text-slate-700">{{ $school->grade_12_count }}</td>
+                                            <td class="py-3 text-center font-extrabold text-brand-600">{{ number_format($school->potential_score, 1) }}</td>
+                                            <td class="py-3 text-center">
+                                                @php
+                                                    $badgeColor = match ($school->priority_level) {
+                                                        'A' => 'bg-red-100 text-red-700 border-red-200',
+                                                        'B' => 'bg-amber-100 text-amber-700 border-amber-200',
+                                                        'C' => 'bg-emerald-100 text-emerald-700 border-emerald-200',
+                                                        default => 'bg-slate-100 text-slate-600 border-slate-200',
+                                                    };
+                                                @endphp
+                                                <span class="px-2 py-0.5 text-[10px] font-bold rounded-full border {{ $badgeColor }}">
+                                                    {{ $school->priority_level ?? '-' }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="6" class="py-6 text-center text-slate-400">Belum ada data sekolah terdaftar.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Rekomendasi Kunjungan Berikutnya (5 Cols) -->
+                    <div class="lg:col-span-5">
+                        <div class="bg-gradient-to-br from-brand-900 to-slate-900 text-white p-6 rounded-3xl shadow-soft h-full flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center space-x-3 mb-5">
+                                    <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30">
+                                        <i data-lucide="sparkles" class="w-5 h-5"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-sm font-bold text-white">Rekomendasi Kunjungan Berikutnya</h3>
+                                        <p class="text-[11px] text-slate-300">Sekolah belum pernah dikunjungi &amp; potensi tinggi</p>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-3">
+                                    @forelse($reportSuggestedSchools->take(5) as $s)
+                                        <div class="p-3.5 rounded-2xl bg-white/10 border border-white/10 hover:bg-white/15 transition flex items-center justify-between gap-2">
+                                            <div class="min-w-0">
+                                                <h4 class="text-xs font-bold text-white truncate">{{ $s->name }}</h4>
+                                                <p class="text-[10px] text-slate-300 mt-0.5 truncate">
+                                                    {{ $s->district ? $s->district->name : '' }} &bull; {{ $s->grade_12_count }} Siswa Klp XII
+                                                </p>
+                                            </div>
+                                            @if(!auth()->user()->isAnyCustomerService())
+                                                <a href="{{ route('visit-plans.index') }}"
+                                                    class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-[10px] rounded-lg shadow transition shrink-0">
+                                                    Jadwalkan
+                                                </a>
+                                            @endif
+                                        </div>
+                                    @empty
+                                        <p class="text-xs text-slate-400 text-center py-6">Semua sekolah potensial sudah dikunjungi.</p>
+                                    @endforelse
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     @else
         <!-- ==================== TAB NAVIGATION (PILIHAN LAPORAN) ==================== -->
@@ -2594,6 +2743,59 @@
                         plugins: {
                             legend: { position: 'bottom', labels: { boxWidth: 10, usePointStyle: true, padding: 12 } }
                         }
+                    }
+                });
+            }
+
+            // Distribusi Sekolah per Kecamatan (Dipindahkan dari Beranda Utama)
+            const reportDistrictSchoolsCanvas = document.getElementById('reportDistrictSchoolsChart');
+            if (reportDistrictSchoolsCanvas) {
+                const schoolDistData = @json(($chartsData['school_mapping']['per_district'] ?? collect())->values());
+                new Chart(reportDistrictSchoolsCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: schoolDistData.map(item => item.name),
+                        datasets: [{
+                            label: 'Jumlah Sekolah',
+                            data: schoolDistData.map(item => item.total),
+                            backgroundColor: '#3b82f6',
+                            borderRadius: 8,
+                            hoverBackgroundColor: '#1e3a5f'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
+
+            // Kategori Jenjang (SMA, SMK, MA, SLB)
+            const reportSchoolTypeCanvas = document.getElementById('reportSchoolTypeChart');
+            if (reportSchoolTypeCanvas) {
+                const schoolTypeData = @json(($chartsData['school_mapping']['per_type'] ?? collect())->values());
+                new Chart(reportSchoolTypeCanvas, {
+                    type: 'doughnut',
+                    data: {
+                        labels: schoolTypeData.map(item => item.name),
+                        datasets: [{
+                            data: schoolTypeData.map(item => item.total),
+                            backgroundColor: ['#1e3a5f', '#3b82f6', '#f59e0b', '#10b981'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+                        },
+                        cutout: '70%'
                     }
                 });
             }

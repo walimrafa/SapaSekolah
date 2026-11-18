@@ -8,6 +8,7 @@ use App\Models\FollowUp;
 use App\Models\MarketingActivity;
 use App\Models\Prospect;
 use App\Models\School;
+use App\Models\SchoolType;
 use App\Models\SchoolVisit;
 use App\Models\StudentQuestionnaire;
 use App\Models\User;
@@ -584,6 +585,44 @@ class ReportController extends Controller
             'rejected' => (clone $kolBaseCharts)->where('kol_verification_status', 'rejected')->count(),
         ];
 
+        // 8. Pemetaan Sekolah SLTA: Distribusi per Kecamatan, Kategori Jenjang, Top 10 Sekolah Potensial & Rekomendasi Kunjungan
+        $schoolsPerDistrict = District::select('districts.name', DB::raw('COUNT(schools.id) as total'))
+            ->leftJoin('schools', function ($join) use ($activeCampus) {
+                $join->on('districts.id', '=', 'schools.district_id')
+                    ->whereNull('schools.deleted_at');
+                if ($activeCampus) {
+                    $join->where('schools.campus_id', '=', $activeCampus->id);
+                }
+            })
+            ->whereNotIn('districts.name', District::EXCLUDED_DISTRICTS)
+            ->groupBy('districts.id', 'districts.name')
+            ->having('total', '>', 0)
+            ->orderBy('total', 'desc')
+            ->get();
+
+        $schoolsPerType = SchoolType::select('school_types.name', DB::raw('COUNT(schools.id) as total'))
+            ->leftJoin('schools', function ($join) use ($activeCampus) {
+                $join->on('school_types.id', '=', 'schools.school_type_id')
+                    ->whereNull('schools.deleted_at');
+                if ($activeCampus) {
+                    $join->where('schools.campus_id', '=', $activeCampus->id);
+                }
+            })
+            ->groupBy('school_types.id', 'school_types.name')
+            ->get();
+
+        $topPotentialSchools = (clone $schoolsBase)->with(['district', 'schoolType'])
+            ->orderBy('potential_score', 'desc')
+            ->orderBy('student_count', 'desc')
+            ->limit(10)
+            ->get();
+
+        $suggestedSchools = (clone $schoolsBase)->with(['district', 'schoolType'])
+            ->doesntHave('visits')
+            ->orderBy('grade_12_count', 'desc')
+            ->limit(5)
+            ->get();
+
         return [
             'timeline' => [
                 'labels' => $timelineLabels,
@@ -619,6 +658,12 @@ class ReportController extends Controller
                 'total' => (clone $kolBaseCharts)->count(),
                 'status_counts' => $kolStatusCounts,
                 'verified_counts' => $kolVerifiedCounts,
+            ],
+            'school_mapping' => [
+                'per_district' => $schoolsPerDistrict,
+                'per_type' => $schoolsPerType,
+                'top_potential' => $topPotentialSchools,
+                'suggested' => $suggestedSchools,
             ],
         ];
     }
