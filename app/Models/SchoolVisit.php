@@ -46,6 +46,14 @@ use Illuminate\Support\Carbon;
  */
 class SchoolVisit extends Model
 {
+    public const AGENDA_PENJADWALAN_SOSIALISASI = 'penjadwalan_sosialisasi';
+    public const AGENDA_MENGANTAR_UNDANGAN = 'mengantar_undangan';
+    public const AGENDA_KUNJUNGAN_LAINNYA = 'kunjungan_lainnya';
+
+    public const ATTENDANCE_AKAN_HADIR = 'akan_hadir';
+    public const ATTENDANCE_MINTA_IJIN = 'minta_ijin_dulu';
+    public const ATTENDANCE_TIDAK_BISA = 'tidak_bisa_hadir';
+
     protected $fillable = [
         'school_id',
         'campus_id',
@@ -53,6 +61,8 @@ class SchoolVisit extends Model
         'headmaster_name',
         'user_id',
         'visit_plan_id',
+        'agenda_category',
+        'invitation_attendance_status',
         'visit_date',
         'start_time',
         'end_time',
@@ -78,6 +88,50 @@ class SchoolVisit extends Model
         'next_followup_date',
         'status',
     ];
+
+    /**
+     * Daftar opsi kategori agenda kunjungan lapangan.
+     */
+    public static function agendaCategoryOptions(): array
+    {
+        return [
+            self::AGENDA_PENJADWALAN_SOSIALISASI => '1. Penjadwalan Sosialisasi',
+            self::AGENDA_MENGANTAR_UNDANGAN => '2. Mengantar Undangan Acara',
+            self::AGENDA_KUNJUNGAN_LAINNYA => '3. Kunjungan Lainnya',
+        ];
+    }
+
+    /**
+     * Daftar opsi konfirmasi kehadiran undangan acara.
+     */
+    public static function invitationAttendanceOptions(): array
+    {
+        return [
+            self::ATTENDANCE_AKAN_HADIR => 'Akan Hadir',
+            self::ATTENDANCE_MINTA_IJIN => 'Minta Ijin Dulu',
+            self::ATTENDANCE_TIDAK_BISA => 'Tidak Bisa Hadir',
+        ];
+    }
+
+    /**
+     * Label Kategori Agenda
+     */
+    public function getAgendaCategoryLabelAttribute(): string
+    {
+        $val = $this->agenda_category ?? self::AGENDA_PENJADWALAN_SOSIALISASI;
+        return self::agendaCategoryOptions()[$val] ?? 'Penjadwalan Sosialisasi';
+    }
+
+    /**
+     * Label Konfirmasi Kehadiran Undangan
+     */
+    public function getInvitationAttendanceLabelAttribute(): ?string
+    {
+        if (empty($this->invitation_attendance_status)) {
+            return null;
+        }
+        return self::invitationAttendanceOptions()[$this->invitation_attendance_status] ?? ucfirst(str_replace('_', ' ', $this->invitation_attendance_status));
+    }
 
     /**
      * Get effective Google Drive Folder URL for this visit.

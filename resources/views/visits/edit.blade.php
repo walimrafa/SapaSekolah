@@ -13,6 +13,8 @@
     <div class="max-w-4xl" @school-selected.window="selectedSchoolId = $event.detail.schoolId; schoolChanged()" x-data="{
         districts: {{ json_encode($districts) }},
         allSchools: {{ json_encode($schools) }},
+        agendaCategory: '{{ old('agenda_category', $visit->agenda_category ?? 'penjadwalan_sosialisasi') }}',
+        invitationStatus: '{{ old('invitation_attendance_status', $visit->invitation_attendance_status ?? 'akan_hadir') }}',
         selectedDistrictId: '{{ old('district_id', $visit->school->district_id ?? '') }}',
         selectedSchoolId: '{{ old('school_id', $visit->school_id) }}',
         selectedMethod: '{{ old('socialization_method', $visit->socialization_method) }}',
@@ -22,6 +24,142 @@
         checkinLongitude: '',
         locationReady: false,
         locationStatus: 'Jika sekolah diubah, ambil GPS baru dalam radius 500 meter.',
+        showCameraModal: false,
+        cameraStream: null,
+        facingMode: 'environment',
+        photoPreviewUrl: null,
+        photoCameraBase64: '',
+        photoFileName: '',
+        photoSource: '',
+        isCameraLoading: false,
+        cameraError: null,
+
+        init() {
+            this.$watch('agendaCategory', () => {
+                this.$nextTick(() => {
+                    if (window.lucide) window.lucide.createIcons();
+                });
+            });
+        },
+
+        async openCamera() {
+            this.showCameraModal = true;
+            this.isCameraLoading = true;
+            this.cameraError = null;
+            this.$nextTick(async () => {
+                if (window.lucide) window.lucide.createIcons();
+                await this.startStream();
+            });
+        },
+
+        async startStream() {
+            try {
+                this.stopStream();
+                const constraints = {
+                    video: {
+                        facingMode: { ideal: this.facingMode },
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    },
+                    audio: false
+                };
+                this.cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+                const videoEl = document.getElementById('camera_video_feed_edit');
+                if (videoEl) {
+                    videoEl.srcObject = this.cameraStream;
+                    await videoEl.play();
+                }
+                this.isCameraLoading = false;
+            } catch (err) {
+                console.error('Camera access error:', err);
+                this.isCameraLoading = false;
+                this.cameraError = 'Tidak dapat mengakses kamera. Pastikan izin kamera telah diizinkan di browser Anda.';
+            }
+        },
+
+        async switchCamera() {
+            this.facingMode = this.facingMode === 'environment' ? 'user' : 'environment';
+            this.isCameraLoading = true;
+            await this.startStream();
+        },
+
+        capturePhoto() {
+            const videoEl = document.getElementById('camera_video_feed_edit');
+            if (!videoEl || !this.cameraStream) return;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = videoEl.videoWidth || 1280;
+            canvas.height = videoEl.videoHeight || 720;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+            this.photoPreviewUrl = dataUrl;
+            this.photoCameraBase64 = dataUrl;
+            this.photoFileName = 'kamera_edit_' + (new Date().toISOString().replace(/[:.-]/g, '_')) + '.jpg';
+            this.photoSource = 'camera';
+
+            const fileInput = document.getElementById('visit_photo_edit');
+            if (fileInput) fileInput.value = '';
+
+            this.closeCamera();
+            this.$nextTick(() => {
+                if (window.lucide) window.lucide.createIcons();
+            });
+        },
+
+        closeCamera() {
+            this.stopStream();
+            this.showCameraModal = false;
+        },
+
+        stopStream() {
+            if (this.cameraStream) {
+                this.cameraStream.getTracks().forEach(track => track.stop());
+                this.cameraStream = null;
+            }
+        },
+
+        handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            this.photoFileName = file.name;
+            this.photoSource = 'file';
+            this.photoCameraBase64 = '';
+
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.photoPreviewUrl = e.target.result;
+                    this.$nextTick(() => {
+                        if (window.lucide) window.lucide.createIcons();
+                    });
+                };
+                reader.readAsDataURL(file);
+            } else {
+                this.photoPreviewUrl = null;
+            }
+        },
+
+        downloadPhoto() {
+            if (!this.photoPreviewUrl) return;
+            const link = document.createElement('a');
+            link.href = this.photoPreviewUrl;
+            link.download = this.photoFileName || 'bukti_dokumentasi_kunjungan.jpg';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        },
+
+        clearPhoto() {
+            this.photoPreviewUrl = null;
+            this.photoCameraBase64 = '';
+            this.photoFileName = '';
+            this.photoSource = '';
+            const fileInput = document.getElementById('visit_photo_edit');
+            if (fileInput) fileInput.value = '';
+        },
         captureCheckIn() {
             const school = this.allSchools.find(item => String(item.id) === String(this.selectedSchoolId));
             if (!school || school.latitude === null || school.longitude === null || school.latitude === '' || school.longitude === '') {
@@ -86,55 +224,69 @@
             <input type="hidden" name="latitude" x-model="checkinLatitude">
             <input type="hidden" name="longitude" x-model="checkinLongitude">
 
-            <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-soft">
+            <!-- Card 0: PILIHAN KATEGORI AGENDA KUNJUNGAN -->
+            <div class="bg-white p-6 rounded-2xl border-2 border-brand-200/90 shadow-soft">
                 <div class="pb-3 mb-4 border-b border-slate-100 flex items-center justify-between">
-                    <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
-                        <i data-lucide="camera" class="w-4 h-4 text-emerald-600"></i>
-                        <span>Dokumentasi Kunjungan</span>
-                    </h3>
-                    <span class="text-[11px] text-slate-400 font-normal">Tersimpan di Data Kunjungan</span>
+                    <div class="flex items-center gap-2">
+                        <span class="p-1.5 rounded-lg bg-brand-600 text-white shadow-xs">
+                            <i data-lucide="layers" class="w-4 h-4"></i>
+                        </span>
+                        <div>
+                            <h3 class="text-sm font-extrabold text-slate-900">Pilih Kategori Agenda Kunjungan</h3>
+                            <p class="text-[11px] text-slate-500">Sesuaikan formulir berdasarkan keperluan dan tujuan kunjungan ke sekolah</p>
+                        </div>
+                    </div>
+                    <span class="px-2.5 py-1 text-[10px] font-bold rounded-full bg-brand-50 text-brand-700 border border-brand-200">
+                        Wajib Dipilih
+                    </span>
                 </div>
 
-                @if($visit->photo)
-                    @php
-                        $ext = strtolower(pathinfo($visit->photo, PATHINFO_EXTENSION));
-                        $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif']);
-                        $fileUrl = asset('storage/' . $visit->photo);
-                    @endphp
-                    <div class="mb-4 p-3.5 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between gap-3">
-                        <div class="flex items-center gap-3 min-w-0">
-                            @if($isImage)
-                                <a href="{{ $fileUrl }}" target="_blank" title="Klik untuk memperbesar" class="shrink-0 group relative block">
-                                    <img src="{{ $fileUrl }}" alt="Dokumentasi Saat Ini" class="w-16 h-16 object-cover rounded-xl border border-slate-300 shadow-xs group-hover:scale-105 transition">
-                                </a>
-                            @else
-                                <div class="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-extrabold text-xs uppercase shrink-0">
-                                    {{ $ext ?: 'DOC' }}
-                                </div>
-                            @endif
-                            <div class="min-w-0">
-                                <p class="text-xs font-bold text-slate-800 truncate">Berkas Dokumentasi Tersimpan</p>
-                                <p class="text-[10px] text-slate-400 font-mono truncate">{{ basename($visit->photo) }}</p>
-                                <a href="{{ $fileUrl }}" target="_blank" class="text-xs text-brand-600 font-bold hover:underline inline-flex items-center gap-1 mt-1">
-                                    <i data-lucide="external-link" class="w-3 h-3"></i>
-                                    <span>Buka / Lihat Berkas Penuh ↗</span>
-                                </a>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <!-- Opsi 1: Penjadwalan Sosialisasi -->
+                    <label class="relative flex flex-col p-4 rounded-xl border-2 cursor-pointer transition text-left"
+                        :class="agendaCategory === 'penjadwalan_sosialisasi' ? 'border-brand-600 bg-brand-50/50 shadow-sm ring-2 ring-brand-500/20' : 'border-slate-200 hover:border-slate-300 bg-white'">
+                        <input type="radio" name="agenda_category" value="penjadwalan_sosialisasi" x-model="agendaCategory" class="sr-only">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs"
+                                :class="agendaCategory === 'penjadwalan_sosialisasi' ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600'">
+                                1
                             </div>
+                            <i data-lucide="calendar" class="w-4 h-4" :class="agendaCategory === 'penjadwalan_sosialisasi' ? 'text-brand-600' : 'text-slate-400'"></i>
                         </div>
-                        <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full shrink-0">
-                            Tersedia
-                        </span>
-                    </div>
-                @endif
+                        <span class="text-xs font-extrabold text-slate-900 block leading-tight">Penjadwalan Sosialisasi</span>
+                        <span class="text-[10.5px] text-slate-500 mt-1 block leading-normal">Form lengkap: estimasi rombel kelas 12, jadwal &amp; metode sosialisasi</span>
+                    </label>
 
-                <label for="visit_photo" class="block text-xs font-bold text-slate-700 mb-1">
-                    {{ $visit->photo ? 'Unggah berkas baru untuk mengganti dokumentasi saat ini (opsional)' : 'Unggah berkas foto/dokumen dokumentasi (opsional)' }}
-                </label>
-                <input id="visit_photo" type="file" name="photo" accept="image/jpeg,image/png,image/webp,application/pdf,.rar,.zip,.pdf,.doc,.docx" class="w-full text-xs text-slate-600 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 transition">
-                <p class="text-[10px] text-slate-500 mt-1">Dapat berupa Foto (JPG, PNG, WEBP), Dokumen (PDF, Word), atau Arsip (RAR, ZIP); maksimal 50 MB.</p>
-                @error('photo')
-                    <span class="text-xs text-red-600 mt-1 block font-semibold">{{ $message }}</span>
-                @enderror
+                    <!-- Opsi 2: Mengantar Undangan Acara -->
+                    <label class="relative flex flex-col p-4 rounded-xl border-2 cursor-pointer transition text-left"
+                        :class="agendaCategory === 'mengantar_undangan' ? 'border-amber-500 bg-amber-50/50 shadow-sm ring-2 ring-amber-500/20' : 'border-slate-200 hover:border-slate-300 bg-white'">
+                        <input type="radio" name="agenda_category" value="mengantar_undangan" x-model="agendaCategory" class="sr-only">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs"
+                                :class="agendaCategory === 'mengantar_undangan' ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-600'">
+                                2
+                            </div>
+                            <i data-lucide="mail" class="w-4 h-4" :class="agendaCategory === 'mengantar_undangan' ? 'text-amber-600' : 'text-slate-400'"></i>
+                        </div>
+                        <span class="text-xs font-extrabold text-slate-900 block leading-tight">Mengantar Undangan Acara</span>
+                        <span class="text-[10.5px] text-slate-500 mt-1 block leading-normal">Data penerima undangan, konfirmasi kehadiran (Akan Hadir / Ijin / Tidak)</span>
+                    </label>
+
+                    <!-- Opsi 3: Kunjungan Lainnya -->
+                    <label class="relative flex flex-col p-4 rounded-xl border-2 cursor-pointer transition text-left"
+                        :class="agendaCategory === 'kunjungan_lainnya' ? 'border-purple-600 bg-purple-50/50 shadow-sm ring-2 ring-purple-500/20' : 'border-slate-200 hover:border-slate-300 bg-white'">
+                        <input type="radio" name="agenda_category" value="kunjungan_lainnya" x-model="agendaCategory" class="sr-only">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs"
+                                :class="agendaCategory === 'kunjungan_lainnya' ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-600'">
+                                3
+                            </div>
+                            <i data-lucide="clipboard-list" class="w-4 h-4" :class="agendaCategory === 'kunjungan_lainnya' ? 'text-purple-600' : 'text-slate-400'"></i>
+                        </div>
+                        <span class="text-xs font-extrabold text-slate-900 block leading-tight">Kunjungan Lainnya</span>
+                        <span class="text-[10.5px] text-slate-500 mt-1 block leading-normal">Data penerima kunjungan, catatan dinas &amp; bukti dokumentasi</span>
+                    </label>
+                </div>
             </div>
 
             {{-- Form Card 1: Informasi Sekolah & Tim Marketing --}}
@@ -227,7 +379,7 @@
                 <div class="pb-3 border-b border-slate-100 flex items-center justify-between">
                     <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
                         <i data-lucide="user-check" class="w-4 h-4 text-amber-500"></i>
-                        <span>Detail Penerima Kunjungan &amp; Kepala Sekolah</span>
+                        <span x-text="agendaCategory === 'mengantar_undangan' ? 'Detail Penerima Undangan Acara' : 'Detail Penerima Kunjungan & Kepala Sekolah'"></span>
                     </h3>
                     <span class="text-[11px] text-slate-400 font-normal">Kontak PIC &amp; Pimpinan Sekolah</span>
                 </div>
@@ -241,13 +393,13 @@
                     </div>
                     <div>
                         <label class="block font-bold text-slate-800 mb-1">
-                            1. Nama Penerima Beserta Gelarnya <span class="text-red-500">*</span>
+                            <span x-text="agendaCategory === 'mengantar_undangan' ? 'Nama Penerima Undangan Beserta Gelarnya' : '1. Nama Penerima Beserta Gelarnya'"></span> <span class="text-red-500">*</span>
                         </label>
                         <input type="text" name="recipient_name" value="{{ old('recipient_name', $visit->recipient_name) }}" placeholder="Contoh: Drs. H. Mulyadi, M.Pd." required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-semibold focus:border-brand-500">
                     </div>
                     <div>
                         <label class="block font-bold text-slate-800 mb-1">
-                            2. Jabatan Penerima <span class="text-red-500">*</span>
+                            <span x-text="agendaCategory === 'mengantar_undangan' ? 'Jabatan Penerima Undangan' : '2. Jabatan Penerima'"></span> <span class="text-red-500">*</span>
                         </label>
                         <input type="text" name="recipient_position" value="{{ old('recipient_position', $visit->recipient_position) }}" placeholder="Contoh: Kepala Sekolah / Guru BK / Wakasek Humas" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-semibold focus:border-brand-500">
                     </div>
@@ -258,95 +410,327 @@
                         <input type="tel" name="recipient_phone" value="{{ old('recipient_phone', $visit->recipient_phone) }}" placeholder="Contoh: 081234567890" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-semibold focus:border-brand-500">
                     </div>
                 </div>
-            </div>
 
-            {{-- Form Card 3: Estimasi Siswa Kelas 12 --}}
-            <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-soft">
-                <h3 class="text-sm font-bold text-slate-900 pb-3 mb-4 border-b border-slate-100 flex items-center gap-2">
-                    <i data-lucide="users" class="w-4 h-4 text-purple-600"></i>
-                    <span>Estimasi Siswa Kelas 12</span>
-                </h3>
+                <!-- Bagian Konfirmasi Kehadiran Khusus Undangan (Opsi 2) -->
+                <div x-show="agendaCategory === 'mengantar_undangan'" x-transition class="pt-4 border-t border-slate-100 space-y-3">
+                    <label class="block font-bold text-slate-800 text-xs">
+                        Konfirmasi Kehadiran Undangan Acara <span class="text-red-500">*</span>
+                    </label>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                        <label class="flex items-center p-3 rounded-xl border-2 cursor-pointer transition"
+                            :class="invitationStatus === 'akan_hadir' ? 'border-emerald-500 bg-emerald-50 text-emerald-900 font-bold shadow-xs' : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'">
+                            <input type="radio" name="invitation_attendance_status" value="akan_hadir" x-model="invitationStatus" :disabled="agendaCategory !== 'mengantar_undangan'" class="sr-only">
+                            <i data-lucide="check-circle-2" class="w-4 h-4 mr-2" :class="invitationStatus === 'akan_hadir' ? 'text-emerald-600' : 'text-slate-400'"></i>
+                            <span>Akan Hadir</span>
+                        </label>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">3. Jumlah Kelas 12 <span class="text-red-500">*</span></label>
-                        <input type="number" name="grade_12_class_count" x-model="grade12ClassCount" min="1" placeholder="Contoh: 6" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-bold">
+                        <label class="flex items-center p-3 rounded-xl border-2 cursor-pointer transition"
+                            :class="invitationStatus === 'minta_ijin_dulu' ? 'border-amber-500 bg-amber-50 text-amber-900 font-bold shadow-xs' : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'">
+                            <input type="radio" name="invitation_attendance_status" value="minta_ijin_dulu" x-model="invitationStatus" :disabled="agendaCategory !== 'mengantar_undangan'" class="sr-only">
+                            <i data-lucide="clock" class="w-4 h-4 mr-2" :class="invitationStatus === 'minta_ijin_dulu' ? 'text-amber-600' : 'text-slate-400'"></i>
+                            <span>Minta Ijin Dulu</span>
+                        </label>
+
+                        <label class="flex items-center p-3 rounded-xl border-2 cursor-pointer transition"
+                            :class="invitationStatus === 'tidak_bisa_hadir' ? 'border-rose-500 bg-rose-50 text-rose-900 font-bold shadow-xs' : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'">
+                            <input type="radio" name="invitation_attendance_status" value="tidak_bisa_hadir" x-model="invitationStatus" :disabled="agendaCategory !== 'mengantar_undangan'" class="sr-only">
+                            <i data-lucide="x-circle" class="w-4 h-4 mr-2" :class="invitationStatus === 'tidak_bisa_hadir' ? 'text-rose-600' : 'text-slate-400'"></i>
+                            <span>Tidak Bisa Hadir</span>
+                        </label>
                     </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">7. Rata-Rata Jumlah Siswa Per Kelas <span class="text-red-500">*</span></label>
-                        <input type="number" name="students_per_class" x-model="studentsPerClass" min="1" placeholder="Contoh: 36" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-bold">
+
+                    <div class="pt-2">
+                        <label class="block font-bold text-slate-700 text-xs mb-1">Catatan Respon Penerima Undangan</label>
+                        <textarea name="notes" rows="2" :disabled="agendaCategory !== 'mengantar_undangan'" placeholder="Contoh: Undangan diterima oleh Wakasek Humas, kepsek berhalangan hadir..." class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:border-brand-500">{{ old('notes', $visit->notes) }}</textarea>
                     </div>
                 </div>
 
-                <div class="mt-4 p-3 bg-purple-50 rounded-xl border border-purple-200 flex items-center justify-between" x-show="totalStudents > 0" x-transition>
-                    <span class="font-bold text-purple-800 text-xs">Total Estimasi Siswa Kelas 12:</span>
-                    <span class="text-lg font-extrabold text-purple-900"><span x-text="totalStudents"></span> Siswa</span>
-                </div>
-            </div>
-
-            {{-- Form Card 4: Target Jadwal Waktu Sosialisasi --}}
-            <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-soft">
-                <h3 class="text-sm font-bold text-slate-900 pb-3 mb-4 border-b border-slate-100 flex items-center gap-2">
-                    <i data-lucide="clock" class="w-4 h-4 text-emerald-600"></i>
-                    <span>Target Jadwal Waktu Sosialisasi</span>
-                </h3>
-
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-                    <div>
-                        <label class="block font-bold text-slate-800 mb-1">4. Target Bulan &amp; Tahun <span class="text-red-500">*</span></label>
-                        <input type="text" name="target_month_year" value="{{ old('target_month_year', $visit->target_month_year) }}" placeholder="Contoh: Oktober 2026" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-bold text-brand-600">
-                    </div>
-                    <div>
-                        <label class="block font-bold text-slate-800 mb-1">5. Target Tanggal <span class="text-amber-600 font-normal">(Opsional)</span></label>
-                        <input type="date" name="target_date" value="{{ old('target_date', $visit->target_date ? \Carbon\Carbon::parse($visit->target_date)->format('Y-m-d') : '') }}" class="w-full px-3 py-2.5 rounded-xl border border-slate-300">
-                    </div>
-                    <div>
-                        <label class="block font-bold text-slate-800 mb-1">6. Target Waktu Sosialisasi <span class="text-red-500">*</span></label>
-                        <input type="text" name="target_time" value="{{ old('target_time', $visit->target_time) }}" placeholder="Contoh: 08:30 WIB" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-semibold">
-                    </div>
+                <!-- Bagian Catatan Khusus Kunjungan Lainnya (Opsi 3) -->
+                <div x-show="agendaCategory === 'kunjungan_lainnya'" x-transition class="pt-4 border-t border-slate-100 space-y-2">
+                    <label class="block font-bold text-slate-800 text-xs mb-1">Catatan Hasil Kunjungan Lainnya</label>
+                    <textarea name="notes" rows="3" :disabled="agendaCategory !== 'kunjungan_lainnya'" placeholder="Tuliskan catatan hasil silaturahmi, audiensi, atau keperluan dinas lainnya..." class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:border-brand-500">{{ old('notes', $visit->notes) }}</textarea>
                 </div>
             </div>
 
-            {{-- Form Card 5: Metode Kegiatan Sosialisasi --}}
-            <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-soft">
-                <h3 class="text-sm font-bold text-slate-900 pb-3 mb-4 border-b border-slate-100 flex items-center gap-2">
-                    <i data-lucide="presentation" class="w-4 h-4 text-rose-500"></i>
-                    <span>Metode Kegiatan Sosialisasi</span>
-                </h3>
+            <!-- KONTEN KHUSUS OPSI 1 (PENJADWALAN SOSIALISASI) -->
+            <div x-show="agendaCategory === 'penjadwalan_sosialisasi'" x-transition class="space-y-6">
+                {{-- Form Card 3: Estimasi Siswa Kelas 12 --}}
+                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-soft">
+                    <h3 class="text-sm font-bold text-slate-900 pb-3 mb-4 border-b border-slate-100 flex items-center gap-2">
+                        <i data-lucide="users" class="w-4 h-4 text-purple-600"></i>
+                        <span>Estimasi Siswa Kelas 12</span>
+                    </h3>
 
-                <div class="space-y-4 text-xs">
-                    <div>
-                        <label class="block font-bold text-slate-900 mb-1">8. Metode Sosialisasi <span class="text-red-500">*</span></label>
-                        <select name="socialization_method" x-model="selectedMethod" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-bold text-slate-900">
-                            <option value="">-- Pilih Metode Sosialisasi --</option>
-                            <option value="Sosialisasi di Kelas" {{ old('socialization_method', $visit->socialization_method) == 'Sosialisasi di Kelas' ? 'selected' : '' }}>a. Sosialisasi di Kelas</option>
-                            <option value="Sosialisasi di Aula" {{ old('socialization_method', $visit->socialization_method) == 'Sosialisasi di Aula' ? 'selected' : '' }}>b. Sosialisasi di Aula</option>
-                            <option value="Workshop Digital Kreatif" {{ old('socialization_method', $visit->socialization_method) == 'Workshop Digital Kreatif' ? 'selected' : '' }}>c. Workshop Digital Kreatif</option>
-                            <option value="Edufair" {{ old('socialization_method', $visit->socialization_method) == 'Edufair' ? 'selected' : '' }}>d. Edufair</option>
-                            <option value="Lainnya" {{ old('socialization_method', $visit->socialization_method) == 'Lainnya' ? 'selected' : '' }}>e. Lainnya (Input Kegiatan Khusus)</option>
-                        </select>
-                    </div>
-
-                    {{-- Dynamic Input Field if 'Lainnya' is selected --}}
-                    <div x-show="selectedMethod === 'Lainnya'" x-transition class="p-3 bg-amber-50 rounded-xl border border-amber-200">
-                        <label class="block font-bold text-amber-900 mb-1">Input Nama Kegiatan Khusus / Lainnya <span class="text-red-500">*</span></label>
-                        <input type="text" name="other_activity_name" value="{{ old('other_activity_name', $visit->other_activity_name) }}" placeholder="Tuliskan nama kegiatan sosialisasi khusus..." class="w-full px-3 py-2.5 rounded-xl border border-amber-300 bg-white font-semibold text-slate-900">
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                         <div>
-                            <label class="block font-bold text-slate-700 mb-1">Status Hasil Visit <span class="text-red-500">*</span></label>
-                            <select name="status" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-bold">
-                                <option value="berhasil" {{ old('status', $visit->status) == 'berhasil' ? 'selected' : '' }}>Berhasil (Diizinkan Sosialisasi)</option>
-                                <option value="tidak_bertemu" {{ old('status', $visit->status) == 'tidak_bertemu' ? 'selected' : '' }}>Tidak Bertemu (Jadwal Ulang)</option>
-                                <option value="tidak_berhasil" {{ old('status', $visit->status) == 'tidak_berhasil' ? 'selected' : '' }}>Tidak Berhasil (Ditolak)</option>
-                                <option value="pending" {{ old('status', $visit->status) == 'pending' ? 'selected' : '' }}>Pending</option>
+                            <label class="block font-bold text-slate-700 mb-1">3. Jumlah Kelas 12 <span class="text-red-500">*</span></label>
+                            <input type="number" name="grade_12_class_count" x-model="grade12ClassCount" min="1" placeholder="Contoh: 6" :required="agendaCategory === 'penjadwalan_sosialisasi'" :disabled="agendaCategory !== 'penjadwalan_sosialisasi'" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-bold">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">7. Rata-Rata Jumlah Siswa Per Kelas <span class="text-red-500">*</span></label>
+                            <input type="number" name="students_per_class" x-model="studentsPerClass" min="1" placeholder="Contoh: 36" :required="agendaCategory === 'penjadwalan_sosialisasi'" :disabled="agendaCategory !== 'penjadwalan_sosialisasi'" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-bold">
+                        </div>
+                    </div>
+
+                    <div class="mt-4 p-3 bg-purple-50 rounded-xl border border-purple-200 flex items-center justify-between" x-show="totalStudents > 0" x-transition>
+                        <span class="font-bold text-purple-800 text-xs">Total Estimasi Siswa Kelas 12:</span>
+                        <span class="text-lg font-extrabold text-purple-900"><span x-text="totalStudents"></span> Siswa</span>
+                    </div>
+                </div>
+
+                {{-- Form Card 4: Target Jadwal Waktu Sosialisasi --}}
+                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-soft">
+                    <h3 class="text-sm font-bold text-slate-900 pb-3 mb-4 border-b border-slate-100 flex items-center gap-2">
+                        <i data-lucide="clock" class="w-4 h-4 text-emerald-600"></i>
+                        <span>Target Jadwal Waktu Sosialisasi</span>
+                    </h3>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                        <div>
+                            <label class="block font-bold text-slate-800 mb-1">4. Target Bulan &amp; Tahun <span class="text-red-500">*</span></label>
+                            <input type="text" name="target_month_year" value="{{ old('target_month_year', $visit->target_month_year) }}" placeholder="Contoh: Oktober 2026" :required="agendaCategory === 'penjadwalan_sosialisasi'" :disabled="agendaCategory !== 'penjadwalan_sosialisasi'" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-bold text-brand-600">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-800 mb-1">5. Target Tanggal <span class="text-amber-600 font-normal">(Opsional)</span></label>
+                            <input type="date" name="target_date" value="{{ old('target_date', $visit->target_date ? \Carbon\Carbon::parse($visit->target_date)->format('Y-m-d') : '') }}" :disabled="agendaCategory !== 'penjadwalan_sosialisasi'" class="w-full px-3 py-2.5 rounded-xl border border-slate-300">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-800 mb-1">6. Target Waktu Sosialisasi <span class="text-red-500">*</span></label>
+                            <input type="text" name="target_time" value="{{ old('target_time', $visit->target_time) }}" placeholder="Contoh: 08:30 WIB" :required="agendaCategory === 'penjadwalan_sosialisasi'" :disabled="agendaCategory !== 'penjadwalan_sosialisasi'" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-semibold">
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Form Card 5: Metode Kegiatan Sosialisasi --}}
+                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-soft">
+                    <h3 class="text-sm font-bold text-slate-900 pb-3 mb-4 border-b border-slate-100 flex items-center gap-2">
+                        <i data-lucide="presentation" class="w-4 h-4 text-rose-500"></i>
+                        <span>Metode Kegiatan Sosialisasi</span>
+                    </h3>
+
+                    <div class="space-y-4 text-xs">
+                        <div>
+                            <label class="block font-bold text-slate-900 mb-1">8. Metode Sosialisasi <span class="text-red-500">*</span></label>
+                            <select name="socialization_method" x-model="selectedMethod" :required="agendaCategory === 'penjadwalan_sosialisasi'" :disabled="agendaCategory !== 'penjadwalan_sosialisasi'" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-bold text-slate-900">
+                                <option value="">-- Pilih Metode Sosialisasi --</option>
+                                <option value="Sosialisasi di Kelas" {{ old('socialization_method', $visit->socialization_method) == 'Sosialisasi di Kelas' ? 'selected' : '' }}>a. Sosialisasi di Kelas</option>
+                                <option value="Sosialisasi di Aula" {{ old('socialization_method', $visit->socialization_method) == 'Sosialisasi di Aula' ? 'selected' : '' }}>b. Sosialisasi di Aula</option>
+                                <option value="Workshop Digital Kreatif" {{ old('socialization_method', $visit->socialization_method) == 'Workshop Digital Kreatif' ? 'selected' : '' }}>c. Workshop Digital Kreatif</option>
+                                <option value="Edufair" {{ old('socialization_method', $visit->socialization_method) == 'Edufair' ? 'selected' : '' }}>d. Edufair</option>
+                                <option value="Lainnya" {{ old('socialization_method', $visit->socialization_method) == 'Lainnya' ? 'selected' : '' }}>e. Lainnya (Input Kegiatan Khusus)</option>
                             </select>
                         </div>
-                        <div>
-                            <label class="block font-bold text-slate-700 mb-1">Catatan Tambahan Visit</label>
-                            <input type="text" name="notes" value="{{ old('notes', $visit->notes) }}" placeholder="Catatan respon penerima..." class="w-full px-3 py-2.5 rounded-xl border border-slate-300">
+
+                        {{-- Dynamic Input Field if 'Lainnya' is selected --}}
+                        <div x-show="selectedMethod === 'Lainnya'" x-transition class="p-3 bg-amber-50 rounded-xl border border-amber-200">
+                            <label class="block font-bold text-amber-900 mb-1">Input Nama Kegiatan Khusus / Lainnya <span class="text-red-500">*</span></label>
+                            <input type="text" name="other_activity_name" value="{{ old('other_activity_name', $visit->other_activity_name) }}" :disabled="agendaCategory !== 'penjadwalan_sosialisasi'" placeholder="Tuliskan nama kegiatan sosialisasi khusus..." class="w-full px-3 py-2.5 rounded-xl border border-amber-300 bg-white font-semibold text-slate-900">
                         </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block font-bold text-slate-700 mb-1">Status Hasil Visit <span class="text-red-500">*</span></label>
+                                <select name="status" :required="agendaCategory === 'penjadwalan_sosialisasi'" :disabled="agendaCategory !== 'penjadwalan_sosialisasi'" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-bold">
+                                    <option value="berhasil" {{ old('status', $visit->status) == 'berhasil' ? 'selected' : '' }}>Berhasil (Diizinkan Sosialisasi)</option>
+                                    <option value="tidak_bertemu" {{ old('status', $visit->status) == 'tidak_bertemu' ? 'selected' : '' }}>Tidak Bertemu (Jadwal Ulang)</option>
+                                    <option value="tidak_berhasil" {{ old('status', $visit->status) == 'tidak_berhasil' ? 'selected' : '' }}>Tidak Berhasil (Ditolak)</option>
+                                    <option value="pending" {{ old('status', $visit->status) == 'pending' ? 'selected' : '' }}>Pending</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-700 mb-1">Catatan Tambahan Visit</label>
+                                <input type="text" name="notes" value="{{ old('notes', $visit->notes) }}" :disabled="agendaCategory !== 'penjadwalan_sosialisasi'" placeholder="Catatan respon penerima..." class="w-full px-3 py-2.5 rounded-xl border border-slate-300">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Form Card: Dokumentasi Kunjungan Lapangan & Fitur Kamera --}}
+            <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-soft">
+                <div class="pb-3 mb-4 border-b border-slate-100 flex items-center justify-between">
+                    <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                        <i data-lucide="camera" class="w-4 h-4 text-emerald-600"></i>
+                        <span>Dokumentasi Kunjungan Lapangan</span>
+                    </h3>
+                    <span class="text-[11px] text-slate-400 font-normal">Tersimpan di Server &amp; Google Drive</span>
+                </div>
+
+                @if($visit->photo)
+                    @php
+                        $ext = strtolower(pathinfo($visit->photo, PATHINFO_EXTENSION));
+                        $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif']);
+                        $fileUrl = asset('storage/' . $visit->photo);
+                    @endphp
+                    <div class="mb-4 p-3.5 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                            @if($isImage)
+                                <a href="{{ $fileUrl }}" target="_blank" title="Klik untuk memperbesar" class="shrink-0 group relative block">
+                                    <img src="{{ $fileUrl }}" alt="Dokumentasi Saat Ini" class="w-16 h-16 object-cover rounded-xl border border-slate-300 shadow-xs group-hover:scale-105 transition">
+                                </a>
+                            @else
+                                <div class="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-extrabold text-xs uppercase shrink-0">
+                                    {{ $ext ?: 'DOC' }}
+                                </div>
+                            @endif
+                            <div class="min-w-0">
+                                <p class="text-xs font-bold text-slate-800 truncate">Berkas Dokumentasi Tersimpan Saat Ini</p>
+                                <p class="text-[10px] text-slate-400 font-mono truncate">{{ basename($visit->photo) }}</p>
+                                <div class="flex flex-wrap items-center gap-2 mt-1">
+                                    <a href="{{ $fileUrl }}" target="_blank" class="text-xs text-brand-600 font-bold hover:underline inline-flex items-center gap-1">
+                                        <i data-lucide="external-link" class="w-3 h-3"></i>
+                                        <span>Lihat Berkas ↗</span>
+                                    </a>
+                                    @if($visit->gdrive_url)
+                                        <a href="{{ $visit->gdrive_url }}" target="_blank" class="text-xs text-emerald-600 font-bold hover:underline inline-flex items-center gap-1">
+                                            <i data-lucide="cloud" class="w-3 h-3"></i>
+                                            <span>Buka di Google Drive ↗</span>
+                                        </a>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full shrink-0">
+                            Tersedia
+                        </span>
+                    </div>
+                @endif
+
+                <div class="space-y-3 text-xs">
+                    <label class="block font-bold text-slate-800">
+                        {{ $visit->photo ? 'Perbarui / Ganti Bukti Dokumentasi (Opsional)' : 'Unggah Bukti Dokumentasi Lapangan (Opsional)' }}
+                    </label>
+
+                    <!-- Tombol Buka Kamera & Pilih Berkas -->
+                    <div class="flex flex-wrap items-center gap-3">
+                        <button type="button" @click="openCamera()"
+                            class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition flex items-center space-x-2">
+                            <i data-lucide="camera" class="w-4 h-4"></i>
+                            <span>Buka Kamera Langsung</span>
+                        </button>
+
+                        <button type="button" @click="document.getElementById('visit_photo_edit').click()"
+                            class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition border border-slate-200 flex items-center space-x-2">
+                            <i data-lucide="upload" class="w-4 h-4 text-slate-500"></i>
+                            <span>Pilih dari Galeri / Berkas</span>
+                        </button>
+                    </div>
+
+                    <!-- Hidden Inputs -->
+                    <input id="visit_photo_edit" type="file" name="photo" @change="handleFileSelect($event)" accept="image/jpeg,image/png,image/webp,application/pdf,.rar,.zip,.pdf,.doc,.docx" class="hidden">
+                    <input type="hidden" name="photo_camera_base64" x-model="photoCameraBase64">
+
+                    <!-- Preview Card untuk Berkas / Foto Baru -->
+                    <div x-show="photoPreviewUrl || photoFileName" x-transition class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                <span class="font-extrabold text-slate-800 text-xs">Dokumentasi Baru Dipilih:</span>
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                    :class="photoSource === 'camera' ? 'bg-emerald-100 text-emerald-800' : 'bg-brand-100 text-brand-800'"
+                                    x-text="photoSource === 'camera' ? '📸 Hasil Kamera' : '📁 Berkas File'"></span>
+                            </div>
+                            <span class="text-[11px] text-slate-500 font-medium truncate max-w-xs" x-text="photoFileName"></span>
+                        </div>
+
+                        <div x-show="photoPreviewUrl" class="relative max-w-sm rounded-xl overflow-hidden border border-slate-200 bg-black/5 shadow-inner">
+                            <img :src="photoPreviewUrl" alt="Pratinjau Dokumentasi Baru" class="w-full h-44 object-cover rounded-xl">
+                        </div>
+
+                        <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200">
+                            <div class="flex items-center space-x-2">
+                                <button type="button" @click="downloadPhoto()" x-show="photoPreviewUrl"
+                                    class="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-brand-700 border border-slate-200 font-bold text-xs shadow-2xs transition inline-flex items-center space-x-1.5"
+                                    title="Unduh foto ini">
+                                    <i data-lucide="download" class="w-3.5 h-3.5 text-brand-600"></i>
+                                    <span>Unduh Foto</span>
+                                </button>
+
+                                <button type="button" @click="openCamera()"
+                                    class="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-bold text-xs shadow-2xs transition inline-flex items-center space-x-1.5">
+                                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-slate-500"></i>
+                                    <span>Ambil Ulang</span>
+                                </button>
+                            </div>
+
+                            <button type="button" @click="clearPhoto()"
+                                class="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs border border-rose-200 transition inline-flex items-center space-x-1">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                <span>Batalkan Berkas Baru</span>
+                            </button>
+                        </div>
+
+                        <p class="text-[11px] text-emerald-700 font-medium flex items-center gap-1.5">
+                            <i data-lucide="cloud" class="w-3.5 h-3.5 text-emerald-600"></i>
+                            <span>Foto/berkas baru akan otomatis disimpan &amp; diunggah ke Google Drive sekolah saat disimpan.</span>
+                        </p>
+                    </div>
+
+                    <p class="text-[10px] text-slate-500">Dapat berupa Foto (JPG, PNG, WEBP), Dokumen (PDF, Word), atau Arsip (RAR, ZIP); maksimal 50 MB.</p>
+                    @error('photo')
+                        <span class="text-xs text-red-600 mt-1 block font-semibold">{{ $message }}</span>
+                    @enderror
+                </div>
+            </div>
+
+            <!-- Modal Kamera Internal Edit -->
+            <div x-show="showCameraModal" x-cloak
+                class="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0">
+                <div class="bg-slate-900 rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-800 text-white flex flex-col">
+                    <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+                        <div class="flex items-center space-x-2.5">
+                            <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                                <i data-lucide="camera" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-extrabold text-white">Kamera Dokumentasi Kunjungan</h4>
+                                <p class="text-[10px] text-slate-400">Arahkan kamera ke kegiatan/penerima kunjungan</p>
+                            </div>
+                        </div>
+                        <button type="button" @click="closeCamera()" class="w-8 h-8 rounded-xl bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+
+                    <div class="relative bg-black flex items-center justify-center min-h-[320px] max-h-[460px] overflow-hidden">
+                        <div x-show="isCameraLoading" class="absolute inset-0 flex flex-col items-center justify-center space-y-2 bg-slate-950 text-slate-400 text-xs">
+                            <div class="w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                            <span>Menghubungkan ke kamera...</span>
+                        </div>
+
+                        <div x-show="cameraError" class="p-6 text-center text-xs text-rose-400 space-y-2">
+                            <i data-lucide="alert-triangle" class="w-8 h-8 mx-auto text-rose-500"></i>
+                            <p x-text="cameraError"></p>
+                        </div>
+
+                        <video id="camera_video_feed_edit" playsinline autoplay muted class="w-full h-full object-cover max-h-[460px]"></video>
+                    </div>
+
+                    <div class="p-4 bg-slate-950 flex items-center justify-between border-t border-slate-800">
+                        <button type="button" @click="switchCamera()" 
+                            class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition inline-flex items-center space-x-1.5"
+                            title="Balik kamera depan / belakang">
+                            <i data-lucide="flip-horizontal" class="w-4 h-4"></i>
+                            <span class="hidden sm:inline">Balik Kamera</span>
+                        </button>
+
+                        <button type="button" @click="capturePhoto()"
+                            class="w-16 h-16 rounded-full bg-white hover:bg-slate-200 text-slate-900 shadow-xl shadow-white/20 p-1 flex items-center justify-center transform active:scale-90 transition">
+                            <div class="w-13 h-13 rounded-full border-2 border-slate-900 flex items-center justify-center bg-emerald-500 text-white">
+                                <i data-lucide="camera" class="w-6 h-6"></i>
+                            </div>
+                        </button>
+
+                        <button type="button" @click="closeCamera()"
+                            class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 font-bold text-xs transition">
+                            Batal
+                        </button>
                     </div>
                 </div>
             </div>

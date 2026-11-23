@@ -11,6 +11,7 @@ use App\Services\ActivityLogService;
 use App\Services\AppContextService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class PublicVisitController extends Controller
@@ -94,21 +95,18 @@ class PublicVisitController extends Controller
             return back()->with('error', 'Portal Input Kunjungan Lapangan untuk kampus ini saat ini sedang ditutup atau dinonaktifkan.');
         }
 
-        $validated = $request->validate([
+        $agendaCategory = $request->input('agenda_category', SchoolVisit::AGENDA_PENJADWALAN_SOSIALISASI);
+
+        $rules = [
             'school_id' => ['required', 'exists:schools,id'],
             'user_id' => ['required', 'exists:users,id'],
             'visit_date' => ['required', 'date'],
+            'agenda_category' => ['nullable', 'string', 'in:penjadwalan_sosialisasi,mengantar_undangan,kunjungan_lainnya'],
+            'invitation_attendance_status' => ['nullable', 'string', 'in:akan_hadir,minta_ijin_dulu,tidak_bisa_hadir'],
             'headmaster_name' => ['nullable', 'string', 'max:150'],
             'recipient_name' => ['required', 'string', 'max:150'],
             'recipient_position' => ['required', 'string', 'max:100'],
             'recipient_phone' => ['nullable', 'string', 'max:30'],
-            'grade_12_class_count' => ['required', 'integer', 'min:1'],
-            'target_month_year' => ['required', 'string', 'max:50'],
-            'target_date' => ['nullable', 'date'],
-            'target_time' => ['required', 'string', 'max:20'],
-            'students_per_class' => ['required', 'integer', 'min:1'],
-            'socialization_method' => ['required', 'string', 'max:100'],
-            'other_activity_name' => ['nullable', 'required_if:socialization_method,Lainnya', 'string', 'max:200'],
             'notes' => ['nullable', 'string'],
             'photo' => [
                 'nullable',
@@ -123,8 +121,51 @@ class PublicVisitController extends Controller
                     }
                 },
             ],
-            'status' => ['required', 'in:berhasil,tidak_bertemu,tidak_berhasil,pending'],
-        ]);
+            'photo_camera_base64' => ['nullable', 'string'],
+        ];
+
+        if ($agendaCategory === SchoolVisit::AGENDA_PENJADWALAN_SOSIALISASI) {
+            $rules['grade_12_class_count'] = ['required', 'integer', 'min:1'];
+            $rules['target_month_year'] = ['required', 'string', 'max:50'];
+            $rules['target_date'] = ['nullable', 'date'];
+            $rules['target_time'] = ['required', 'string', 'max:20'];
+            $rules['students_per_class'] = ['required', 'integer', 'min:1'];
+            $rules['socialization_method'] = ['required', 'string', 'max:100'];
+            $rules['other_activity_name'] = ['nullable', 'required_if:socialization_method,Lainnya', 'string', 'max:200'];
+            $rules['status'] = ['required', 'in:berhasil,tidak_bertemu,tidak_berhasil,pending'];
+        } elseif ($agendaCategory === SchoolVisit::AGENDA_MENGANTAR_UNDANGAN) {
+            $rules['invitation_attendance_status'] = ['required', 'string', 'in:akan_hadir,minta_ijin_dulu,tidak_bisa_hadir'];
+            $rules['grade_12_class_count'] = ['nullable', 'integer'];
+            $rules['target_month_year'] = ['nullable', 'string', 'max:50'];
+            $rules['target_date'] = ['nullable', 'date'];
+            $rules['target_time'] = ['nullable', 'string', 'max:20'];
+            $rules['students_per_class'] = ['nullable', 'integer'];
+            $rules['socialization_method'] = ['nullable', 'string', 'max:100'];
+            $rules['other_activity_name'] = ['nullable', 'string', 'max:200'];
+            $rules['status'] = ['nullable', 'in:berhasil,tidak_bertemu,tidak_berhasil,pending'];
+        } else {
+            // Kunjungan Lainnya
+            $rules['grade_12_class_count'] = ['nullable', 'integer'];
+            $rules['target_month_year'] = ['nullable', 'string', 'max:50'];
+            $rules['target_date'] = ['nullable', 'date'];
+            $rules['target_time'] = ['nullable', 'string', 'max:20'];
+            $rules['students_per_class'] = ['nullable', 'integer'];
+            $rules['socialization_method'] = ['nullable', 'string', 'max:100'];
+            $rules['other_activity_name'] = ['nullable', 'string', 'max:200'];
+            $rules['status'] = ['nullable', 'in:berhasil,tidak_bertemu,tidak_berhasil,pending'];
+        }
+
+        $validated = $request->validate($rules);
+        $validated['agenda_category'] = $agendaCategory;
+
+        if ($agendaCategory === SchoolVisit::AGENDA_MENGANTAR_UNDANGAN) {
+            $validated['status'] = $validated['status'] ?? 'berhasil';
+            $validated['purpose'] = 'Mengantar Undangan Acara';
+            $validated['result'] = 'Konfirmasi Kehadiran: ' . (SchoolVisit::invitationAttendanceOptions()[$validated['invitation_attendance_status']] ?? $validated['invitation_attendance_status']);
+        } elseif ($agendaCategory === SchoolVisit::AGENDA_KUNJUNGAN_LAINNYA) {
+            $validated['status'] = $validated['status'] ?? 'berhasil';
+            $validated['purpose'] = 'Kunjungan Lainnya';
+        }
 
         $school = School::findOrFail($validated['school_id']);
         $validated['contact_person'] = $validated['recipient_name'] . ' (' . $validated['recipient_position'] . ')';
@@ -136,8 +177,31 @@ class PublicVisitController extends Controller
         $validated['campus_id'] = $targetCampusId;
         $validated['academic_period_id'] = $activePeriod?->id;
 
+        // Ambil berkas foto dari unggahan standar atau hasil kamera langsung (Base64)
         $photo = $request->file('photo');
-        unset($validated['photo']);
+        if (!$photo && $request->filled('photo_camera_base64')) {
+            $base64Data = $request->input('photo_camera_base64');
+            if (preg_match('/^data:image\/(\w+);base64,/', $base64Data, $typeMatches)) {
+                $base64Data = substr($base64Data, strpos($base64Data, ',') + 1);
+                $imgType = strtolower($typeMatches[1]);
+                if (in_array($imgType, ['jpg', 'jpeg', 'png', 'webp'])) {
+                    $decoded = base64_decode($base64Data);
+                    if ($decoded !== false) {
+                        $tmpFilePath = sys_get_temp_dir() . '/' . uniqid('cam_visit_', true) . '.' . $imgType;
+                        file_put_contents($tmpFilePath, $decoded);
+                        $photo = new \Illuminate\Http\UploadedFile(
+                            $tmpFilePath,
+                            'kamera_' . Str::slug($school->name) . '_' . date('Ymd_His') . '.' . $imgType,
+                            'image/' . ($imgType === 'jpg' ? 'jpeg' : $imgType),
+                            null,
+                            true
+                        );
+                    }
+                }
+            }
+        }
+
+        unset($validated['photo'], $validated['photo_camera_base64']);
         if ($photo) {
             $gdriveResult = \App\Services\GoogleDriveService::uploadDocumentation(
                 $photo,

@@ -121,6 +121,13 @@
                     @endforeach
                 </select>
 
+                <select name="agenda_category" onchange="this.form.submit()" class="py-1.5 px-3 rounded-xl border border-slate-300 font-semibold text-slate-700">
+                    <option value="">Semua Kategori Agenda</option>
+                    <option value="penjadwalan_sosialisasi" {{ request('agenda_category') == 'penjadwalan_sosialisasi' ? 'selected' : '' }}>1. Penjadwalan Sosialisasi</option>
+                    <option value="mengantar_undangan" {{ request('agenda_category') == 'mengantar_undangan' ? 'selected' : '' }}>2. Mengantar Undangan Acara</option>
+                    <option value="kunjungan_lainnya" {{ request('agenda_category') == 'kunjungan_lainnya' ? 'selected' : '' }}>3. Kunjungan Lainnya</option>
+                </select>
+
                 <select name="status" onchange="this.form.submit()" class="py-1.5 px-3 rounded-xl border border-slate-300">
                     <option value="">Semua Status Visit</option>
                     <option value="berhasil" {{ request('status') == 'berhasil' ? 'selected' : '' }}>Berhasil (Terlaksana)</option>
@@ -146,9 +153,9 @@
             <table class="w-full text-left text-xs border-collapse">
                 <thead class="bg-slate-900 text-white font-bold uppercase text-[11px]">
                     <tr>
-                        <th class="py-3.5 px-4">Tanggal Visit</th>
+                        <th class="py-3.5 px-4">Tanggal &amp; Agenda</th>
                         <th class="py-3.5 px-4">Sekolah Kunjungan</th>
-                        <th class="py-3.5 px-4">Petugas PIC (User Management)</th>
+                        <th class="py-3.5 px-4">Petugas PIC (Marketing)</th>
                         <th class="py-3.5 px-4">Penerima &amp; Jabatan</th>
                         <th class="py-3.5 px-4">Target Sosialisasi</th>
                         <th class="py-3.5 px-4">Metode Kegiatan</th>
@@ -161,14 +168,39 @@
                 <tbody class="divide-y divide-slate-100">
                     @forelse($visits as $v)
                         <tr class="hover:bg-slate-50 transition">
-                            <!-- Tanggal Visit -->
+                            <!-- Tanggal Visit & Agenda -->
                             <td class="py-3.5 px-4 font-bold text-slate-900 whitespace-nowrap">
-                                {{ \Carbon\Carbon::parse($v->visit_date)->translatedFormat('d M Y') }}
-                                @if($v->visitPlan)
-                                    <span class="inline-block px-1.5 py-0.5 text-[9px] rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold mt-1">
-                                        Dari Rencana
-                                    </span>
-                                @endif
+                                <div>{{ \Carbon\Carbon::parse($v->visit_date)->translatedFormat('d M Y') }}</div>
+                                
+                                <div class="mt-1 flex flex-col gap-1 items-start">
+                                    @if(($v->agenda_category ?? 'penjadwalan_sosialisasi') === 'mengantar_undangan')
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-50 text-amber-800 border border-amber-200">
+                                            <i data-lucide="mail" class="w-3 h-3 text-amber-600"></i>
+                                            <span>Antar Undangan</span>
+                                        </span>
+                                        @if($v->invitation_attendance_status)
+                                            <span class="inline-block px-1.5 py-0.2 rounded text-[9.5px] font-bold {{ $v->invitation_attendance_status === 'akan_hadir' ? 'bg-emerald-100 text-emerald-800' : ($v->invitation_attendance_status === 'minta_ijin_dulu' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800') }}">
+                                                ● {{ $v->invitation_attendance_label }}
+                                            </span>
+                                        @endif
+                                    @elseif(($v->agenda_category ?? '') === 'kunjungan_lainnya')
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-50 text-purple-800 border border-purple-200">
+                                            <i data-lucide="clipboard-list" class="w-3 h-3 text-purple-600"></i>
+                                            <span>Kunjungan Lain</span>
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-brand-50 text-brand-800 border border-brand-200">
+                                            <i data-lucide="presentation" class="w-3 h-3 text-brand-600"></i>
+                                            <span>Sosialisasi</span>
+                                        </span>
+                                    @endif
+
+                                    @if($v->visitPlan)
+                                        <span class="inline-block px-1.5 py-0.2 text-[9px] rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold">
+                                            Dari Rencana
+                                        </span>
+                                    @endif
+                                </div>
                             </td>
 
                             <!-- Sekolah Kunjungan -->
@@ -252,13 +284,27 @@
 
                             <!-- Target Sosialisasi -->
                             <td class="py-3.5 px-4 text-slate-700 whitespace-nowrap">
-                                <span class="font-bold text-emerald-700 block">{{ $v->target_month_year ?? '-' }}</span>
-                                <span class="text-[10px] text-slate-500 block">Jam {{ $v->target_time ?? '-' }} &bull; Tgl: {{ $v->target_date ? \Carbon\Carbon::parse($v->target_date)->translatedFormat('d M Y') : 'Flexibel' }}</span>
+                                @if(($v->agenda_category ?? '') === 'mengantar_undangan')
+                                    <span class="text-xs font-bold text-amber-700 block">Antar Undangan</span>
+                                    <span class="text-[10px] text-slate-500 block">{{ $v->invitation_attendance_label ?? 'Terkonfirmasi' }}</span>
+                                @elseif(($v->agenda_category ?? '') === 'kunjungan_lainnya')
+                                    <span class="text-xs font-bold text-purple-700 block">Kunjungan Lain</span>
+                                    <span class="text-[10px] text-slate-500 block">{{ Str::limit($v->notes ?? 'Selesai', 25) }}</span>
+                                @else
+                                    <span class="font-bold text-emerald-700 block">{{ $v->target_month_year ?? '-' }}</span>
+                                    <span class="text-[10px] text-slate-500 block">Jam {{ $v->target_time ?? '-' }} &bull; Tgl: {{ $v->target_date ? \Carbon\Carbon::parse($v->target_date)->translatedFormat('d M Y') : 'Flexibel' }}</span>
+                                @endif
                             </td>
 
                             <!-- Metode Kegiatan -->
                             <td class="py-3.5 px-4 font-semibold text-purple-700 whitespace-nowrap">
-                                {{ $v->socialization_method === 'Lainnya' ? ($v->other_activity_name ?? 'Lainnya') : ($v->socialization_method ?? '-') }}
+                                @if(($v->agenda_category ?? '') === 'mengantar_undangan')
+                                    <span class="text-xs text-slate-500">Penyerahan Surat</span>
+                                @elseif(($v->agenda_category ?? '') === 'kunjungan_lainnya')
+                                    <span class="text-xs text-slate-500">Audiensi / Dinas</span>
+                                @else
+                                    {{ $v->socialization_method === 'Lainnya' ? ($v->other_activity_name ?? 'Lainnya') : ($v->socialization_method ?? '-') }}
+                                @endif
                             </td>
 
                             <!-- Estimasi Siswa XII -->
@@ -267,7 +313,7 @@
                                     {{ $v->grade_12_class_count * $v->students_per_class }} Siswa
                                     <span class="block text-[10px] text-slate-400 font-normal">({{ $v->grade_12_class_count }} Kls &times; {{ $v->students_per_class }} Ssw)</span>
                                 @else
-                                    -
+                                    <span class="text-slate-300">-</span>
                                 @endif
                             </td>
 
