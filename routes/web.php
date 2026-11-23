@@ -233,6 +233,7 @@ Route::middleware(['auth'])->group(function () {
     // Support Event Sekolah (Proposal Masuk & Laporan Kegiatan Terintegrasi)
     Route::get('/event-proposals', [\App\Http\Controllers\SchoolEventProposalController::class, 'index'])->name('event-proposals.index');
     Route::put('/event-proposals/{proposal}/status', [\App\Http\Controllers\SchoolEventProposalController::class, 'updateStatus'])->name('event-proposals.update-status');
+    Route::put('/event-proposals/{proposal}', [\App\Http\Controllers\SchoolEventProposalController::class, 'update'])->name('event-proposals.update');
     Route::get('/event-proposals/{proposal}/download', [\App\Http\Controllers\SchoolEventProposalController::class, 'downloadProposal'])->name('event-proposals.download');
     Route::delete('/event-proposals/{proposal}', [\App\Http\Controllers\SchoolEventProposalController::class, 'destroy'])->name('event-proposals.destroy');
 

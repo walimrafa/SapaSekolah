@@ -281,7 +281,17 @@ class SchoolEventProposalController extends Controller
             'ditolak' => (clone $baseQuery)->where('status', SchoolEventProposal::STATUS_DITOLAK)->count(),
         ];
 
-        return view('event-proposals.index', compact('proposals', 'stats', 'activeCampus'));
+        $schoolsQuery = School::query()
+            ->select('id', 'name', 'district_id', 'campus_id')
+            ->with(['district:id,name', 'campus']);
+
+        if ($activeCampus) {
+            $schoolsQuery->where('campus_id', $activeCampus->id);
+        }
+
+        $schools = $schoolsQuery->orderBy('name')->get();
+
+        return view('event-proposals.index', compact('proposals', 'stats', 'activeCampus', 'schools'));
     }
 
     /**
@@ -369,6 +379,119 @@ class SchoolEventProposalController extends Controller
         );
 
         return back()->with('success', "Status proposal #{$proposal->reference_no} berhasil diperbarui menjadi {$proposal->status_label}.");
+    }
+
+    /**
+     * Update data proposal event sekolah (Koreksi salah ketik/typo oleh Managerial).
+     */
+    public function update(Request $request, SchoolEventProposal $proposal): RedirectResponse
+    {
+        $this->authorizeCampusAccess($proposal);
+
+        $user = auth()->user();
+        if (!$user || !$user->hasFullMenuAccess()) {
+            abort(403, 'Akses ditolak. Pengubahan data proposal hanya dapat dilakukan oleh Admin, Pimpinan, Koordinator Marketing, dan Koordinator Customer Service.');
+        }
+
+        $validated = $request->validate([
+            'school_id' => 'nullable',
+            'school_name' => 'nullable|string|max:200',
+            'pic_name' => 'required|string|max:150',
+            'pic_phone' => 'required|string|max:50',
+            'pic_position' => 'nullable|string|max:100',
+            'event_name' => 'required|string|max:200',
+            'event_date' => 'required|date',
+            'event_end_date' => 'nullable|date|after_or_equal:event_date',
+            'event_time' => 'required|string|max:100',
+            'event_location' => 'required|string|max:255',
+            'target_participants' => 'required|string|max:150',
+            'support_type_requested' => 'nullable|string|max:255',
+            'estimated_budget' => 'nullable|numeric|min:0',
+            'proposal_file' => [
+                'nullable',
+                'file',
+                'max:51200',
+                'mimes:pdf,doc,docx,zip,rar,7z',
+                function ($attribute, $value, $fail) {
+                    if ($value instanceof \Illuminate\Http\UploadedFile) {
+                        $ext = strtolower($value->getClientOriginalExtension());
+                        $allowed = ['pdf', 'doc', 'docx', 'zip', 'rar', '7z'];
+                        if (!in_array($ext, $allowed)) {
+                            $fail('Format berkas proposal harus berupa PDF, DOC, DOCX, ZIP, atau RAR.');
+                        }
+                    }
+                }
+            ],
+        ], [
+            'pic_name.required' => 'Nama narahubung / PIC wajib diisi.',
+            'pic_phone.required' => 'Nomor WhatsApp / HP narahubung wajib diisi.',
+            'event_name.required' => 'Nama event / kegiatan wajib diisi.',
+            'event_date.required' => 'Tanggal pelaksanaan event wajib diisi.',
+            'event_time.required' => 'Waktu pelaksanaan event wajib diisi.',
+            'event_location.required' => 'Lokasi / tempat kegiatan wajib diisi.',
+            'target_participants.required' => 'Target peserta event wajib diisi.',
+            'proposal_file.max' => 'Ukuran file proposal maksimal adalah 50MB.',
+        ]);
+
+        $schoolId = null;
+        $schoolName = trim((string) ($request->input('school_name') ?? ''));
+
+        if (!empty($validated['school_id']) && $validated['school_id'] !== 'other') {
+            $school = School::find($validated['school_id']);
+            if ($school) {
+                $schoolId = $school->id;
+                $schoolName = $school->name;
+            }
+        }
+
+        $dataToUpdate = [
+            'school_id' => $schoolId,
+            'school_name' => $schoolName ?: $proposal->school_name,
+            'pic_name' => $validated['pic_name'],
+            'pic_phone' => $validated['pic_phone'],
+            'pic_position' => $validated['pic_position'] ?? null,
+            'event_name' => $validated['event_name'],
+            'event_date' => $validated['event_date'],
+            'event_end_date' => $validated['event_end_date'] ?? null,
+            'event_time' => $validated['event_time'],
+            'event_location' => $validated['event_location'],
+            'target_participants' => $validated['target_participants'],
+            'support_type_requested' => $validated['support_type_requested'] ?? $proposal->support_type_requested,
+            'estimated_budget' => $validated['estimated_budget'] ?? $proposal->estimated_budget,
+        ];
+
+        if (!empty($school) && $school->campus_id) {
+            $dataToUpdate['campus_id'] = $school->campus_id;
+        }
+
+        if ($request->hasFile('proposal_file')) {
+            $file = $request->file('proposal_file');
+            $originalFileName = $file->getClientOriginalName();
+            $fileSize = $file->getSize();
+            $filePath = $file->store('event-proposals', 'public');
+
+            // Hapus file lama jika ada di storage public
+            if ($proposal->proposal_file_path && Storage::disk('public')->exists($proposal->proposal_file_path)) {
+                Storage::disk('public')->delete($proposal->proposal_file_path);
+            }
+
+            $dataToUpdate['proposal_file_path'] = $filePath;
+            $dataToUpdate['proposal_file_name'] = $originalFileName;
+            $dataToUpdate['proposal_file_size'] = $fileSize;
+        }
+
+        $proposal->update($dataToUpdate);
+
+        \App\Services\ActivityLogService::log(
+            'UPDATE',
+            'school_event',
+            $proposal->id,
+            "Memperbarui data proposal event #{$proposal->reference_no}: {$proposal->event_name} ({$schoolName})",
+            null,
+            ['ref_no' => $proposal->reference_no, 'event_name' => $proposal->event_name, 'school' => $schoolName]
+        );
+
+        return back()->with('success', "Data proposal event #{$proposal->reference_no} berhasil diperbarui.");
     }
 
     /**

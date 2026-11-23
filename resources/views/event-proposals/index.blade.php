@@ -311,23 +311,32 @@
 
                                     <!-- Aksi -->
                                     <td class="py-4 px-4 align-top text-right space-y-1.5">
-                                        <button type="button" @click="openStatusModal({{ $item->id }})"
-                                            class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 transition">
-                                            <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
-                                            <span>Ubah Status</span>
-                                        </button>
+                                        <div class="flex flex-col items-end gap-1.5">
+                                            <button type="button" @click="openStatusModal({{ $item->id }})"
+                                                class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 transition">
+                                                <i data-lucide="check-square" class="w-3.5 h-3.5"></i>
+                                                <span>Ubah Status</span>
+                                            </button>
 
-                                        @if(auth()->user()->hasFullMenuAccess())
-                                            <div>
-                                                <form action="{{ route('event-proposals.destroy', $item) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus proposal {{ $item->reference_no }} ini?')" class="inline">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="text-[11px] text-rose-600 hover:text-rose-800 font-semibold transition">
-                                                        Hapus
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        @endif
+                                            @if(auth()->user()->hasFullMenuAccess())
+                                                <button type="button" @click="openEditModal({{ $item->id }})"
+                                                    class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 transition"
+                                                    title="Edit / Koreksi Data Proposal">
+                                                    <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                                                    <span>Edit Proposal</span>
+                                                </button>
+
+                                                <div>
+                                                    <form action="{{ route('event-proposals.destroy', $item) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus proposal {{ $item->reference_no }} ini?')" class="inline">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="text-[11px] text-rose-600 hover:text-rose-800 font-semibold transition">
+                                                            Hapus
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            @endif
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach
@@ -417,6 +426,206 @@
                     </div>
                 </form>
             </div>
+        </div>
+
+        <!-- Modal Edit Data Proposal Kegiatan -->
+        <div x-show="showEditModal" style="display: none;"
+            class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+            <div @click.away="showEditModal = false"
+                class="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 text-slate-800 space-y-5 animate-in fade-in zoom-in duration-200 my-8 max-h-[90vh] flex flex-col">
+                
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
+                    <div class="flex items-center space-x-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
+                            <i data-lucide="edit-3" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[11px] font-mono font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded" x-text="editProposal?.reference_no"></span>
+                                <h3 class="text-base font-extrabold text-slate-900">Edit Data Proposal Event</h3>
+                            </div>
+                            <p class="text-[11px] text-slate-500">Koreksi kesalahan ketik (typo) nama event, sekolah, narahubung, jadwal, atau berkas proposal.</p>
+                        </div>
+                    </div>
+                    <button type="button" @click="showEditModal = false" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <form :action="'/event-proposals/' + (editProposal ? editProposal.id : '')" method="POST" enctype="multipart/form-data" class="space-y-4 overflow-y-auto pr-1 flex-1">
+                    @csrf
+                    @method('PUT')
+
+                    <!-- Asal Sekolah & Event -->
+                    <div class="space-y-3">
+                        <h4 class="text-xs font-black uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-1 flex items-center gap-1.5">
+                            <i data-lucide="building" class="w-3.5 h-3.5 text-indigo-500"></i>
+                            <span>Asal Sekolah & Nama Kegiatan</span>
+                        </h4>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                    Pilih Asal Sekolah <span class="text-rose-500">*</span>
+                                </label>
+                                <select name="school_id" x-model="editSchoolId" class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs bg-white">
+                                    <option value="">-- Pilih Sekolah Terdaftar --</option>
+                                    @if(isset($schools))
+                                        @foreach($schools as $sch)
+                                            <option value="{{ $sch->id }}">{{ $sch->name }} ({{ $sch->district->name ?? 'Wilayah' }})</option>
+                                        @endforeach
+                                    @endif
+                                    <option value="other">&bull; Sekolah Lainnya / Tidak Terdaftar &bull;</option>
+                                </select>
+                            </div>
+                            <div x-show="editSchoolId === 'other'">
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                    Ketik Nama Sekolah (Lainnya) <span class="text-rose-500">*</span>
+                                </label>
+                                <input type="text" name="school_name" x-model="editSchoolName" placeholder="Contoh: SMA Negeri 3 Karawang"
+                                    class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                Nama Event / Kegiatan <span class="text-rose-500">*</span>
+                            </label>
+                            <input type="text" name="event_name" x-model="editEventName" required placeholder="Contoh: Workshop Digital Kreatif"
+                                class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                        </div>
+                    </div>
+
+                    <!-- Jadwal & Lokasi -->
+                    <div class="space-y-3 pt-2">
+                        <h4 class="text-xs font-black uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-1 flex items-center gap-1.5">
+                            <i data-lucide="calendar" class="w-3.5 h-3.5 text-brand-500"></i>
+                            <span>Waktu, Lokasi & Target Peserta</span>
+                        </h4>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                    Tanggal Mulai <span class="text-rose-500">*</span>
+                                </label>
+                                <input type="date" name="event_date" x-model="editEventDate" required
+                                    class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                    Tanggal Selesai
+                                </label>
+                                <input type="date" name="event_end_date" x-model="editEventEndDate"
+                                    class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                    Waktu / Jam <span class="text-rose-500">*</span>
+                                </label>
+                                <input type="text" name="event_time" x-model="editEventTime" required placeholder="08:00 - 15:00 WIB"
+                                    class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                    Lokasi / Tempat Acara <span class="text-rose-500">*</span>
+                                </label>
+                                <input type="text" name="event_location" x-model="editEventLocation" required placeholder="Contoh: Aula BSI Cibitung / SMAN 3"
+                                    class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                    Target Peserta <span class="text-rose-500">*</span>
+                                </label>
+                                <input type="text" name="target_participants" x-model="editTargetParticipants" required placeholder="Contoh: 500 Siswa Kelas XII"
+                                    class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Narahubung / PIC -->
+                    <div class="space-y-3 pt-2">
+                        <h4 class="text-xs font-black uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-1 flex items-center gap-1.5">
+                            <i data-lucide="user" class="w-3.5 h-3.5 text-emerald-500"></i>
+                            <span>Narahubung (PIC) Sekolah</span>
+                        </h4>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                    Nama PIC <span class="text-rose-500">*</span>
+                                </label>
+                                <input type="text" name="pic_name" x-model="editPicName" required placeholder="Nama narahubung"
+                                    class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                    No. HP / WA PIC <span class="text-rose-500">*</span>
+                                </label>
+                                <input type="text" name="pic_phone" x-model="editPicPhone" required placeholder="08xxxxxxxxxx"
+                                    class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                    Jabatan PIC
+                                </label>
+                                <input type="text" name="pic_position" x-model="editPicPosition" placeholder="Guru BK / Pembina OSIS"
+                                    class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Kebutuhan Support & Berkas -->
+                    <div class="space-y-3 pt-2">
+                        <h4 class="text-xs font-black uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-1 flex items-center gap-1.5">
+                            <i data-lucide="file-text" class="w-3.5 h-3.5 text-amber-500"></i>
+                            <span>Bentuk Support, Anggaran & Berkas Proposal</span>
+                        </h4>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                    Bentuk Support yang Diminta
+                                </label>
+                                <input type="text" name="support_type_requested" x-model="editSupportType" placeholder="Sponsorship Dana, Narasumber, Stand Booth"
+                                    class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                    Estimasi Kebutuhan Anggaran (Rp)
+                                </label>
+                                <input type="number" name="estimated_budget" x-model="editEstimatedBudget" step="50000" min="0" placeholder="Contoh: 1500000"
+                                    class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                Ganti Berkas Proposal (Opsional)
+                            </label>
+                            <input type="file" name="proposal_file" accept=".pdf,.doc,.docx,.zip,.rar,.7z"
+                                class="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100">
+                            <p class="text-[11px] text-slate-500 mt-1" x-show="editProposal?.proposal_file_name">
+                                Berkas saat ini: <strong class="text-slate-800" x-text="editProposal?.proposal_file_name"></strong>. Biarkan kosong jika tidak ingin mengganti file.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-100 flex items-center justify-end space-x-2 shrink-0">
+                        <button type="button" @click="showEditModal = false"
+                            class="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
+                            Batal
+                        </button>
+                        <button type="submit"
+                            class="px-5 py-2.5 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white shadow-md shadow-amber-600/20 transition">
+                            Simpan Perubahan Data
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
         <!-- Modal QR Code Form Pengajuan Proposal Sekolah -->
         <div x-show="showQrModal" style="display: none;"
             class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
@@ -483,12 +692,28 @@
             return {
                 proposalsMap: proposalsMap || {},
                 showStatusModal: false,
+                showEditModal: false,
                 showQrModal: false,
                 activeProposal: null,
                 modalStatus: 'menunggu_review',
                 modalApprovedAmount: '',
                 modalApprovedItems: '',
                 modalNotes: '',
+
+                editProposal: null,
+                editSchoolId: '',
+                editSchoolName: '',
+                editEventName: '',
+                editEventDate: '',
+                editEventEndDate: '',
+                editEventTime: '',
+                editEventLocation: '',
+                editTargetParticipants: '',
+                editPicName: '',
+                editPicPhone: '',
+                editPicPosition: '',
+                editSupportType: '',
+                editEstimatedBudget: '',
 
                 openStatusModal(id) {
                     const proposal = this.proposalsMap[id];
@@ -499,6 +724,29 @@
                     this.modalApprovedItems = proposal.approved_support_items || '';
                     this.modalNotes = proposal.status_notes || '';
                     this.showStatusModal = true;
+                },
+
+                openEditModal(id) {
+                    const proposal = this.proposalsMap[id];
+                    if (!proposal) return;
+                    this.editProposal = proposal;
+                    this.editSchoolId = proposal.school_id || (proposal.school_name ? 'other' : '');
+                    this.editSchoolName = proposal.school_name || '';
+                    this.editEventName = proposal.event_name || '';
+                    this.editEventDate = proposal.event_date ? String(proposal.event_date).substring(0, 10) : '';
+                    this.editEventEndDate = proposal.event_end_date ? String(proposal.event_end_date).substring(0, 10) : '';
+                    this.editEventTime = proposal.event_time || '';
+                    this.editEventLocation = proposal.event_location || '';
+                    this.editTargetParticipants = proposal.target_participants || '';
+                    this.editPicName = proposal.pic_name || '';
+                    this.editPicPhone = proposal.pic_phone || '';
+                    this.editPicPosition = proposal.pic_position || '';
+                    this.editSupportType = proposal.support_type_requested || '';
+                    this.editEstimatedBudget = proposal.estimated_budget || '';
+                    this.showEditModal = true;
+                    this.$nextTick(() => {
+                        if (window.lucide) { window.lucide.createIcons(); }
+                    });
                 }
             }
         }
