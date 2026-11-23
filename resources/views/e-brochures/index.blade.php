@@ -233,8 +233,8 @@
                                 <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
                             </button>
 
-                            <!-- Delete Button (Admin, Pimpinan, or Marketing) -->
-                            @if(auth()->user()->isAdmin() || auth()->user()->hasRole('Pimpinan') || auth()->id() === $brochure->created_by)
+                            <!-- Delete Button (Admin, Pimpinan, Koordinator Marketing, Koordinator Customer Service, or Owner) -->
+                            @if(auth()->user()->hasFullMenuAccess() || auth()->id() === $brochure->created_by)
                                 <form method="POST" action="{{ route('e-brochures.destroy', $brochure) }}" onsubmit="return confirm('Apakah Anda yakin ingin menghapus e-brosur ini?');" class="inline">
                                     @csrf
                                     @method('DELETE')

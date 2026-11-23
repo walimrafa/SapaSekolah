@@ -66,8 +66,8 @@ class EBrochureController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $user = auth()->user();
-        if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator())) {
-            abort(403, 'Akses ditolak. Pengunggahan E-Brosur resmi hanya dapat dilakukan oleh Admin, Pimpinan, dan Koordinator Marketing.');
+        if (!$user || !$user->hasFullMenuAccess()) {
+            abort(403, 'Akses ditolak. Pengunggahan E-Brosur resmi hanya dapat dilakukan oleh Admin, Pimpinan, Koordinator Marketing, dan Koordinator Customer Service.');
         }
 
         $validated = $request->validate([
@@ -156,8 +156,8 @@ class EBrochureController extends Controller
     public function destroy(EBrochure $eBrochure): RedirectResponse
     {
         $user = auth()->user();
-        if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator())) {
-            abort(403, 'Akses ditolak. Penghapusan E-Brosur resmi hanya dapat dilakukan oleh Admin, Pimpinan, dan Koordinator Marketing.');
+        if (!$user || !$user->hasFullMenuAccess()) {
+            abort(403, 'Akses ditolak. Penghapusan E-Brosur resmi hanya dapat dilakukan oleh Admin, Pimpinan, Koordinator Marketing, dan Koordinator Customer Service.');
         }
 
         $title = $eBrochure->title;

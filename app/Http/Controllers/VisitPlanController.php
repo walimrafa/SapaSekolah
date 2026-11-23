@@ -305,7 +305,7 @@ class VisitPlanController extends Controller
         $this->authorizeCampusAccess($visitPlan);
 
         $user = auth()->user();
-        if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator() && $visitPlan->user_id !== $user->id)) {
+        if (!$user || (!$user->hasFullMenuAccess() && $visitPlan->user_id !== $user->id)) {
             abort(403, 'Akses ditolak. Anda tidak berhak menghapus rencana kunjungan ini.');
         }
 

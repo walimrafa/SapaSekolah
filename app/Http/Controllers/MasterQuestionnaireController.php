@@ -17,8 +17,8 @@ class MasterQuestionnaireController extends Controller
     protected function authorizeAccess(): void
     {
         $user = auth()->user();
-        if (!$user || (!$user->isAdmin() && !$user->hasRole('Pimpinan') && !$user->hasRole('Koordinator Marketing'))) {
-            abort(403, 'Akses terbatas. Master Kuisioner hanya dapat dikelola oleh Administrator, Pimpinan, dan Koordinator Marketing.');
+        if (!$user || !$user->hasFullMenuAccess()) {
+            abort(403, 'Akses terbatas. Master Kuisioner hanya dapat dikelola oleh Administrator, Pimpinan, Koordinator Marketing, dan Koordinator Customer Service.');
         }
     }
 

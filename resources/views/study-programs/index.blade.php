@@ -12,7 +12,7 @@
     </div>
 
     @php
-        $canManagePrograms = auth()->user()->isAdmin() || auth()->user()->hasRole('Pimpinan');
+        $canManagePrograms = auth()->user()->hasFullMenuAccess();
     @endphp
 
     <div class="grid grid-cols-1 {{ $canManagePrograms ? 'lg:grid-cols-12' : '' }} gap-6">

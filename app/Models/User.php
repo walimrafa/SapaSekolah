@@ -280,20 +280,29 @@ class User extends Authenticatable
 
     /**
      * Cek apakah user berwenang mengakses menu dan data Rekomendasi KOL.
-     * Hanya Administrator, Pimpinan, dan Koordinator Marketing.
+     * Hak akses: Administrator, Pimpinan, Koordinator Marketing, dan Koordinator Customer Service.
      */
     public function canAccessKolMenu(): bool
     {
-        return $this->isAdmin() || $this->isPimpinan() || $this->isKoordinator();
+        return $this->hasFullMenuAccess();
     }
 
     /**
      * Cek apakah user berwenang mengelola backup database (manual dump, unduh, sync Google Drive).
-     * Hak akses: Administrator, Pimpinan, dan Koordinator Marketing.
+     * Hak akses: Administrator, Pimpinan, Koordinator Marketing, dan Koordinator Customer Service.
      */
     public function canManageBackups(): bool
     {
-        return $this->isAdmin() || $this->isPimpinan() || $this->isKoordinator();
+        return $this->hasFullMenuAccess();
+    }
+
+    /**
+     * Cek apakah user memiliki hak akses managerial/CRUD penuh ke semua menu
+     * (Administrator, Pimpinan, Koordinator Marketing, Koordinator Customer Service).
+     */
+    public function hasFullMenuAccess(): bool
+    {
+        return $this->isAdmin() || $this->isPimpinan() || $this->isKoordinator() || $this->isKoordinatorCs();
     }
 
     /**

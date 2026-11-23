@@ -82,19 +82,19 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::post('/notifications/read-all', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
 
-    // Public Portal Status Toggle (Admin, Pimpinan, Koordinator Marketing)
+    // Public Portal Status Toggle (Admin, Pimpinan, Koordinator Marketing, Koordinator Customer Service)
     Route::post('/portal-status/toggle', [\App\Http\Controllers\ContextController::class, 'togglePortal'])
         ->name('portal-status.toggle')
-        ->middleware('role:Admin,Pimpinan,Koordinator Marketing');
+        ->middleware('role:Admin,Pimpinan,Koordinator Marketing,Koordinator Customer Service');
 
     // Profile & Password Mandiri
     Route::get('/profile', [\App\Http\Controllers\ContextController::class, 'showProfile'])->name('profile.show');
     Route::put('/profile/password', [\App\Http\Controllers\ContextController::class, 'updatePassword'])->name('profile.password')->middleware('throttle:10,1');
 
-    // Audit Trail / Log Aktivitas Sistem (Admin, Pimpinan, Koordinator Marketing)
+    // Audit Trail / Log Aktivitas Sistem (Admin, Pimpinan, Koordinator Marketing, Koordinator Customer Service)
     Route::get('/activity-logs', [\App\Http\Controllers\ActivityLogController::class, 'index'])
         ->name('activity-logs.index')
-        ->middleware('role:Admin,Pimpinan,Koordinator Marketing');
+        ->middleware('role:Admin,Pimpinan,Koordinator Marketing,Koordinator Customer Service');
 
     // Laporan Khusus Lengkap & Ekspor Kategori
     Route::get('/comprehensive-reports', [\App\Http\Controllers\ComprehensiveReportController::class, 'index'])->name('comprehensive-reports.index');
@@ -154,8 +154,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/new-students/export', [\App\Http\Controllers\NewStudentController::class, 'export'])->name('new-students.export');
     Route::post('/new-students/{prospect}/unvalidate', [\App\Http\Controllers\NewStudentController::class, 'unvalidate'])->name('new-students.unvalidate');
 
-    // Rekomendasi KOL & Master Kuisioner (Khusus Admin, Pimpinan, dan Koordinator Marketing)
-    Route::middleware('role:Admin,Pimpinan,Koordinator Marketing')->group(function () {
+    // Rekomendasi KOL & Master Kuisioner (Admin, Pimpinan, Koordinator Marketing, Koordinator Customer Service)
+    Route::middleware('role:Admin,Pimpinan,Koordinator Marketing,Koordinator Customer Service')->group(function () {
         Route::get('/kol-recommendations', [\App\Http\Controllers\KolRecommendationController::class, 'index'])->name('kol-recommendations.index');
         Route::get('/kol-recommendations/documentation', [\App\Http\Controllers\KolRecommendationController::class, 'documentation'])->name('kol-recommendations.documentation');
         Route::put('/kol-recommendations/{studentQuestionnaire}/status', [\App\Http\Controllers\KolRecommendationController::class, 'updateStatus'])->name('kol-recommendations.update-status');
@@ -202,9 +202,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/map', [MapController::class, 'index'])->name('map.index');
     Route::get('/api/map/schools', [MapController::class, 'apiSchools'])->name('api.map.schools');
 
-    // Master Program Studi Routes (Index is open for viewing; mutations restricted to Admin & Pimpinan)
+    // Master Program Studi Routes (Index is open for viewing; mutations restricted to Admin, Pimpinan, Koordinator Marketing, Koordinator Customer Service)
     Route::get('/study-programs', [StudyProgramController::class, 'index'])->name('study-programs.index');
-    Route::middleware('role:Admin,Pimpinan,Koordinator Marketing')->group(function () {
+    Route::middleware('role:Admin,Pimpinan,Koordinator Marketing,Koordinator Customer Service')->group(function () {
         Route::post('/study-programs', [StudyProgramController::class, 'store'])->name('study-programs.store');
         Route::put('/study-programs/{studyProgram}', [StudyProgramController::class, 'update'])->name('study-programs.update');
         Route::delete('/study-programs/{studyProgram}', [StudyProgramController::class, 'destroy'])->name('study-programs.destroy');
@@ -250,16 +250,16 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/hasil-support-event-data/export-pdf', [\App\Http\Controllers\EventStudentLeadController::class, 'exportPdf'])->name('event-students.export-pdf');
     Route::get('/hasil-support-event-data/export-pptx', [\App\Http\Controllers\EventStudentLeadController::class, 'exportPptx'])->name('event-students.export-pptx');
 
-    // 3. Prioritas Sekolah (Scoring & Ranking - Admin, Pimpinan, Koordinator, Marketing)
-    Route::middleware('role:Admin,Pimpinan,Koordinator Marketing,Marketing')->group(function () {
+    // 3. Prioritas Sekolah (Scoring & Ranking - Admin, Pimpinan, Koordinator Marketing, Koordinator Customer Service, Marketing)
+    Route::middleware('role:Admin,Pimpinan,Koordinator Marketing,Koordinator Customer Service,Marketing')->group(function () {
         Route::get('/priorities', [PriorityController::class, 'index'])->name('priorities.index');
         Route::get('/priorities/student-intakes-template', [PriorityController::class, 'downloadStudentIntakeTemplate'])->name('priorities.student-intakes-template');
         Route::post('/priorities/import-student-intakes', [PriorityController::class, 'importStudentIntakes'])->name('priorities.import-student-intakes');
         Route::post('/priorities/recalculate', [PriorityController::class, 'recalculate'])->name('priorities.recalculate');
     });
 
-    // 4. Operasional Lapangan (Field Operations - Admin, Pimpinan, Koordinator, Marketing)
-    Route::middleware('role:Admin,Pimpinan,Koordinator Marketing,Marketing')->group(function () {
+    // 4. Operasional Lapangan (Field Operations - Admin, Pimpinan, Koordinator Marketing, Koordinator Customer Service, Marketing)
+    Route::middleware('role:Admin,Pimpinan,Koordinator Marketing,Koordinator Customer Service,Marketing')->group(function () {
         Route::post('/visit-plans/bulk-destroy', [VisitPlanController::class, 'bulkDestroy'])->name('visit-plans.bulk-destroy');
         Route::resource('visit-plans', VisitPlanController::class)->except(['show']);
         Route::get('/visits/export', [SchoolVisitController::class, 'export'])->name('visits.export');
@@ -281,8 +281,8 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('activities', MarketingActivityController::class)->except(['create', 'show', 'edit']);
     });
 
-    // 5. Master Data Routes (Admin & Pimpinan)
-    Route::middleware('role:Admin,Pimpinan,Koordinator Marketing')->group(function () {
+    // 5. Master Data Routes (Admin, Pimpinan, Koordinator Marketing, Koordinator Customer Service)
+    Route::middleware('role:Admin,Pimpinan,Koordinator Marketing,Koordinator Customer Service')->group(function () {
         Route::get('/master-data', [MasterDataController::class, 'index'])->name('master-data.index');
         Route::post('/master-data/school-types', [MasterDataController::class, 'storeSchoolType'])->name('master-data.school-types.store');
         Route::post('/master-data/accreditations', [MasterDataController::class, 'storeAccreditation'])->name('master-data.accreditations.store');
@@ -300,20 +300,20 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/master-data/academic-periods/{period}', [MasterDataController::class, 'destroyAcademicPeriod'])->name('master-data.academic-periods.destroy');
     });
 
-    // 6. User Management (Admin & Pimpinan Kampus)
-    Route::middleware('role:Admin,Pimpinan')->group(function () {
+    // 6. User Management (Admin, Pimpinan, Koordinator Marketing, Koordinator Customer Service)
+    Route::middleware('role:Admin,Pimpinan,Koordinator Marketing,Koordinator Customer Service')->group(function () {
         Route::resource('users', UserController::class)->except(['create', 'show', 'edit']);
     });
 
-    // 7. Pengaturan Sistem & Operasional Khusus (Admin Only)
-    Route::middleware('role:Admin')->group(function () {
+    // 7. Pengaturan Sistem & Operasional Khusus (Admin, Pimpinan, Koordinator Marketing, Koordinator Customer Service)
+    Route::middleware('role:Admin,Pimpinan,Koordinator Marketing,Koordinator Customer Service')->group(function () {
         Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
         Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
         Route::post('/settings/sidebar-labels', [SettingsController::class, 'updateSidebarLabels'])->name('settings.sidebar-labels.update');
         Route::post('/settings/login-labels', [SettingsController::class, 'updateLoginLabels'])->name('settings.login-labels.update');
         Route::post('/settings/close-period', [SettingsController::class, 'closePeriod'])->name('settings.close-period');
 
-        // Pengajuan Tutup Periode oleh Admin
+        // Pengajuan Tutup Periode
         Route::post('/period-closing/request', [\App\Http\Controllers\PeriodClosingController::class, 'storeRequest'])->name('period-closing.request');
         Route::post('/period-closing/{periodClosingRequest}/cancel', [\App\Http\Controllers\PeriodClosingController::class, 'cancel'])->name('period-closing.cancel');
 
@@ -330,8 +330,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/period-closing/{periodClosingRequest}/respond', [\App\Http\Controllers\PeriodClosingController::class, 'respond'])->name('period-closing.respond');
     });
 
-    // 8. Manajemen Cadangan Database & Sinkronisasi Google Drive (Admin, Pimpinan, Koordinator Marketing)
-    Route::middleware('role:Admin,Pimpinan,Koordinator Marketing')->group(function () {
+    // 8. Manajemen Cadangan Database & Sinkronisasi Google Drive (Admin, Pimpinan, Koordinator Marketing, Koordinator Customer Service)
+    Route::middleware('role:Admin,Pimpinan,Koordinator Marketing,Koordinator Customer Service')->group(function () {
         Route::get('/database-backups', [\App\Http\Controllers\DatabaseBackupController::class, 'index'])->name('database-backups.index');
         Route::post('/database-backups/create', [\App\Http\Controllers\DatabaseBackupController::class, 'createManual'])->name('database-backups.create');
         Route::get('/database-backups/{backup}/download', [\App\Http\Controllers\DatabaseBackupController::class, 'download'])->name('database-backups.download');

@@ -306,8 +306,8 @@ class SchoolController extends Controller
         $this->authorizeCampusAccess($school);
 
         $user = auth()->user();
-        if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator())) {
-            abort(403, 'Akses ditolak. Penghapusan data sekolah hanya dapat dilakukan oleh Admin, Pimpinan, dan Koordinator Marketing.');
+        if (!$user || !$user->hasFullMenuAccess()) {
+            abort(403, 'Akses ditolak. Penghapusan data sekolah hanya dapat dilakukan oleh Admin, Pimpinan, Koordinator Marketing, dan Koordinator Customer Service.');
         }
 
         $name = $school->name;
@@ -331,8 +331,8 @@ class SchoolController extends Controller
     public function restoreAll(): RedirectResponse
     {
         $user = auth()->user();
-        if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator())) {
-            abort(403, 'Akses ditolak. Pemulihan data sekolah hanya dapat dilakukan oleh Admin, Pimpinan, dan Koordinator Marketing.');
+        if (!$user || !$user->hasFullMenuAccess()) {
+            abort(403, 'Akses ditolak. Pemulihan data sekolah hanya dapat dilakukan oleh Admin, Pimpinan, Koordinator Marketing, dan Koordinator Customer Service.');
         }
 
         $activeCampus = \App\Services\AppContextService::getActiveCampus();
@@ -367,8 +367,8 @@ class SchoolController extends Controller
     public function restore(int $id): RedirectResponse
     {
         $user = auth()->user();
-        if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator())) {
-            abort(403, 'Akses ditolak. Pemulihan data sekolah hanya dapat dilakukan oleh Admin, Pimpinan, dan Koordinator Marketing.');
+        if (!$user || !$user->hasFullMenuAccess()) {
+            abort(403, 'Akses ditolak. Pemulihan data sekolah hanya dapat dilakukan oleh Admin, Pimpinan, Koordinator Marketing, dan Koordinator Customer Service.');
         }
 
         $activeCampus = \App\Services\AppContextService::getActiveCampus();
@@ -394,8 +394,8 @@ class SchoolController extends Controller
     public function destroyAll(Request $request): RedirectResponse
     {
         $user = auth()->user();
-        if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator())) {
-            abort(403, 'Akses ditolak. Pengosongan data sekolah secara massal hanya dapat dilakukan oleh Admin, Pimpinan, dan Koordinator Marketing.');
+        if (!$user || !$user->hasFullMenuAccess()) {
+            abort(403, 'Akses ditolak. Pengosongan data sekolah secara massal hanya dapat dilakukan oleh Admin, Pimpinan, Koordinator Marketing, dan Koordinator Customer Service.');
         }
 
         $activeCampus = \App\Services\AppContextService::getActiveCampus();

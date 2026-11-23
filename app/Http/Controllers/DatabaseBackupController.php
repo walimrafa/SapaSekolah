@@ -353,8 +353,8 @@ class DatabaseBackupController extends Controller
     public function updateSettings(Request $request): RedirectResponse
     {
         $user = auth()->user();
-        if (!$user || !$user->isAdmin()) {
-            abort(403, 'Hanya Administrator Utama yang dapat mengubah kredensial sistem Google Drive.');
+        if (!$user || !$user->hasFullMenuAccess()) {
+            abort(403, 'Hanya Administrator, Pimpinan, dan Koordinator yang dapat mengubah kredensial sistem Google Drive.');
         }
 
         $validated = $request->validate([

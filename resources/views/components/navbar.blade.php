@@ -194,7 +194,7 @@
             $navbarUser = auth()->user();
             $unreadNotifCount = \App\Services\NotificationService::getUnreadCount($navbarUser);
             $recentNotifs = \App\Services\NotificationService::getRecentForUser($navbarUser, 6);
-            $navCanManageMaster = $navbarUser && ($navbarUser->isAdmin() || $navbarUser->hasRole('Pimpinan') || $navbarUser->hasRole('Koordinator Marketing'));
+            $navCanManageMaster = $navbarUser && $navbarUser->hasFullMenuAccess();
             $navCanPeriodClosing = $navbarUser && ($navbarUser->isAdmin() || $navbarUser->isPimpinan() || $navbarUser->isKoordinator() || $navbarUser->isAnyCustomerService());
             $navPendingPeriod = $navbarUser ? \App\Services\PeriodClosingService::pendingForUser($navbarUser) : false;
             $navLbl = fn(string $k, string $def = '') => \App\Services\AppSettingService::getSidebarLabel($k, $def);
@@ -252,13 +252,13 @@
                     <div class="my-1.5 border-t border-slate-100"></div>
                     <div class="px-3.5 py-1.5 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">{{ $navLbl('menu_system_ops', 'Sistem & Manajemen') }}</div>
 
-                    @if($navbarUser->isAdmin() || $navbarUser->hasRole('Pimpinan'))
+                    @if($navbarUser->hasFullMenuAccess())
                         <a href="{{ route('users.index') }}" class="flex items-center space-x-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
                             <i data-lucide="user-check" class="w-4 h-4 text-slate-500"></i>
                             <span>{{ $navLbl('submenu_users', 'User & Akun') }}</span>
                         </a>
                     @endif
-                    @if($navbarUser->isAdmin())
+                    @if($navbarUser->hasFullMenuAccess())
                         <a href="{{ route('whatsapp-notifications.index') }}" class="flex items-center space-x-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-700">
                             <i data-lucide="message-square" class="w-4 h-4 text-emerald-500"></i>
                             <span>{{ $navLbl('submenu_whatsapp', 'WhatsApp Gateway') }}</span>

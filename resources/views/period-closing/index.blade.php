@@ -8,7 +8,7 @@
             <p class="text-xs text-slate-500 mt-0.5">Otorisasi multi-pihak: Memerlukan persetujuan mutlak dari Pimpinan, Koordinator Marketing, dan Customer Service</p>
         </div>
 
-        @if(auth()->user()->isAdmin() && !$activeRequest)
+        @if(auth()->user()->hasFullMenuAccess() && !$activeRequest)
             <a href="{{ route('settings.index') }}#danger-zone" class="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-red-600/30 transition flex items-center space-x-2">
                 <i data-lucide="power-off" class="w-4 h-4"></i>
                 <span>Ajukan Tutup Periode Baru</span>
@@ -224,8 +224,8 @@
                     </div>
                 @endif
 
-                <!-- Admin Cancel Action -->
-                @if(auth()->user()->isAdmin())
+                <!-- Managerial Cancel Action -->
+                @if(auth()->user()->hasFullMenuAccess())
                     <div class="flex justify-end pt-2 border-t border-slate-100">
                         <form method="POST" action="{{ route('period-closing.cancel', $activeRequest) }}" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan permohonan tutup periode yang sedang berjalan ini?')">
                             @csrf

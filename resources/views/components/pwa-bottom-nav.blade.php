@@ -169,7 +169,7 @@
                 </div>
             </a>
 
-            @if(auth()->check() && (auth()->user()->isAdmin() || auth()->user()->hasRole('Pimpinan')))
+            @if(auth()->check() && auth()->user()->hasFullMenuAccess())
             <!-- 7. Master Kampus -->
             <a href="{{ route('master-data.index', ['tab' => 'campuses']) }}" @click="mobileMenuOpen = false"
                 class="p-3 rounded-2xl bg-slate-900 border border-slate-800 hover:border-emerald-400/50 flex flex-col justify-between space-y-2">

@@ -218,8 +218,8 @@ class MasterDataController extends Controller
      */
     public function storeCampus(Request $request): RedirectResponse
     {
-        if (!auth()->user()->isAdmin()) {
-            abort(403, 'Akses ditolak. Hanya Administrator yang memiliki wewenang untuk menambahkan kampus baru.');
+        if (!auth()->user()->hasFullMenuAccess()) {
+            abort(403, 'Akses ditolak. Hanya Administrator, Pimpinan, dan Koordinator yang memiliki wewenang untuk menambahkan kampus baru.');
         }
 
         $validated = $request->validate([
@@ -292,7 +292,7 @@ class MasterDataController extends Controller
         }
         unset($validated['building_image']);
 
-        if ($currentUser->isAdmin()) {
+        if ($currentUser->hasFullMenuAccess()) {
             $validated['is_active'] = $request->has('is_active');
             $validated['is_default'] = $request->has('is_default');
 
@@ -319,8 +319,8 @@ class MasterDataController extends Controller
      */
     public function destroyCampus(Campus $campus): RedirectResponse
     {
-        if (!auth()->user()->isAdmin() && !auth()->user()->isPusat()) {
-            abort(403, 'Akses ditolak. Hanya Administrator atau Pimpinan Pusat yang memiliki wewenang untuk menghapus kampus.');
+        if (!auth()->user()->hasFullMenuAccess()) {
+            abort(403, 'Akses ditolak. Hanya Administrator, Pimpinan, dan Koordinator yang memiliki wewenang untuk menghapus kampus.');
         }
 
         if ($campus->schools()->count() > 0 || $campus->prospects()->count() > 0) {

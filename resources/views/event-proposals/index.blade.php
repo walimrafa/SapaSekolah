@@ -317,7 +317,7 @@
                                             <span>Ubah Status</span>
                                         </button>
 
-                                        @if(auth()->user()->isAdmin())
+                                        @if(auth()->user()->hasFullMenuAccess())
                                             <div>
                                                 <form action="{{ route('event-proposals.destroy', $item) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus proposal {{ $item->reference_no }} ini?')" class="inline">
                                                     @csrf

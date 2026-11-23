@@ -530,7 +530,7 @@ class SchoolVisitController extends Controller
         $this->authorizeCampusAccess($visit);
 
         $user = auth()->user();
-        if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator() && $visit->user_id !== $user->id)) {
+        if (!$user || (!$user->hasFullMenuAccess() && $visit->user_id !== $user->id)) {
             abort(403, 'Akses ditolak. Anda tidak memiliki wewenang untuk menghapus rekaman kunjungan ini.');
         }
 

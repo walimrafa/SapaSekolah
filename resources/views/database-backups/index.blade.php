@@ -48,7 +48,7 @@
                     </button>
                 </form>
 
-                @if(auth()->user()->isAdmin())
+                @if(auth()->user()->hasFullMenuAccess())
                 <button type="button" @click="settingsModal = true" class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50 transition shadow-xs">
                     <i data-lucide="settings" class="w-4 h-4 text-slate-500"></i>
                     <span>Kredensial GDrive</span>
@@ -620,8 +620,8 @@
             </div>
         </div>
 
-        <!-- MODAL: Pengaturan Kredensial Google Drive (Admin Only) -->
-        @if(auth()->user()->isAdmin())
+        <!-- MODAL: Pengaturan Kredensial Google Drive -->
+        @if(auth()->user()->hasFullMenuAccess())
         <div x-show="settingsModal" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
             <div @click.away="settingsModal = false" class="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] flex flex-col">
                 <div class="flex items-center justify-between pb-4 border-b border-slate-100 shrink-0">

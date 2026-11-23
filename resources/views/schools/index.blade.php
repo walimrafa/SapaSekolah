@@ -175,8 +175,8 @@
                 <span>+ Tambah</span>
             </a>
 
-            <!-- Hapus Semua Data Sekolah Button (Khusus Admin, Pimpinan, dan Koordinator Marketing) -->
-            @if(auth()->user() && (auth()->user()->isAdmin() || auth()->user()->isPimpinan() || auth()->user()->isKoordinator()))
+            <!-- Hapus Semua Data Sekolah Button (Admin, Pimpinan, Koordinator Marketing, Koordinator Customer Service) -->
+            @if(auth()->user() && auth()->user()->hasFullMenuAccess())
                 <button type="button" @click="showDeleteAllModal = true"
                     style="background-color: #dc2626 !important; color: #ffffff !important;"
                     title="Hapus Seluruh Data Sekolah {{ $activeCampus ? '— ' . $activeCampus->name : '' }}"

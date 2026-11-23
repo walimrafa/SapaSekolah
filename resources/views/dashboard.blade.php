@@ -4,14 +4,14 @@
     $activeCampus = \App\Services\AppContextService::getActiveCampus();
     $campusLabel = $activeCampus ? $activeCampus->name : 'Seluruh Kampus';
     $dashUser = auth()->user();
-    $canManageMasterAndPortal = $dashUser->isAdmin() || $dashUser->hasRole('Pimpinan') || $dashUser->hasRole('Koordinator Marketing');
+    $canManageMasterAndPortal = $dashUser->hasFullMenuAccess();
     $canAccessPeriodClosing = $dashUser->isAdmin()
         || $dashUser->isPimpinan()
         || $dashUser->isKoordinator()
         || $dashUser->isAnyCustomerService();
     $hasPendingPeriodNotice = \App\Services\PeriodClosingService::pendingForUser($dashUser);
     $eBrochureCount = \App\Models\EBrochure::count();
-    $todayWaCount = $dashUser->isAdmin()
+    $todayWaCount = $dashUser->hasFullMenuAccess()
         ? \App\Models\WhatsAppNotificationLog::whereDate('created_at', now()->toDateString())->count()
         : 0;
 @endphp
@@ -362,7 +362,7 @@
                     x-transition:leave-end="opacity-0 -translate-y-1"
                     class="px-5 pb-5 pt-3 border-t border-slate-100" style="display: none;">
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-                        @if($dashUser->isAdmin() || $dashUser->hasRole('Pimpinan'))
+                        @if($dashUser->hasFullMenuAccess())
                             <a href="{{ route('users.index') }}"
                                 class="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-100 hover:border-slate-300 font-semibold transition">
                                 <i data-lucide="user-check" class="w-3.5 h-3.5 text-slate-600 shrink-0"></i>
@@ -370,7 +370,7 @@
                             </a>
                         @endif
 
-                        @if($dashUser->isAdmin())
+                        @if($dashUser->hasFullMenuAccess())
                             <a href="{{ route('whatsapp-notifications.index') }}"
                                 class="flex items-center justify-between gap-1.5 px-3 py-2.5 rounded-xl bg-slate-50 hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 border border-slate-100 hover:border-emerald-200 font-semibold transition">
                                 <span class="flex items-center gap-2 min-w-0">

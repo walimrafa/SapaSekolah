@@ -322,8 +322,8 @@ class SchoolEventProposalController extends Controller
         $this->authorizeCampusAccess($proposal);
 
         $user = auth()->user();
-        if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator())) {
-            abort(403, 'Akses ditolak. Hanya Admin, Pimpinan, dan Koordinator Marketing yang berwenang meninjau proposal event.');
+        if (!$user || !$user->hasFullMenuAccess()) {
+            abort(403, 'Akses ditolak. Hanya Admin, Pimpinan, Koordinator Marketing, dan Koordinator Customer Service yang berwenang meninjau proposal event.');
         }
 
         $request->validate([
@@ -333,8 +333,8 @@ class SchoolEventProposalController extends Controller
             'approved_support_items' => 'nullable|string|max:500',
         ]);
 
-        if ($request->has('approved_amount') && (float)$request->approved_amount > 0 && !$user->isAdmin() && !$user->isPimpinan()) {
-            abort(403, 'Akses ditolak. Persetujuan anggaran pencairan dana sponsor hanya dapat disahkan oleh Pimpinan Kampus atau Admin.');
+        if ($request->has('approved_amount') && (float)$request->approved_amount > 0 && !$user->hasFullMenuAccess()) {
+            abort(403, 'Akses ditolak. Persetujuan anggaran pencairan dana sponsor hanya dapat disahkan oleh Admin, Pimpinan, atau Koordinator.');
         }
 
         $oldStatus = $proposal->status;
@@ -380,8 +380,8 @@ class SchoolEventProposalController extends Controller
         $this->authorizeCampusAccess($proposal);
 
         $user = auth()->user();
-        if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator())) {
-            abort(403, 'Akses ditolak. Penghapusan proposal kegiatan hanya dapat dilakukan oleh Admin, Pimpinan, dan Koordinator Marketing.');
+        if (!$user || !$user->hasFullMenuAccess()) {
+            abort(403, 'Akses ditolak. Penghapusan proposal kegiatan hanya dapat dilakukan oleh Admin, Pimpinan, Koordinator Marketing, dan Koordinator Customer Service.');
         }
 
         $refNo = $proposal->reference_no;

@@ -90,8 +90,8 @@ class ContextController extends Controller
     public function togglePortal(Request $request): RedirectResponse|JsonResponse
     {
         $user = Auth::user();
-        if (!$user || (!$user->isAdmin() && !$user->isPimpinan() && !$user->isKoordinator())) {
-            abort(403, 'Akses ditolak. Pengaturan status portal publik hanya dapat diubah oleh Admin, Pimpinan, dan Koordinator Marketing.');
+        if (!$user || !$user->hasFullMenuAccess()) {
+            abort(403, 'Akses ditolak. Pengaturan status portal publik hanya dapat diubah oleh Admin, Pimpinan, Koordinator Marketing, dan Koordinator Customer Service.');
         }
 
         $validated = $request->validate([

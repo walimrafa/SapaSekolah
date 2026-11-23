@@ -139,7 +139,7 @@
                                     </td>
                                     <td class="py-3 px-3.5 text-center whitespace-nowrap">
                                         <div class="flex items-center justify-center space-x-1">
-                                            @if(auth()->user()->isAdmin() || auth()->user()->campus_id === $campus->id)
+                                            @if(auth()->user()->hasFullMenuAccess() || auth()->user()->campus_id === $campus->id)
                                                 <button type="button" 
                                                     onclick="openEditCampusModal({{ json_encode($campus) }})"
                                                     class="p-1.5 text-amber-600 hover:text-amber-800 hover:bg-amber-50 rounded-lg transition" 
@@ -148,7 +148,7 @@
                                                 </button>
                                             @endif
 
-                                            @if(auth()->user()->isAdmin())
+                                            @if(auth()->user()->hasFullMenuAccess())
                                                 @if($campus->schools_count == 0 && $campus->prospects_count == 0 && !$campus->is_default)
                                                     <form method="POST" action="{{ route('master-data.campuses.destroy', $campus->id) }}" onsubmit="return confirm('Hapus kampus {{ $campus->name }}?')">
                                                         @csrf
@@ -176,7 +176,7 @@
                 </div>
             </div>
 
-            @if(auth()->user()->isAdmin())
+            @if(auth()->user()->hasFullMenuAccess())
                 <div class="lg:col-span-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-soft">
                     <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-4 pb-2 border-b border-slate-100 flex items-center gap-2">
                         <i data-lucide="plus-circle" class="w-4 h-4 text-emerald-600"></i>
@@ -327,7 +327,7 @@
                                     </td>
                                     <td class="py-3 px-3.5 text-center whitespace-nowrap">
                                         <div class="flex items-center justify-center space-x-1">
-                                            @if(auth()->user()->isAdmin())
+                                            @if(auth()->user()->hasFullMenuAccess())
                                                 <button type="button" 
                                                     onclick="openEditPeriodModal({{ json_encode($period) }})"
                                                     class="p-1.5 text-amber-600 hover:text-amber-800 hover:bg-amber-50 rounded-lg transition" 
@@ -978,7 +978,7 @@
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Kode</label>
                         <input type="text" id="edit_campus_code" name="code" required 
-                            @if(!auth()->user()->isAdmin()) readonly @endif
+                            @if(!auth()->user()->hasFullMenuAccess()) readonly @endif
                             class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 font-mono uppercase bg-slate-50">
                     </div>
                     <div class="col-span-2">
@@ -1035,7 +1035,7 @@
                     </div>
                 </div>
 
-                @if(auth()->user()->isAdmin())
+                @if(auth()->user()->hasFullMenuAccess())
                     <div class="pt-2 space-y-2 border-t border-slate-100">
                         <label class="flex items-center space-x-2 text-xs font-semibold text-slate-700 cursor-pointer">
                             <input type="checkbox" id="edit_campus_is_active" name="is_active" value="1" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
