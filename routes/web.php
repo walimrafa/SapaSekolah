@@ -163,6 +163,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/kol-recommendations/{studentQuestionnaire}/save-work-links', [\App\Http\Controllers\KolRecommendationController::class, 'saveWorkLinks'])->name('kol-recommendations.save-work-links');
         Route::post('/kol-recommendations/bulk-status', [\App\Http\Controllers\KolRecommendationController::class, 'bulkUpdateStatus'])->name('kol-recommendations.bulk-status');
         Route::post('/kol-recommendations/bulk-delete', [\App\Http\Controllers\KolRecommendationController::class, 'bulkDelete'])->name('kol-recommendations.bulk-delete');
+        Route::delete('/kol-recommendations/{studentQuestionnaire}', [\App\Http\Controllers\KolRecommendationController::class, 'destroy'])->name('kol-recommendations.destroy');
         Route::post('/kol-recommendations/bulk-verify', [\App\Http\Controllers\KolRecommendationController::class, 'bulkVerifyFollowers'])->name('kol-recommendations.bulk-verify');
         Route::get('/kol-recommendations/export', [\App\Http\Controllers\KolRecommendationController::class, 'exportExcel'])->name('kol-recommendations.export');
         Route::post('/kol-recommendations/settings', [\App\Http\Controllers\KolRecommendationController::class, 'updateSettings'])->name('kol-recommendations.settings.update');

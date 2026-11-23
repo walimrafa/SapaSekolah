@@ -141,15 +141,19 @@ class StudentQuestionnaire extends Model
             $tiktokFollowers = (int) ($student->tiktok_followers ?? 0);
             $minFollowers = self::getKolMinFollowers();
 
-            // Jika followers instagram >= minFollowers atau tiktok >= minFollowers, otomatis kandidat KOL
-            if ($igFollowers >= $minFollowers || $tiktokFollowers >= $minFollowers) {
+            $meetsMinFollowers = ($igFollowers >= $minFollowers || $tiktokFollowers >= $minFollowers);
+
+            // Jika followers memenuhi syarat minimal dan tidak berstatus ditolak, otomatis kandidat KOL
+            if ($meetsMinFollowers && $student->kol_status !== self::KOL_STATUS_DITOLAK) {
                 $student->is_kol = true;
                 if (empty($student->kol_status)) {
                     $student->kol_status = self::KOL_STATUS_KANDIDAT;
                 }
             } else {
-                if ($student->is_kol === null) {
-                    $student->is_kol = false;
+                // Jika follower kurang dari syarat kelayakan minimal, otomatis tidak layak / dikeluarkan dari KOL
+                $student->is_kol = false;
+                if (empty($student->kol_status) || $student->kol_status === self::KOL_STATUS_KANDIDAT) {
+                    $student->kol_status = self::KOL_STATUS_DITOLAK;
                 }
             }
         });
@@ -162,17 +166,21 @@ class StudentQuestionnaire extends Model
     }
 
     /**
-     * Scope: Hanya ambil kandidat KOL (berdasarkan flag is_kol atau follower >= syarat minimal)
+     * Scope: Hanya ambil kandidat KOL yang layak (is_kol true, tidak ditolak, dan follower >= syarat minimal)
      */
     public function scopeKolCandidates($query)
     {
         $minFollowers = self::getKolMinFollowers();
 
-        return $query->where(function ($q) use ($minFollowers) {
-            $q->where('is_kol', true)
-              ->orWhere('instagram_followers', '>=', $minFollowers)
-              ->orWhere('tiktok_followers', '>=', $minFollowers);
-        });
+        return $query->where('is_kol', true)
+            ->where(function ($q) {
+                $q->whereNull('kol_status')
+                  ->orWhere('kol_status', '!=', self::KOL_STATUS_DITOLAK);
+            })
+            ->where(function ($q) use ($minFollowers) {
+                $q->where('instagram_followers', '>=', $minFollowers)
+                  ->orWhere('tiktok_followers', '>=', $minFollowers);
+            });
     }
 
     public static function kolStatusOptions(): array

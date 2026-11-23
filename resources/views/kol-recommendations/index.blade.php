@@ -525,6 +525,21 @@
                                             <i data-lucide="edit-3" class="w-3.5 h-3.5 text-slate-600"></i>
                                             <span>Kelola</span>
                                         </button>
+
+                                        <!-- Hapus / Keluarkan dari KOL Button -->
+                                        <button type="button"
+                                            @click="openDeleteModal({{ json_encode([
+                                                'id' => $candidate->id,
+                                                'name' => $candidate->student_name,
+                                                'school' => $candidate->school_display_name,
+                                                'followers' => $candidate->instagram_followers,
+                                                'delete_url' => route('kol-recommendations.destroy', $candidate->id),
+                                            ]) }})"
+                                            class="inline-flex items-center space-x-1 px-2 py-1.5 rounded-lg text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition"
+                                            title="Hapus / Keluarkan dari Rekomendasi KOL">
+                                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                            <span>Hapus</span>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -678,6 +693,15 @@
                         </div>
                     </div>
 
+                    <!-- Peringatan Kelayakan Minimal -->
+                    <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start space-x-2.5 text-amber-900 text-xs">
+                        <i data-lucide="info" class="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0"></i>
+                        <div>
+                            <p class="font-bold">Ketentuan Kelayakan: &ge; {{ $formattedMinFollowers }} Followers</p>
+                            <p class="text-[11px] text-amber-700 mt-0.5">Jika jumlah followers diubah menjadi kurang dari {{ $formattedMinFollowers }}, data otomatis dikeluarkan dari daftar Rekomendasi KOL karena tidak memenuhi kriteria kelayakan.</p>
+                        </div>
+                    </div>
+
                     <!-- Status Rekrutmen -->
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Status Rekrutmen KOL</label>
@@ -700,14 +724,90 @@
                             class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500"></textarea>
                     </div>
 
-                    <div class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
-                        <button type="button" @click="showModal = false"
-                            class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
+                    <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+                        <button type="button"
+                            @click="showModal = false; openDeleteModal({ id: form.id, name: form.name, school: form.school, followers: form.instagram_followers, delete_url: '{{ url('/kol-recommendations') }}/' + form.id })"
+                            class="px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 transition inline-flex items-center space-x-1.5 border border-rose-200">
+                            <i data-lucide="user-x" class="w-3.5 h-3.5"></i>
+                            <span>Keluarkan dari KOL</span>
+                        </button>
+                        <div class="flex items-center space-x-2">
+                            <button type="button" @click="showModal = false"
+                                class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
+                                Batal
+                            </button>
+                            <button type="submit"
+                                class="px-5 py-2 rounded-xl text-xs font-bold bg-pink-600 hover:bg-pink-500 text-white shadow-md shadow-pink-600/30 transition">
+                                Simpan Perubahan
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal Konfirmasi Hapus / Keluarkan dari KOL -->
+        <div x-show="showDeleteModal" x-cloak
+            class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0">
+            <div @click.away="showDeleteModal = false"
+                class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden transform transition-all">
+                <form :action="deleteCandidate ? deleteCandidate.delete_url : ''" method="POST">
+                    @csrf
+                    @method('DELETE')
+                    
+                    <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-rose-50/50">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="trash-2" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-base font-bold text-slate-900">Hapus / Keluarkan Data KOL</h3>
+                                <p class="text-xs text-slate-500" x-text="deleteCandidate ? deleteCandidate.name + ' (' + deleteCandidate.school + ')' : ''"></p>
+                            </div>
+                        </div>
+                        <button type="button" @click="showDeleteModal = false" class="text-slate-400 hover:text-slate-600">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <div class="p-5 space-y-4">
+                        <p class="text-xs text-slate-600">
+                            Pilih tindakan yang ingin dilakukan untuk data calon KOL ini:
+                        </p>
+
+                        <div class="space-y-2.5">
+                            <label class="flex items-start p-3 rounded-xl border border-pink-200 bg-pink-50/30 hover:bg-pink-50/60 cursor-pointer transition">
+                                <input type="radio" name="mode" value="remove_kol" checked class="mt-0.5 text-pink-600 focus:ring-pink-500">
+                                <div class="ml-3">
+                                    <span class="block text-xs font-bold text-slate-900">Keluarkan dari Daftar Rekomendasi KOL</span>
+                                    <span class="block text-[11px] text-slate-500 mt-0.5">Siswa ditandai tidak layak / dikeluarkan dari KOL. Data pengisian kuisioner & prospek siswa tetap tersimpan di sistem.</span>
+                                </div>
+                            </label>
+
+                            <label class="flex items-start p-3 rounded-xl border border-rose-200 bg-rose-50/20 hover:bg-rose-50/50 cursor-pointer transition">
+                                <input type="radio" name="mode" value="delete_permanent" class="mt-0.5 text-rose-600 focus:ring-rose-500">
+                                <div class="ml-3">
+                                    <span class="block text-xs font-bold text-rose-700">Hapus Permanen Data Siswa</span>
+                                    <span class="block text-[11px] text-rose-600/80 mt-0.5">Menghapus seluruh rekaman kuisioner & riwayat follow-up siswa ini secara permanen dari database.</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end space-x-2">
+                        <button type="button" @click="showDeleteModal = false"
+                            class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-200 transition">
                             Batal
                         </button>
                         <button type="submit"
-                            class="px-5 py-2 rounded-xl text-xs font-bold bg-pink-600 hover:bg-pink-500 text-white shadow-md shadow-pink-600/30 transition">
-                            Simpan Perubahan
+                            class="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/30 transition">
+                            Eksekusi
                         </button>
                     </div>
                 </form>
@@ -935,6 +1035,8 @@
         function kolManager() {
             return {
                 showModal: false,
+                showDeleteModal: false,
+                deleteCandidate: null,
                 openSettingModal: false,
                 showRateCardModal: false,
                 showWorkLinksModal: false,
@@ -1004,6 +1106,15 @@
                 openModal(data) {
                     this.form = Object.assign({}, data);
                     this.showModal = true;
+                    this.$nextTick(() => {
+                        if (window.lucide) {
+                            window.lucide.createIcons();
+                        }
+                    });
+                },
+                openDeleteModal(data) {
+                    this.deleteCandidate = Object.assign({}, data);
+                    this.showDeleteModal = true;
                     this.$nextTick(() => {
                         if (window.lucide) {
                             window.lucide.createIcons();

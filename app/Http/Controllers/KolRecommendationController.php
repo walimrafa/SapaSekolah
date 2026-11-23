@@ -258,34 +258,127 @@ class KolRecommendationController extends Controller
             'kol_notes' => 'nullable|string|max:1000',
             'instagram_handle' => 'nullable|string|max:150',
             'instagram_followers' => 'nullable|integer|min:0',
+            'student_name' => 'nullable|string|max:150',
+            'student_phone' => 'nullable|string|max:30',
         ]);
 
         $oldStatus = $studentQuestionnaire->kol_status;
+        $minFollowers = StudentQuestionnaire::getKolMinFollowers();
 
-        $studentQuestionnaire->update([
+        $newFollowers = $request->has('instagram_followers')
+            ? (int) $validated['instagram_followers']
+            : (int) $studentQuestionnaire->instagram_followers;
+
+        $meetsMin = ($newFollowers >= $minFollowers);
+        $isEligible = $meetsMin && ($validated['kol_status'] !== StudentQuestionnaire::KOL_STATUS_DITOLAK);
+
+        $dataToUpdate = [
             'kol_status' => $validated['kol_status'],
             'kol_notes' => $validated['kol_notes'] ?? $studentQuestionnaire->kol_notes,
-            'instagram_handle' => $request->has('instagram_handle') ? $validated['instagram_handle'] : $studentQuestionnaire->instagram_handle,
-            'instagram_followers' => $request->has('instagram_followers') ? (int) $validated['instagram_followers'] : $studentQuestionnaire->instagram_followers,
-            'is_kol' => true,
-        ]);
+            'instagram_followers' => $newFollowers,
+            'is_kol' => $isEligible,
+        ];
+
+        if ($request->has('instagram_handle')) {
+            $dataToUpdate['instagram_handle'] = $validated['instagram_handle'];
+        }
+
+        if ($request->filled('student_name')) {
+            $dataToUpdate['student_name'] = $validated['student_name'];
+        }
+
+        if ($request->filled('student_phone')) {
+            $dataToUpdate['student_phone'] = $validated['student_phone'];
+        }
+
+        // Jika followers kurang dari syarat kelayakan minimal, otomatis tandai tidak layak / batalkan
+        if (!$meetsMin) {
+            $dataToUpdate['is_kol'] = false;
+            $dataToUpdate['kol_status'] = StudentQuestionnaire::KOL_STATUS_DITOLAK;
+            $dataToUpdate['kol_verification_status'] = StudentQuestionnaire::KOL_VERIFY_REJECTED;
+            $dataToUpdate['kol_verification_notes'] = "Followers ({$newFollowers}) tidak memenuhi batas kelayakan minimal ({$minFollowers}). Dikeluarkan dari rekomendasi KOL.";
+        }
+
+        $studentQuestionnaire->update($dataToUpdate);
 
         ActivityLogService::log(
             'UPDATE_KOL_STATUS',
             'student_questionnaire',
             $studentQuestionnaire->id,
-            "Memperbarui status rekomendasi KOL siswa {$studentQuestionnaire->student_name} dari '{$oldStatus}' menjadi '{$validated['kol_status']}'."
+            "Memperbarui data/status KOL siswa {$studentQuestionnaire->student_name} ({$newFollowers} followers, status: {$dataToUpdate['kol_status']})."
         );
+
+        $message = !$meetsMin
+            ? "Data {$studentQuestionnaire->student_name} berhasil diperbarui. Karena jumlah followers ({$newFollowers}) di bawah batas kelayakan minimal ({$minFollowers}), data ini otomatis dikeluarkan dari daftar Rekomendasi KOL."
+            : "Data dan status KOL untuk {$studentQuestionnaire->student_name} berhasil diperbarui.";
 
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Status rekomendasi KOL berhasil diperbarui.',
+                'message' => $message,
                 'lead' => $studentQuestionnaire->fresh(),
+                'is_eligible' => $isEligible,
             ]);
         }
 
-        return back()->with('success', "Status KOL untuk {$studentQuestionnaire->student_name} berhasil diperbarui.");
+        return back()->with('success', $message);
+    }
+
+    /**
+     * Hapus / Keluarkan data siswa dari daftar Rekomendasi KOL jika follower tidak sesuai / tidak layak.
+     */
+    public function destroy(Request $request, StudentQuestionnaire $studentQuestionnaire): RedirectResponse|JsonResponse
+    {
+        $this->authorizeAccess();
+        $this->authorizeCampusAccess($studentQuestionnaire);
+
+        $mode = $request->input('mode', 'remove_kol'); // 'remove_kol' (default) atau 'delete_permanent'
+        $studentName = $studentQuestionnaire->student_name;
+
+        if ($mode === 'delete_permanent') {
+            if ($studentQuestionnaire->prospect) {
+                $studentQuestionnaire->prospect->delete();
+            }
+            $studentQuestionnaire->followUps()->delete();
+            $studentQuestionnaire->delete();
+
+            ActivityLogService::log(
+                'DELETE_STUDENT_FROM_KOL',
+                'student_questionnaire',
+                $studentQuestionnaire->id,
+                "Menghapus permanen data siswa {$studentName} dari menu Rekomendasi KOL."
+            );
+
+            $msg = "Data siswa {$studentName} berhasil dihapus permanen dari sistem.";
+        } else {
+            $studentQuestionnaire->update([
+                'is_kol' => false,
+                'kol_status' => StudentQuestionnaire::KOL_STATUS_DITOLAK,
+                'kol_verification_status' => StudentQuestionnaire::KOL_VERIFY_REJECTED,
+                'kol_verification_notes' => 'Dikeluarkan dari rekomendasi KOL karena follower tidak sesuai / tidak layak.',
+            ]);
+
+            ActivityLogService::log(
+                'REMOVE_KOL',
+                'student_questionnaire',
+                $studentQuestionnaire->id,
+                "Mengeluarkan siswa {$studentName} dari daftar Rekomendasi KOL karena follower tidak sesuai / tidak layak."
+            );
+
+            $msg = "Siswa {$studentName} berhasil dikeluarkan dari daftar Rekomendasi KOL karena tidak memenuhi kriteria kelayakan.";
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $msg,
+            ]);
+        }
+
+        return back()->with('toast', [
+            'type' => 'success',
+            'message' => $msg,
+        ]);
     }
 
     /**
