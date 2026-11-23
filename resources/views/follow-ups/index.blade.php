@@ -69,6 +69,82 @@
             </div>
         @endif
 
+        <!-- Combobox Kategori Follow Up Kunjungan -->
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-soft mb-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-600 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
+                        <i data-lucide="layers" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <label for="combobox_agenda_category" class="block text-xs font-extrabold text-slate-900">
+                            Pilih Kategori Follow Up Kunjungan
+                        </label>
+                        <p class="text-[11px] text-slate-500">Pilih agenda kunjungan yang ingin difollow up agar antrean tampil sesuai kategori masing-masing</p>
+                    </div>
+                </div>
+                <div class="w-full sm:w-80">
+                    <form method="GET" action="{{ route('follow-ups.index') }}" id="formAgendaCategory">
+                        @foreach(request()->except('agenda_category', 'page') as $k => $v)
+                            @if(is_string($v) && $v !== '')
+                                <input type="hidden" name="{{ $k }}" value="{{ $v }}">
+                            @endif
+                        @endforeach
+                        <select id="combobox_agenda_category" name="agenda_category" onchange="document.getElementById('formAgendaCategory').submit()"
+                            class="w-full px-3.5 py-2.5 rounded-xl border-2 border-brand-500/50 bg-white font-extrabold text-xs text-slate-800 shadow-xs focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 transition cursor-pointer">
+                            <option value="">-- Semua Kategori Agenda ({{ $categoryCounts['all'] ?? $totalCount }} Sekolah) --</option>
+                            <option value="penjadwalan_sosialisasi" {{ request('agenda_category') === 'penjadwalan_sosialisasi' ? 'selected' : '' }}>
+                                1. Penjadwalan Sosialisasi ({{ $categoryCounts['penjadwalan_sosialisasi'] ?? 0 }})
+                            </option>
+                            <option value="mengantar_undangan" {{ request('agenda_category') === 'mengantar_undangan' ? 'selected' : '' }}>
+                                2. Mengantar Undangan Acara ({{ $categoryCounts['mengantar_undangan'] ?? 0 }})
+                            </option>
+                            <option value="kunjungan_lainnya" {{ request('agenda_category') === 'kunjungan_lainnya' ? 'selected' : '' }}>
+                                3. Kunjungan Lainnya ({{ $categoryCounts['kunjungan_lainnya'] ?? 0 }})
+                            </option>
+                        </select>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Info Hint Berdasarkan Kategori yang Dipilih -->
+            <div class="mt-3 pt-2.5 border-t border-slate-100">
+                @if(request('agenda_category') === 'penjadwalan_sosialisasi')
+                    <div class="text-[11px] text-brand-700 bg-brand-50/80 px-3 py-1.5 rounded-xl border border-brand-200/60 flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="calendar" class="w-4 h-4 text-brand-600 shrink-0"></i>
+                            <span><strong>Mode Penjadwalan Sosialisasi:</strong> Menampilkan antrean sekolah untuk konfirmasi target &amp; penguncian jadwal FIX sosialisasi kampus.</span>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-100 text-brand-800 shrink-0">{{ $totalCount }} Antrean</span>
+                    </div>
+                @elseif(request('agenda_category') === 'mengantar_undangan')
+                    <div class="text-[11px] text-amber-800 bg-amber-50/80 px-3 py-1.5 rounded-xl border border-amber-200/60 flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="mail" class="w-4 h-4 text-amber-600 shrink-0"></i>
+                            <span><strong>Mode Mengantar Undangan:</strong> Menampilkan antrean sekolah untuk tindak lanjut konfirmasi kehadiran undangan acara (Akan Hadir / Minta Ijin Dulu / Tidak Bisa).</span>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 shrink-0">{{ $totalCount }} Antrean</span>
+                    </div>
+                @elseif(request('agenda_category') === 'kunjungan_lainnya')
+                    <div class="text-[11px] text-purple-800 bg-purple-50/80 px-3 py-1.5 rounded-xl border border-purple-200/60 flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="clipboard-list" class="w-4 h-4 text-purple-600 shrink-0"></i>
+                            <span><strong>Mode Kunjungan Lainnya:</strong> Menampilkan antrean tindak lanjut hasil silaturahmi &amp; audiensi dinas sekolah.</span>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800 shrink-0">{{ $totalCount }} Antrean</span>
+                    </div>
+                @else
+                    <div class="text-[11px] text-slate-600 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/80 flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="layers" class="w-4 h-4 text-slate-500 shrink-0"></i>
+                            <span><strong>Semua Kategori:</strong> Menampilkan seluruh antrean follow up kunjungan dari semua kategori agenda.</span>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 text-slate-800 shrink-0">{{ $totalCount }} Antrean</span>
+                    </div>
+                @endif
+            </div>
+        </div>
+
         <!-- KPI Summary Cards -->
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
             <!-- Total Follow Up -->
@@ -151,6 +227,7 @@
         <!-- Filter Bar -->
         <div class="bg-white rounded-2xl border border-slate-200/80 shadow-soft p-4 mb-6">
             <form method="GET" action="{{ route('follow-ups.index') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
+                <input type="hidden" name="agenda_category" value="{{ request('agenda_category') }}">
                 <!-- Search -->
                 <div>
                     <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Cari Sekolah / PIC</label>
@@ -205,7 +282,7 @@
                         <i data-lucide="download" class="w-3.5 h-3.5"></i>
                         <span class="hidden sm:inline">Excel</span>
                     </a>
-                    @if(request()->anyFilled(['search', 'schedule_status', 'user_id', 'method']))
+                    @if(request()->anyFilled(['search', 'schedule_status', 'user_id', 'method', 'agenda_category']))
                         <a href="{{ route('follow-ups.index') }}" class="py-2 px-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs transition" title="Reset Filter">
                             <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
                         </a>
@@ -422,6 +499,15 @@
 
                 <form method="POST" action="{{ route('follow-ups.store') }}" class="p-6 space-y-4 text-xs">
                     @csrf
+
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Kategori Agenda Kunjungan <span class="text-rose-500">*</span></label>
+                        <select name="agenda_category" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-semibold">
+                            <option value="penjadwalan_sosialisasi">1. Penjadwalan Sosialisasi</option>
+                            <option value="mengantar_undangan">2. Mengantar Undangan Acara</option>
+                            <option value="kunjungan_lainnya">3. Kunjungan Lainnya</option>
+                        </select>
+                    </div>
 
                     <div>
                         <label class="block font-bold text-slate-700 mb-1">Sekolah Tujuan <span class="text-rose-500">*</span></label>

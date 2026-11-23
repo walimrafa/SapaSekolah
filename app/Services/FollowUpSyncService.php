@@ -38,7 +38,16 @@ class FollowUpSyncService
             ? ($visit->grade_12_class_count * $visit->students_per_class)
             : null;
 
-        $desc = "Follow-up konfirmasi FIX jadwal sosialisasi kampus UBSI. Target hasil kunjungan: {$targetDateStr} (Waktu: {$visit->target_time}) - Metode: {$methodLabel} ({$visit->grade_12_class_count} kelas 12). PIC: {$visit->recipient_name} ({$visit->recipient_position}).";
+        $agendaCategory = $visit->agenda_category ?: SchoolVisit::AGENDA_PENJADWALAN_SOSIALISASI;
+
+        if ($agendaCategory === SchoolVisit::AGENDA_MENGANTAR_UNDANGAN) {
+            $attendanceLabel = $visit->invitation_attendance_label ?: 'Belum Konfirmasi';
+            $desc = "Follow-up konfirmasi kehadiran undangan acara kampus UBSI. Status respon: [{$attendanceLabel}]. PIC: {$visit->recipient_name} ({$visit->recipient_position}). Catatan: " . ($visit->notes ?: 'Undangan acara telah diantar');
+        } elseif ($agendaCategory === SchoolVisit::AGENDA_KUNJUNGAN_LAINNYA) {
+            $desc = "Follow-up hasil audiensi & kunjungan dinas lainnya. PIC: {$visit->recipient_name} ({$visit->recipient_position}). Catatan: " . ($visit->notes ?: 'Tindak lanjut kunjungan');
+        } else {
+            $desc = "Follow-up konfirmasi FIX jadwal sosialisasi kampus UBSI. Target hasil kunjungan: {$targetDateStr} (Waktu: {$visit->target_time}) - Metode: {$methodLabel} ({$visit->grade_12_class_count} kelas 12). PIC: {$visit->recipient_name} ({$visit->recipient_position}).";
+        }
 
         $followupDate = $visit->next_followup_date;
         if (!$followupDate) {
@@ -60,6 +69,8 @@ class FollowUpSyncService
         $data = [
             'school_id' => $visit->school_id,
             'visit_id' => $visit->id,
+            'agenda_category' => $agendaCategory,
+            'invitation_attendance_status' => $visit->invitation_attendance_status,
             'campus_id' => $campusId,
             'academic_period_id' => $periodId,
             'user_id' => $visit->user_id ?: (auth()->id() ?: 1),
@@ -79,6 +90,10 @@ class FollowUpSyncService
         ];
 
         if ($followUp) {
+            $data['agenda_category'] = $agendaCategory;
+            if ($visit->invitation_attendance_status) {
+                $data['invitation_attendance_status'] = $visit->invitation_attendance_status;
+            }
             // Update agenda target date and drive links
             if ($visit->target_date) {
                 $data['fixed_date'] = $visit->target_date;

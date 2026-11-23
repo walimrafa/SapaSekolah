@@ -11,69 +11,131 @@
             </div>
         </div>
 
-        @if($item->visit_id)
-            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 shrink-0" title="Data Otomatis dari Hasil Kunjungan Lapangan">
-                <i data-lucide="navigation-2" class="w-3 h-3"></i>
-                <span>Kunjungan</span>
+        @php
+            $cat = $item->agenda_category ?: ($item->visit?->agenda_category ?? 'penjadwalan_sosialisasi');
+            $attStatus = $item->invitation_attendance_status ?: ($item->visit?->invitation_attendance_status ?? null);
+        @endphp
+
+        @if($cat === 'mengantar_undangan')
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shrink-0" title="Kategori: Mengantar Undangan Acara">
+                <i data-lucide="mail" class="w-3 h-3 text-amber-600"></i>
+                <span>Antar Undangan</span>
+            </span>
+        @elseif($cat === 'kunjungan_lainnya')
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200 shrink-0" title="Kategori: Kunjungan Lainnya">
+                <i data-lucide="clipboard-list" class="w-3 h-3 text-purple-600"></i>
+                <span>Kunjungan Lain</span>
+            </span>
+        @else
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 shrink-0" title="Kategori: Penjadwalan Sosialisasi">
+                <i data-lucide="calendar" class="w-3 h-3 text-blue-600"></i>
+                <span>Sosialisasi</span>
             </span>
         @endif
     </div>
 
-    <!-- Target / Fixed Schedule Box -->
-    <div class="p-2.5 rounded-xl {{ $item->is_schedule_fixed ? 'bg-emerald-50 border border-emerald-300' : 'bg-slate-50 border border-slate-200' }}">
-        <div class="flex items-center justify-between mb-1">
-            <span class="text-[10px] font-bold uppercase tracking-wider {{ $item->is_schedule_fixed ? 'text-emerald-800' : 'text-slate-500' }}">
-                {{ $item->is_schedule_fixed ? 'Jadwal Sosialisasi FIX' : 'Target Sosialisasi' }}
-            </span>
+    @if($cat === 'mengantar_undangan')
+        <!-- Box Mengantar Undangan -->
+        <div class="p-2.5 rounded-xl bg-amber-50/70 border border-amber-200 space-y-1.5">
+            <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-amber-800">
+                    Konfirmasi Kehadiran Undangan
+                </span>
+                @if($attStatus === 'akan_hadir')
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+                        <i data-lucide="check-circle-2" class="w-3 h-3 text-emerald-600"></i>
+                        Akan Hadir
+                    </span>
+                @elseif($attStatus === 'minta_ijin_dulu')
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
+                        <i data-lucide="clock" class="w-3 h-3 text-amber-600"></i>
+                        Minta Ijin Dulu
+                    </span>
+                @elseif($attStatus === 'tidak_bisa_hadir')
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-800 border border-rose-300 flex items-center gap-1">
+                        <i data-lucide="x-circle" class="w-3 h-3 text-rose-600"></i>
+                        Tidak Bisa Hadir
+                    </span>
+                @else
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                        Belum Dikonfirmasi
+                    </span>
+                @endif
+            </div>
+            <p class="text-[10.5px] text-amber-900">
+                Undangan acara kampus UBSI telah diantar ke pihak sekolah. Tindak lanjuti respon dan kepastian kehadiran delegasi sekolah.
+            </p>
+        </div>
+    @elseif($cat === 'kunjungan_lainnya')
+        <!-- Box Kunjungan Lainnya -->
+        <div class="p-2.5 rounded-xl bg-purple-50/70 border border-purple-200 space-y-1">
+            <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-purple-800">
+                    Tindak Lanjut Kunjungan Dinas
+                </span>
+                <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+            </div>
+            <p class="text-[10.5px] text-purple-900">
+                Tindak lanjut audiensi, perizinan, atau silaturahmi formal dengan pihak sekolah.
+            </p>
+        </div>
+    @else
+        <!-- Target / Fixed Schedule Box untuk Sosialisasi -->
+        <div class="p-2.5 rounded-xl {{ $item->is_schedule_fixed ? 'bg-emerald-50 border border-emerald-300' : 'bg-slate-50 border border-slate-200' }}">
+            <div class="flex items-center justify-between mb-1">
+                <span class="text-[10px] font-bold uppercase tracking-wider {{ $item->is_schedule_fixed ? 'text-emerald-800' : 'text-slate-500' }}">
+                    {{ $item->is_schedule_fixed ? 'Jadwal Sosialisasi FIX' : 'Target Sosialisasi' }}
+                </span>
+                @if($item->is_schedule_fixed)
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                @endif
+            </div>
+
             @if($item->is_schedule_fixed)
-                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <div class="font-extrabold text-emerald-900 text-xs flex items-center gap-1">
+                    <i data-lucide="calendar-check" class="w-3.5 h-3.5 text-emerald-600"></i>
+                    <span>{{ $item->fixed_date ? $item->fixed_date->format('d M Y') : '-' }} &bull; {{ $item->fixed_time ?: 'Pagi' }}</span>
+                </div>
+                @if($item->socialization_location)
+                    <p class="text-[11px] text-emerald-700 mt-0.5">Lokasi: {{ $item->socialization_location }}</p>
+                @endif
+            @else
+                <div class="font-bold text-slate-800 text-xs flex items-center gap-1">
+                    <i data-lucide="calendar" class="w-3.5 h-3.5 text-amber-500"></i>
+                    <span>
+                        @if($item->fixed_date)
+                            {{ $item->fixed_date->format('d M Y') }}
+                        @elseif($item->visit?->target_date)
+                            {{ $item->visit->target_date->format('d M Y') }}
+                        @else
+                            {{ $item->visit?->target_month_year ?: 'Belum ada target' }}
+                        @endif
+                        @if($item->fixed_time || $item->visit?->target_time)
+                            &bull; {{ $item->fixed_time ?: $item->visit?->target_time }}
+                        @endif
+                    </span>
+                </div>
+            @endif
+
+            @if($item->target_audience_count || $item->visit?->grade_12_class_count)
+                <div class="text-[10px] text-slate-500 mt-1 flex items-center gap-1">
+                    <i data-lucide="users" class="w-3 h-3 text-slate-400"></i>
+                    <span>
+                        @if($item->target_audience_count)
+                            Estimasi {{ number_format($item->target_audience_count) }} Siswa
+                        @elseif($item->visit?->grade_12_class_count)
+                            {{ $item->visit->grade_12_class_count }} Kelas 12
+                        @endif
+                        @if($item->socialization_location)
+                            &bull; {{ $item->socialization_location }}
+                        @elseif($item->visit?->socialization_method)
+                            &bull; {{ $item->visit->socialization_method === 'Lainnya' ? $item->visit->other_activity_name : $item->visit->socialization_method }}
+                        @endif
+                    </span>
+                </div>
             @endif
         </div>
-
-        @if($item->is_schedule_fixed)
-            <div class="font-extrabold text-emerald-900 text-xs flex items-center gap-1">
-                <i data-lucide="calendar-check" class="w-3.5 h-3.5 text-emerald-600"></i>
-                <span>{{ $item->fixed_date ? $item->fixed_date->format('d M Y') : '-' }} &bull; {{ $item->fixed_time ?: 'Pagi' }}</span>
-            </div>
-            @if($item->socialization_location)
-                <p class="text-[11px] text-emerald-700 mt-0.5">Lokasi: {{ $item->socialization_location }}</p>
-            @endif
-        @else
-            <div class="font-bold text-slate-800 text-xs flex items-center gap-1">
-                <i data-lucide="calendar" class="w-3.5 h-3.5 text-amber-500"></i>
-                <span>
-                    @if($item->fixed_date)
-                        {{ $item->fixed_date->format('d M Y') }}
-                    @elseif($item->visit?->target_date)
-                        {{ $item->visit->target_date->format('d M Y') }}
-                    @else
-                        {{ $item->visit?->target_month_year ?: 'Belum ada target' }}
-                    @endif
-                    @if($item->fixed_time || $item->visit?->target_time)
-                        &bull; {{ $item->fixed_time ?: $item->visit?->target_time }}
-                    @endif
-                </span>
-            </div>
-        @endif
-
-        @if($item->target_audience_count || $item->visit?->grade_12_class_count)
-            <div class="text-[10px] text-slate-500 mt-1 flex items-center gap-1">
-                <i data-lucide="users" class="w-3 h-3 text-slate-400"></i>
-                <span>
-                    @if($item->target_audience_count)
-                        Estimasi {{ number_format($item->target_audience_count) }} Siswa
-                    @elseif($item->visit?->grade_12_class_count)
-                        {{ $item->visit->grade_12_class_count }} Kelas 12
-                    @endif
-                    @if($item->socialization_location)
-                        &bull; {{ $item->socialization_location }}
-                    @elseif($item->visit?->socialization_method)
-                        &bull; {{ $item->visit->socialization_method === 'Lainnya' ? $item->visit->other_activity_name : $item->visit->socialization_method }}
-                    @endif
-                </span>
-            </div>
-        @endif
-    </div>
+    @endif
 
     <!-- PIC & WhatsApp Action -->
     <div class="pt-1 border-t border-slate-100 flex items-center justify-between">
@@ -172,6 +234,52 @@
                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
             </button>
 
+            <!-- Quick Attendance Dropdown untuk Undangan -->
+            @if($cat === 'mengantar_undangan')
+                <div x-data="{ openAttendance: false }" class="relative inline-block text-left">
+                    <button @click="openAttendance = !openAttendance" type="button" 
+                        class="px-2 py-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] shadow-xs flex items-center gap-1 transition cursor-pointer"
+                        title="Update Konfirmasi Kehadiran Undangan">
+                        <i data-lucide="mail-check" class="w-3.5 h-3.5"></i>
+                        <span>Kehadiran</span>
+                    </button>
+                    <div x-show="openAttendance" @click.away="openAttendance = false" x-cloak 
+                        class="absolute right-0 bottom-full mb-1 w-48 rounded-2xl bg-white shadow-xl ring-1 ring-black/5 border border-slate-100 z-50 py-1.5 text-xs">
+                        <p class="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pilih Kehadiran:</p>
+                        <form method="POST" action="{{ route('follow-ups.update-schedule', $item) }}">
+                            @csrf
+                            @method('PUT')
+                            <input type="hidden" name="status" value="{{ $item->status ?: 'pending' }}">
+                            <input type="hidden" name="invitation_attendance_status" value="akan_hadir">
+                            <button type="submit" class="w-full text-left px-3 py-1.5 hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 font-semibold flex items-center gap-2 {{ $attStatus === 'akan_hadir' ? 'bg-emerald-50 text-emerald-800 font-bold' : '' }}">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                <span>Akan Hadir</span>
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ route('follow-ups.update-schedule', $item) }}">
+                            @csrf
+                            @method('PUT')
+                            <input type="hidden" name="status" value="{{ $item->status ?: 'pending' }}">
+                            <input type="hidden" name="invitation_attendance_status" value="minta_ijin_dulu">
+                            <button type="submit" class="w-full text-left px-3 py-1.5 hover:bg-amber-50 text-slate-700 hover:text-amber-800 font-semibold flex items-center gap-2 {{ $attStatus === 'minta_ijin_dulu' ? 'bg-amber-50 text-amber-800 font-bold' : '' }}">
+                                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                                <span>Minta Ijin Dulu</span>
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ route('follow-ups.update-schedule', $item) }}">
+                            @csrf
+                            @method('PUT')
+                            <input type="hidden" name="status" value="{{ $item->status ?: 'pending' }}">
+                            <input type="hidden" name="invitation_attendance_status" value="tidak_bisa_hadir">
+                            <button type="submit" class="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-slate-700 hover:text-rose-800 font-semibold flex items-center gap-2 {{ $attStatus === 'tidak_bisa_hadir' ? 'bg-rose-50 text-rose-800 font-bold' : '' }}">
+                                <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                                <span>Tidak Bisa Hadir</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            @endif
+
             <!-- Kunci / Ubah Jadwal FIX -->
             <button type="button" 
                     onclick="openScheduleModal(
@@ -187,8 +295,8 @@
                         {{ $item->is_schedule_fixed ? 1 : 0 }}
                     )"
                     class="px-2.5 py-1 rounded-xl bg-slate-900 hover:bg-brand-600 text-white font-bold text-[11px] shadow-xs flex items-center gap-1 transition cursor-pointer">
-                <i data-lucide="calendar-check" class="w-3 h-3 text-amber-400"></i>
-                <span>{{ $item->is_schedule_fixed ? 'Ubah Jadwal' : 'Kunci Jadwal FIX' }}</span>
+                <i data-lucide="{{ $cat === 'mengantar_undangan' ? 'file-edit' : ($cat === 'kunjungan_lainnya' ? 'clipboard-edit' : 'calendar-check') }}" class="w-3 h-3 text-amber-400"></i>
+                <span>{{ $cat === 'mengantar_undangan' ? 'Tindak Lanjut' : ($cat === 'kunjungan_lainnya' ? 'Catatan Dinas' : ($item->is_schedule_fixed ? 'Ubah Jadwal' : 'Kunci Jadwal FIX')) }}</span>
             </button>
         </div>
     </div>

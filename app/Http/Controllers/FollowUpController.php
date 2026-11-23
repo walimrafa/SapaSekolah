@@ -58,6 +58,43 @@ class FollowUpController extends Controller
             });
         }
 
+        if ($request->filled('agenda_category')) {
+            $cat = $request->input('agenda_category');
+            $query->where(function ($q) use ($cat) {
+                $q->where('agenda_category', $cat)
+                  ->orWhereHas('visit', fn($vq) => $vq->where('agenda_category', $cat));
+
+                if ($cat === SchoolVisit::AGENDA_PENJADWALAN_SOSIALISASI) {
+                    $q->orWhere(function ($sub) {
+                        $sub->whereNull('agenda_category')
+                            ->where(function ($vsub) {
+                                $vsub->whereNull('visit_id')
+                                     ->orWhereHas('visit', fn($vq) => $vq->whereNull('agenda_category')->orWhere('agenda_category', 'penjadwalan_sosialisasi'));
+                            });
+                    });
+                }
+            });
+        }
+
+        $selectedCategory = $request->input('agenda_category');
+        if ($request->filled('agenda_category')) {
+            $cat = $request->input('agenda_category');
+            $query->where(function ($q) use ($cat) {
+                $q->where('agenda_category', $cat)
+                  ->orWhereHas('visit', fn($vq) => $vq->where('agenda_category', $cat));
+
+                if ($cat === SchoolVisit::AGENDA_PENJADWALAN_SOSIALISASI) {
+                    $q->orWhere(function ($sub) {
+                        $sub->whereNull('agenda_category')
+                            ->where(function ($vsub) {
+                                $vsub->whereNull('visit_id')
+                                     ->orWhereHas('visit', fn($vq) => $vq->whereNull('agenda_category')->orWhere('agenda_category', 'penjadwalan_sosialisasi'));
+                            });
+                    });
+                }
+            });
+        }
+
         if ($request->filled('user_id')) {
             $query->where('user_id', $request->user_id);
         }
@@ -207,13 +244,57 @@ class FollowUpController extends Controller
         }
         $schools = $schoolsQuery->get();
 
-        $marketingUsersQuery = User::active();
+        // Base query for category counts
+        $baseCategoryQuery = FollowUp::query()->whereNull('socialization_completed_at');
+        if ($activeCampus) {
+            $baseCategoryQuery->whereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id));
+        }
+        if ($activePeriod) {
+            $baseCategoryQuery->where(function ($q) use ($activePeriod) {
+                $q->where('academic_period_id', $activePeriod->id)
+                  ->orWhere(function ($sub) use ($activePeriod) {
+                      $sub->whereNull('academic_period_id')
+                          ->whereHas('visit', fn($vq) => $vq->where('academic_period_id', $activePeriod->id));
+                  });
+            });
+        }
+
+        $countSosialisasi = (clone $baseCategoryQuery)->where(function ($q) {
+            $q->where('agenda_category', 'penjadwalan_sosialisasi')
+              ->orWhereHas('visit', fn($vq) => $vq->where('agenda_category', 'penjadwalan_sosialisasi'))
+              ->orWhere(function ($sub) {
+                  $sub->whereNull('agenda_category')
+                      ->where(function ($vsub) {
+                          $vsub->whereNull('visit_id')
+                               ->orWhereHas('visit', fn($vq) => $vq->whereNull('agenda_category'));
+                      });
+              });
+        })->count();
+
+        $countUndangan = (clone $baseCategoryQuery)->where(function ($q) {
+            $q->where('agenda_category', 'mengantar_undangan')
+              ->orWhereHas('visit', fn($vq) => $vq->where('agenda_category', 'mengantar_undangan'));
+        })->count();
+
+        $countLainnya = (clone $baseCategoryQuery)->where(function ($q) {
+            $q->where('agenda_category', 'kunjungan_lainnya')
+              ->orWhereHas('visit', fn($vq) => $vq->where('agenda_category', 'kunjungan_lainnya'));
+        })->count();
+
+        $categoryCounts = [
+            'all' => (clone $baseCategoryQuery)->count(),
+            'penjadwalan_sosialisasi' => $countSosialisasi,
+            'mengantar_undangan' => $countUndangan,
+            'kunjungan_lainnya' => $countLainnya,
+        ];
+
+        $marketingUsersQuery = User::active()->fieldMarketing();
         if ($activeCampus) {
             $marketingUsersQuery->where(function ($uq) use ($activeCampus) {
                 $uq->where('campus_id', $activeCampus->id)->orWhereNull('campus_id');
             });
         }
-        $marketingUsers = $marketingUsersQuery->get();
+        $marketingUsers = $marketingUsersQuery->orderBy('name')->get();
 
         return view('follow-ups.index', compact(
             'viewMode',
@@ -234,7 +315,9 @@ class FollowUpController extends Controller
             'chartMarketing',
             'chartMethod',
             'schools',
-            'marketingUsers'
+            'marketingUsers',
+            'categoryCounts',
+            'selectedCategory'
         ));
     }
 
@@ -262,6 +345,24 @@ class FollowUpController extends Controller
                       $sub->whereNull('academic_period_id')
                           ->whereHas('visit', fn($vq) => $vq->where('academic_period_id', $activePeriod->id));
                   });
+            });
+        }
+
+        if ($request->filled('agenda_category')) {
+            $cat = $request->input('agenda_category');
+            $query->where(function ($q) use ($cat) {
+                $q->where('agenda_category', $cat)
+                  ->orWhereHas('visit', fn($vq) => $vq->where('agenda_category', $cat));
+
+                if ($cat === SchoolVisit::AGENDA_PENJADWALAN_SOSIALISASI) {
+                    $q->orWhere(function ($sub) {
+                        $sub->whereNull('agenda_category')
+                            ->where(function ($vsub) {
+                                $vsub->whereNull('visit_id')
+                                     ->orWhereHas('visit', fn($vq) => $vq->whereNull('agenda_category')->orWhere('agenda_category', 'penjadwalan_sosialisasi'));
+                            });
+                    });
+                }
             });
         }
 
@@ -310,6 +411,12 @@ class FollowUpController extends Controller
         ]);
 
         $followUp->update($validated);
+
+        if ($followUp->visit && !empty($validated['invitation_attendance_status'])) {
+            $followUp->visit->update([
+                'invitation_attendance_status' => $validated['invitation_attendance_status'],
+            ]);
+        }
 
         // Auto copy to MarketingActivity & SchoolActivity
         self::syncFollowUpToMarketingActivity($followUp->fresh());
@@ -551,6 +658,24 @@ class FollowUpController extends Controller
             });
         }
 
+        if ($request->filled('agenda_category')) {
+            $cat = $request->input('agenda_category');
+            $query->where(function ($q) use ($cat) {
+                $q->where('agenda_category', $cat)
+                  ->orWhereHas('visit', fn($vq) => $vq->where('agenda_category', $cat));
+
+                if ($cat === SchoolVisit::AGENDA_PENJADWALAN_SOSIALISASI) {
+                    $q->orWhere(function ($sub) {
+                        $sub->whereNull('agenda_category')
+                            ->where(function ($vsub) {
+                                $vsub->whereNull('visit_id')
+                                     ->orWhereHas('visit', fn($vq) => $vq->whereNull('agenda_category')->orWhere('agenda_category', 'penjadwalan_sosialisasi'));
+                            });
+                    });
+                }
+            });
+        }
+
         $filterInfo = [
             'status_label' => 'Semua Data Follow Up',
             'marketing_name' => 'Semua Staf Marketing',
@@ -630,8 +755,11 @@ class FollowUpController extends Controller
             'socialization_location' => ['nullable', 'string', 'max:150'],
             'result' => ['nullable', 'string'],
             'status' => ['required', 'in:pending,progress,completed,failed'],
+            'agenda_category' => ['nullable', 'string', 'in:penjadwalan_sosialisasi,mengantar_undangan,kunjungan_lainnya'],
+            'invitation_attendance_status' => ['nullable', 'string', 'in:akan_hadir,minta_ijin_dulu,tidak_bisa_hadir'],
         ]);
 
+        $validated['agenda_category'] = $validated['agenda_category'] ?? 'penjadwalan_sosialisasi';
         $validated['description'] = $validated['notes'];
         $validated['is_schedule_fixed'] = ($validated['status'] === 'completed');
 
@@ -666,7 +794,12 @@ class FollowUpController extends Controller
             'notes' => ['nullable', 'string'],
             'result' => ['nullable', 'string'],
             'is_schedule_fixed' => ['nullable', 'boolean'],
+            'invitation_attendance_status' => ['nullable', 'string', 'in:akan_hadir,minta_ijin_dulu,tidak_bisa_hadir'],
         ]);
+
+        if ($request->has('invitation_attendance_status')) {
+            $validated['invitation_attendance_status'] = $request->input('invitation_attendance_status');
+        }
 
         $isFixed = !empty($validated['is_schedule_fixed']) || $validated['status'] === 'completed';
         $validated['is_schedule_fixed'] = $isFixed;
@@ -683,6 +816,12 @@ class FollowUpController extends Controller
         }
 
         $followUp->update($validated);
+
+        if ($followUp->visit && !empty($validated['invitation_attendance_status'])) {
+            $followUp->visit->update([
+                'invitation_attendance_status' => $validated['invitation_attendance_status'],
+            ]);
+        }
 
         // Jika jadwal sosialisasi berhasil di-FIX-kan, kirim notifikasi WhatsApp ke tim marketing
         if ($isFixed && !empty($followUp->fixed_date)) {
