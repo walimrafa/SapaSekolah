@@ -87,11 +87,11 @@ class MarketingRouteController extends Controller
 
         $schools = $schoolsQuery->orderBy('name')->get();
 
-        $marketingUsers = User::active();
+        $marketingUsers = User::active()->fieldMarketing();
         if ($activeCampus) {
             $marketingUsers->where('campus_id', $activeCampus->id);
         }
-        $marketingUsers = $marketingUsers->get();
+        $marketingUsers = $marketingUsers->orderBy('name')->get();
 
         $ubsiLat = $activeCampus ? (float)$activeCampus->latitude : SchoolScoringService::UBSI_LATITUDE;
         $ubsiLng = $activeCampus ? (float)$activeCampus->longitude : SchoolScoringService::UBSI_LONGITUDE;

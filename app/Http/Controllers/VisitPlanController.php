@@ -59,7 +59,7 @@ class VisitPlanController extends Controller
         ->orderBy('name')
         ->get();
 
-        $marketingUsers = User::active()
+        $marketingUsers = User::active()->fieldMarketing()
             ->when($activeCampus, function($q) use ($activeCampus) {
                 $q->where(fn($sub) => $sub->where('campus_id', $activeCampus->id)->orWhereNull('campus_id'));
             })
@@ -133,7 +133,7 @@ class VisitPlanController extends Controller
             ->orderBy('name')
             ->get();
 
-        $marketingUsers = User::active()
+        $marketingUsers = User::active()->fieldMarketing()
             ->when($activeCampus, function($q) use ($activeCampus) {
                 $q->where(fn($sub) => $sub->where('campus_id', $activeCampus->id)->orWhereNull('campus_id'));
             })
@@ -261,7 +261,7 @@ class VisitPlanController extends Controller
             ->orderBy('name')
             ->get();
 
-        $marketingUsers = User::active()
+        $marketingUsers = User::active()->fieldMarketing()
             ->when($activeCampus, function($q) use ($activeCampus) {
                 $q->where(fn($sub) => $sub->where('campus_id', $activeCampus->id)->orWhereNull('campus_id'));
             })

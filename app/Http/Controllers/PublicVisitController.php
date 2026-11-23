@@ -74,13 +74,13 @@ class PublicVisitController extends Controller
         }])->orderBy('name');
         $districts = $districtsQuery->get();
 
-        $marketingUsersQuery = User::active();
+        $marketingUsersQuery = User::active()->fieldMarketing()->with('role');
         if ($activeCampus) {
             $marketingUsersQuery->where(function ($q) use ($activeCampus) {
                 $q->where('campus_id', $activeCampus->id)->orWhereNull('campus_id');
             });
         }
-        $marketingUsers = $marketingUsersQuery->get();
+        $marketingUsers = $marketingUsersQuery->orderBy('name')->get();
 
         return view('public-visit', compact('districts', 'schools', 'marketingUsers', 'campuses', 'activeCampus', 'isCampusLocked'));
     }

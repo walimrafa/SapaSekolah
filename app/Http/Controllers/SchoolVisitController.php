@@ -67,13 +67,13 @@ class SchoolVisitController extends Controller
         }
         $schools = $schoolsQuery->orderBy('name')->get();
         
-        $marketingUsersQuery = User::active()->select('id', 'name', 'role_id', 'campus_id');
+        $marketingUsersQuery = User::active()->fieldMarketing()->select('id', 'name', 'role_id', 'campus_id');
         if ($activeCampus) {
             $marketingUsersQuery->where(function ($q) use ($activeCampus) {
                 $q->where('campus_id', $activeCampus->id)->orWhereNull('campus_id');
             });
         }
-        $marketingUsers = $marketingUsersQuery->get();
+        $marketingUsers = $marketingUsersQuery->orderBy('name')->get();
 
         $visitPlansQuery = VisitPlan::where('status', 'planned')->with('school:id,name');
         if ($activeCampus) {
@@ -101,7 +101,13 @@ class SchoolVisitController extends Controller
             ->orderBy('name')
             ->get();
         
-        $marketingUsers = User::active()->get();
+        $marketingUsersQuery = User::active()->fieldMarketing()->with('role');
+        if ($activeCampus) {
+            $marketingUsersQuery->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)->orWhereNull('campus_id');
+            });
+        }
+        $marketingUsers = $marketingUsersQuery->orderBy('name')->get();
 
         // Active planned visit plans
         $visitPlans = VisitPlan::where('status', 'planned')
@@ -344,7 +350,13 @@ class SchoolVisitController extends Controller
             ->orderBy('name')
             ->get();
 
-        $marketingUsers = User::active()->get();
+        $marketingUsersQuery = User::active()->fieldMarketing()->with('role');
+        if ($activeCampus) {
+            $marketingUsersQuery->where(function ($q) use ($activeCampus) {
+                $q->where('campus_id', $activeCampus->id)->orWhereNull('campus_id');
+            });
+        }
+        $marketingUsers = $marketingUsersQuery->orderBy('name')->get();
 
         return view('visits.edit', compact('visit', 'districts', 'schools', 'marketingUsers'));
     }
