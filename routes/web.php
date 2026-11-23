@@ -249,6 +249,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/hasil-support-event-data/export', [\App\Http\Controllers\EventStudentLeadController::class, 'export'])->name('event-students.export');
     Route::get('/hasil-support-event-data/export-pdf', [\App\Http\Controllers\EventStudentLeadController::class, 'exportPdf'])->name('event-students.export-pdf');
     Route::get('/hasil-support-event-data/export-pptx', [\App\Http\Controllers\EventStudentLeadController::class, 'exportPptx'])->name('event-students.export-pptx');
+    Route::put('/hasil-support-event-data/{studentQuestionnaire}', [\App\Http\Controllers\EventStudentLeadController::class, 'update'])->name('event-students.update');
+    Route::delete('/hasil-support-event-data/{studentQuestionnaire}', [\App\Http\Controllers\EventStudentLeadController::class, 'destroy'])->name('event-students.destroy');
 
     // 3. Prioritas Sekolah (Scoring & Ranking - Admin, Pimpinan, Koordinator Marketing, Koordinator Customer Service, Marketing)
     Route::middleware('role:Admin,Pimpinan,Koordinator Marketing,Koordinator Customer Service,Marketing')->group(function () {

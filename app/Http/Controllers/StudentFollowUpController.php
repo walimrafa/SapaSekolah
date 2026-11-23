@@ -1213,6 +1213,10 @@ class StudentFollowUpController extends Controller
         }
 
         $studentName = $studentQuestionnaire->student_name;
+        if ($studentQuestionnaire->prospect) {
+            $studentQuestionnaire->prospect->delete();
+        }
+        $studentQuestionnaire->followUps()->delete();
         $studentQuestionnaire->delete();
 
         \App\Services\ActivityLogService::log(
@@ -1253,7 +1257,15 @@ class StudentFollowUpController extends Controller
             'selected_ids.required' => 'Pilih minimal satu data siswa untuk dihapus.',
         ]);
 
-        $count = StudentQuestionnaire::whereIn('id', $validated['selected_ids'])->delete();
+        $count = 0;
+        foreach (StudentQuestionnaire::whereIn('id', $validated['selected_ids'])->get() as $studentQuestionnaire) {
+            if ($studentQuestionnaire->prospect) {
+                $studentQuestionnaire->prospect->delete();
+            }
+            $studentQuestionnaire->followUps()->delete();
+            $studentQuestionnaire->delete();
+            $count++;
+        }
 
         return redirect()->back()->with('toast', [
             'type' => 'success',

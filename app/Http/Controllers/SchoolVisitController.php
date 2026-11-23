@@ -258,6 +258,11 @@ class SchoolVisitController extends Controller
     {
         $this->authorizeCampusAccess($visit);
 
+        $user = auth()->user();
+        if (!$user || (!$user->hasFullMenuAccess() && $visit->user_id !== $user->id)) {
+            abort(403, 'Akses ditolak. Anda tidak berhak mengubah data kunjungan ini.');
+        }
+
         $visit->load(['school.district', 'user']);
 
         $districts = \App\Models\District::has('schools')
@@ -283,6 +288,11 @@ class SchoolVisitController extends Controller
     public function update(Request $request, SchoolVisit $visit): RedirectResponse
     {
         $this->authorizeCampusAccess($visit);
+
+        $user = auth()->user();
+        if (!$user || (!$user->hasFullMenuAccess() && $visit->user_id !== $user->id)) {
+            abort(403, 'Akses ditolak. Anda tidak berhak mengubah data kunjungan ini.');
+        }
 
         $validated = $request->validate([
             'school_id' => ['required', 'exists:schools,id'],
@@ -319,12 +329,14 @@ class SchoolVisitController extends Controller
 
         $schoolChanged = (int) $validated['school_id'] !== (int) $visit->school_id;
         if ($schoolChanged && !isset($validated['latitude'], $validated['longitude'])) {
-            throw ValidationException::withMessages([
-                'latitude' => 'Ambil ulang GPS check-in saat mengubah sekolah kunjungan.',
-            ]);
+            if (!$user->hasFullMenuAccess()) {
+                throw ValidationException::withMessages([
+                    'latitude' => 'Ambil ulang GPS check-in saat mengubah sekolah kunjungan.',
+                ]);
+            }
         }
 
-        if (isset($validated['latitude'], $validated['longitude'])) {
+        if (isset($validated['latitude'], $validated['longitude']) && !$user->hasFullMenuAccess()) {
             $school = School::findOrFail($validated['school_id']);
             $this->ensureCheckInWithinSchoolRadius(
                 $school,

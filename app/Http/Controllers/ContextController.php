@@ -33,7 +33,7 @@ class ContextController extends Controller
                 $userCampusId = $user->campus_id;
                 $targetCampusId = $validated['campus_id'] ?? null;
 
-                if ($targetCampusId === 'ALL' || (int)$targetCampusId !== (int)$userCampusId) {
+                if ($targetCampusId === 'ALL' || (int) $targetCampusId !== (int) $userCampusId) {
                     $campusName = $user->campus?->name ?? 'kampus penugasan Anda';
                     $roleName = $user->role?->name ?? 'Pengguna';
                     return back()->with('toast', [

@@ -530,6 +530,15 @@ class StudentQuestionnaireController extends Controller
     public function update(Request $request, StudentQuestionnaire $studentQuestionnaire): RedirectResponse|JsonResponse
     {
         $this->authorizeCampusAccess($studentQuestionnaire);
+
+        $user = auth()->user();
+        if (!$user || !$user->hasFullMenuAccess()) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Akses ditolak. Anda tidak berhak mengubah data kuisioner siswa.'], 403);
+            }
+            abort(403, 'Akses ditolak. Anda tidak berhak mengubah data kuisioner siswa.');
+        }
+
         $validated = $request->validate([
             'student_name' => ['required', 'string', 'max:150'],
             'gender' => ['nullable', 'string', 'in:L,P,laki-laki,perempuan,Laki-laki,Perempuan'],
@@ -640,6 +649,14 @@ class StudentQuestionnaireController extends Controller
 
         if (in_array($studentQuestionnaire->followup_status, [StudentQuestionnaire::STATUS_DAFTAR_APLIKASI, 'closing', 'daftar_aplikasi'])) {
             \App\Services\ProspectSyncService::syncStudentQuestionnaire($studentQuestionnaire->fresh());
+        } elseif ($studentQuestionnaire->prospect) {
+            $studentQuestionnaire->prospect->update([
+                'name' => $validated['student_name'],
+                'gender' => $studentQuestionnaire->gender ?: $studentQuestionnaire->prospect->gender,
+                'phone' => $validated['student_phone'],
+                'email' => $validated['student_email'] ?? $studentQuestionnaire->prospect->email,
+                'school_id' => $schoolId ?: $studentQuestionnaire->prospect->school_id,
+            ]);
         }
 
         if ($request->expectsJson() || $request->ajax()) {
@@ -784,14 +801,14 @@ class StudentQuestionnaireController extends Controller
 
     /**
      * Delete student questionnaire from Hasil Kuisioner index.
-     * Hanya diizinkan untuk Admin, Pimpinan, dan Koordinator Marketing.
+     * Hanya diizinkan untuk Admin, Pimpinan, Koordinator Marketing, dan Koordinator Customer Service.
      */
     public function destroy(Request $request, StudentQuestionnaire $studentQuestionnaire)
     {
         $this->authorizeCampusAccess($studentQuestionnaire);
 
         $user = auth()->user();
-        if (!$user || !$user->canPlotFollowUps()) {
+        if (!$user || !$user->hasFullMenuAccess()) {
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json(['success' => false, 'message' => 'Akses ditolak. Anda tidak berhak menghapus data kuisioner siswa.'], 403);
             }
@@ -799,6 +816,17 @@ class StudentQuestionnaireController extends Controller
         }
 
         $name = $studentQuestionnaire->student_name;
+
+        if ($studentQuestionnaire->school_event_proposal_id && $studentQuestionnaire->eventProposal && $studentQuestionnaire->eventProposal->prospects_acquired > 0) {
+            $studentQuestionnaire->eventProposal->decrement('prospects_acquired');
+        }
+
+        if ($studentQuestionnaire->prospect) {
+            $studentQuestionnaire->prospect->delete();
+        }
+
+        $studentQuestionnaire->followUps()->delete();
+
         $studentQuestionnaire->delete();
 
         \App\Services\ActivityLogService::log(

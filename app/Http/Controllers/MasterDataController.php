@@ -69,7 +69,7 @@ class MasterDataController extends Controller
         $villageSearch = $request->get('village_q', '');
         $villageDistrictId = $request->get('village_district_id');
 
-        $villageQuery = Village::whereHas('district', function($q) use ($selectedRegencyId) {
+        $villageQuery = Village::whereHas('district', function ($q) use ($selectedRegencyId) {
             $q->activeDistricts();
             if ($selectedRegencyId && $selectedRegencyId !== 'ALL') {
                 $q->where('regency_id', $selectedRegencyId);
@@ -106,7 +106,8 @@ class MasterDataController extends Controller
             'total_schools' => (clone $schoolCountQuery)->count(),
             'total_regencies' => $activeRegencies->count(),
             'total_districts_with_schools' => District::whereHas('schools', function ($q) use ($activeCampus) {
-                if ($activeCampus) $q->where('campus_id', $activeCampus->id);
+                if ($activeCampus)
+                    $q->where('campus_id', $activeCampus->id);
             })->count(),
             'total_districts' => District::activeDistricts()->count(),
             'total_villages' => Village::whereHas('district', fn($q) => $q->activeDistricts())->count(),

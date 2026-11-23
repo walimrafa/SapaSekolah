@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\School;
 use App\Models\SchoolEventProposal;
 use App\Models\StudentQuestionnaire;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -331,7 +332,17 @@ class EventStudentLeadController extends Controller
             ])
             ->get(['id', 'name', 'email', 'role_id']);
 
-        return view('event-students.index', compact('students', 'events', 'metrics', 'canPlot', 'assignableOfficers', 'activeCampus'));
+        $schoolsQuery = School::query()
+            ->select('id', 'name', 'district_id', 'campus_id', 'school_type_id')
+            ->with(['district:id,name', 'campus', 'schoolType']);
+
+        if ($activeCampus) {
+            $schoolsQuery->where('campus_id', $activeCampus->id);
+        }
+
+        $schools = $schoolsQuery->orderBy('name')->get();
+
+        return view('event-students.index', compact('students', 'events', 'metrics', 'canPlot', 'assignableOfficers', 'activeCampus', 'schools'));
     }
 
     /**
@@ -388,5 +399,217 @@ class EventStudentLeadController extends Controller
     public function exportPptx(Request $request, \App\Services\EventStudentExportImportService $service)
     {
         return $service->exportPptx($request);
+    }
+
+    /**
+     * Update data siswa hasil support event (Koreksi salah ketik/typo oleh Managerial).
+     */
+    public function update(Request $request, StudentQuestionnaire $studentQuestionnaire): RedirectResponse|JsonResponse
+    {
+        $this->authorizeCampusAccess($studentQuestionnaire);
+
+        $user = auth()->user();
+        if (!$user || !$user->hasFullMenuAccess()) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Akses ditolak. Anda tidak berhak mengubah data siswa event ini.'], 403);
+            }
+            abort(403, 'Akses ditolak. Anda tidak berhak mengubah data siswa event ini.');
+        }
+
+        $validated = $request->validate([
+            'student_name' => ['required', 'string', 'max:150'],
+            'gender' => ['nullable', 'string', 'in:L,P,laki-laki,perempuan,Laki-laki,Perempuan'],
+            'school_id' => ['nullable'],
+            'school_name' => ['nullable', 'string', 'max:150'],
+            'student_class' => ['required', 'string', 'max:50'],
+            'student_major' => ['required', 'string', 'max:100'],
+            'student_phone' => ['required', 'string', 'max:30'],
+            'student_email' => ['nullable', 'email', 'max:150'],
+            'student_social_media' => ['nullable', 'string', 'max:255'],
+            'instagram_handle' => ['nullable', 'string', 'max:150'],
+            'tiktok_handle' => ['nullable', 'string', 'max:150'],
+            'guardian_name' => ['nullable', 'string', 'max:150'],
+            'guardian_phone' => ['nullable', 'string', 'max:30'],
+            'guardian_social_media' => ['nullable', 'string', 'max:255'],
+            'scholarship_interest' => ['required', 'in:ya,tidak'],
+            'school_event_proposal_id' => ['nullable', 'exists:school_event_proposals,id'],
+            'event_name_other' => ['nullable', 'string', 'max:200'],
+            'followup_status' => ['nullable', 'in:belum_dihubungi,no_respon,respon,berminat,daftar_aplikasi,closing'],
+            'followup_notes' => ['nullable', 'string', 'max:1000'],
+        ], [
+            'student_name.required' => 'Nama lengkap siswa wajib diisi.',
+            'student_class.required' => 'Kelas wajib diisi.',
+            'student_major.required' => 'Jurusan wajib diisi.',
+            'student_phone.required' => 'Nomor HP / WhatsApp wajib diisi.',
+            'scholarship_interest.required' => 'Minat beasiswa wajib dipilih.',
+        ]);
+
+        $schoolId = null;
+        $schoolName = trim((string) ($request->input('school_name') ?? ''));
+
+        if (!empty($validated['school_id']) && $validated['school_id'] !== 'other') {
+            $school = School::find($validated['school_id']);
+            if ($school) {
+                $schoolId = $school->id;
+                $schoolName = $school->name;
+            }
+        }
+
+        $eventTitle = null;
+        $newEventId = $validated['school_event_proposal_id'] ?? null;
+        if ($newEventId) {
+            $event = SchoolEventProposal::find($newEventId);
+            if ($event) {
+                $eventTitle = $event->event_name;
+            }
+        } elseif (!empty($validated['event_name_other'])) {
+            $eventTitle = trim($validated['event_name_other']);
+        }
+
+        $collegeNotes = $eventTitle
+            ? "Hasil Support Event: {$eventTitle}"
+            : $studentQuestionnaire->college_interest_notes;
+
+        $scholarshipNotes = ($validated['scholarship_interest'] === 'ya')
+            ? 'Berminat Program Beasiswa UBSI'
+            : 'Non-Beasiswa / Jalur Mandiri';
+
+        $gender = $request->filled('gender')
+            ? (strtoupper(substr($request->gender, 0, 1)) === 'P' ? 'P' : 'L')
+            : $studentQuestionnaire->gender;
+
+        $dataToUpdate = [
+            'student_name' => $validated['student_name'],
+            'gender' => $gender,
+            'school_id' => $schoolId,
+            'school_name' => $schoolName ?: $studentQuestionnaire->school_name,
+            'student_class' => $validated['student_class'],
+            'student_major' => $validated['student_major'],
+            'student_phone' => $validated['student_phone'],
+            'student_email' => $validated['student_email'] ?? null,
+            'student_social_media' => $validated['student_social_media'] ?? $studentQuestionnaire->student_social_media,
+            'instagram_handle' => $validated['instagram_handle'] ?? $studentQuestionnaire->instagram_handle,
+            'tiktok_handle' => $validated['tiktok_handle'] ?? $studentQuestionnaire->tiktok_handle,
+            'guardian_name' => $validated['guardian_name'] ?? null,
+            'guardian_phone' => $validated['guardian_phone'] ?? null,
+            'guardian_social_media' => $validated['guardian_social_media'] ?? $studentQuestionnaire->guardian_social_media,
+            'scholarship_interest' => $validated['scholarship_interest'],
+            'scholarship_notes' => $scholarshipNotes,
+            'school_event_proposal_id' => $newEventId,
+        ];
+
+        if ($collegeNotes) {
+            $dataToUpdate['college_interest_notes'] = $collegeNotes;
+        }
+
+        if (!empty($validated['followup_status'])) {
+            $statusVal = ($validated['followup_status'] === 'closing') ? StudentQuestionnaire::STATUS_DAFTAR_APLIKASI : $validated['followup_status'];
+            $dataToUpdate['followup_status'] = $statusVal;
+        }
+
+        if (array_key_exists('followup_notes', $validated)) {
+            $dataToUpdate['followup_notes'] = $validated['followup_notes'];
+        }
+
+        $studentQuestionnaire->update($dataToUpdate);
+
+        // Auto sync ke CRM Prospect jika sudah daftar aplikasi atau sudah ada record prospek
+        if (in_array($studentQuestionnaire->followup_status, [StudentQuestionnaire::STATUS_DAFTAR_APLIKASI, 'closing', 'daftar_aplikasi'])) {
+            \App\Services\ProspectSyncService::syncStudentQuestionnaire($studentQuestionnaire->fresh());
+        } elseif ($studentQuestionnaire->prospect) {
+            $studentQuestionnaire->prospect->update([
+                'name' => $validated['student_name'],
+                'gender' => $studentQuestionnaire->gender ?: $studentQuestionnaire->prospect->gender,
+                'phone' => $validated['student_phone'],
+                'email' => $validated['student_email'] ?? $studentQuestionnaire->prospect->email,
+                'school_id' => $schoolId ?: $studentQuestionnaire->prospect->school_id,
+            ]);
+        }
+
+        \App\Services\ActivityLogService::log(
+            'UPDATE',
+            'event_student',
+            $studentQuestionnaire->id,
+            "Memperbarui data siswa event: {$studentQuestionnaire->student_name} ({$schoolName})",
+            null,
+            ['student_name' => $studentQuestionnaire->student_name, 'school' => $schoolName]
+        );
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => "Data siswa event {$studentQuestionnaire->student_name} berhasil diperbarui.",
+                'student' => $studentQuestionnaire->fresh(['school', 'eventProposal']),
+            ]);
+        }
+
+        return redirect()->route('event-students.index')
+            ->with('success', "Data siswa event {$studentQuestionnaire->student_name} berhasil diperbarui.");
+    }
+
+    /**
+     * Hapus data siswa hasil support event secara langsung oleh Managerial.
+     */
+    public function destroy(Request $request, StudentQuestionnaire $studentQuestionnaire): RedirectResponse|JsonResponse
+    {
+        $this->authorizeCampusAccess($studentQuestionnaire);
+
+        $user = auth()->user();
+        if (!$user || !$user->hasFullMenuAccess()) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Akses ditolak. Anda tidak berhak menghapus data siswa event ini.'], 403);
+            }
+            abort(403, 'Akses ditolak. Anda tidak berhak menghapus data siswa event ini.');
+        }
+
+        $studentName = $studentQuestionnaire->student_name;
+
+        // Kurangi counter prospects_acquired pada proposal event jika ada
+        if ($studentQuestionnaire->school_event_proposal_id && $studentQuestionnaire->eventProposal && $studentQuestionnaire->eventProposal->prospects_acquired > 0) {
+            $studentQuestionnaire->eventProposal->decrement('prospects_acquired');
+        }
+
+        // Hapus prospek CRM jika ada
+        if ($studentQuestionnaire->prospect) {
+            $studentQuestionnaire->prospect->delete();
+        }
+
+        // Hapus riwayat interaksi follow up
+        $studentQuestionnaire->followUps()->delete();
+
+        $studentQuestionnaire->delete();
+
+        \App\Services\ActivityLogService::log(
+            'DELETE',
+            'event_student',
+            $studentQuestionnaire->id,
+            "Menghapus data siswa event: {$studentName}",
+            ['student_name' => $studentName]
+        );
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => "Data siswa event {$studentName} berhasil dihapus.",
+            ]);
+        }
+
+        return redirect()->route('event-students.index')
+            ->with('success', "Data siswa event {$studentName} berhasil dihapus.");
+    }
+
+    /**
+     * Pastikan pengguna hanya mengakses data siswa event di wilayah kampusnya.
+     */
+    protected function authorizeCampusAccess(StudentQuestionnaire $sq): void
+    {
+        $user = auth()->user();
+        if ($user && !\App\Services\AppContextService::canSwitchCampus($user)) {
+            $userCampusId = $user->campus_id;
+            $sqCampusId = $sq->campus_id ?: ($sq->school?->campus_id ?: $sq->eventProposal?->campus_id);
+            if ($sqCampusId && $userCampusId && (int)$sqCampusId !== (int)$userCampusId) {
+                abort(403, 'Akses ditolak. Data siswa event ini berada di luar wilayah kampus penugasan Anda.');
+            }
+        }
     }
 }

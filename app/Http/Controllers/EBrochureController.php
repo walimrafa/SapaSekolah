@@ -35,8 +35,8 @@ class EBrochureController extends Controller
             $search = $request->q;
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhere('file_name', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('file_name', 'like', "%{$search}%");
             });
         }
 

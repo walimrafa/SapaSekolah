@@ -397,11 +397,28 @@
 
                                     <!-- Aksi Tindak Lanjut -->
                                     <td class="py-3.5 px-4 text-center">
-                                        <a href="{{ route('student-follow-ups.index', ['search' => $student->student_phone]) }}"
-                                            class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-brand-600 hover:bg-brand-500 text-white shadow-sm transition hover:scale-105">
-                                            <i data-lucide="phone-call" class="w-3.5 h-3.5"></i>
-                                            <span>Follow Up Siswa</span>
-                                        </a>
+                                        <div class="flex items-center justify-center gap-1.5">
+                                            <a href="{{ route('student-follow-ups.index', ['search' => $student->student_phone]) }}"
+                                                class="inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-brand-600 hover:bg-brand-500 text-white shadow-xs transition hover:scale-105"
+                                                title="Follow Up Siswa">
+                                                <i data-lucide="phone-call" class="w-3.5 h-3.5"></i>
+                                                <span>Follow Up</span>
+                                            </a>
+                                            @if(auth()->user()?->hasFullMenuAccess())
+                                                <button type="button"
+                                                    onclick='openEditEventStudentModal(@json($student))'
+                                                    class="p-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 font-bold transition"
+                                                    title="Edit / Koreksi Typo Data Siswa">
+                                                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                                                </button>
+                                                <button type="button"
+                                                    onclick="confirmDeleteEventStudent({{ $student->id }}, '{{ addslashes($student->student_name) }}')"
+                                                    class="p-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold transition"
+                                                    title="Hapus Data Siswa Event">
+                                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                </button>
+                                            @endif
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach
@@ -536,5 +553,325 @@
             </div>
         </div>
 
+        @if(auth()->user()?->hasFullMenuAccess())
+            <!-- Modal Edit / Koreksi Typo Data Siswa Event -->
+            <div id="editEventStudentModal" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+                <div class="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 text-slate-800 space-y-5 animate-in fade-in zoom-in duration-200 my-8 max-h-[90vh] flex flex-col">
+                    
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
+                        <div class="flex items-center space-x-2.5">
+                            <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
+                                <i data-lucide="edit-3" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-base font-extrabold text-slate-900">Edit / Koreksi Data Siswa Event</h3>
+                                <p class="text-[11px] text-slate-500">Perbaiki salah ketik (typo) nama, nomor HP, asal sekolah, dan data lainnya.</p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="closeEditEventStudentModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <form id="editEventStudentForm" action="" method="POST" class="space-y-4 overflow-y-auto pr-1 flex-1">
+                        @csrf
+                        @method('PUT')
+
+                        <!-- Profil Siswa -->
+                        <div class="space-y-3">
+                            <h4 class="text-xs font-black uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-1 flex items-center gap-1.5">
+                                <i data-lucide="user" class="w-3.5 h-3.5 text-indigo-500"></i>
+                                <span>Informasi Calon Siswa</span>
+                            </h4>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div class="sm:col-span-2">
+                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                        Nama Lengkap Siswa <span class="text-rose-500">*</span>
+                                    </label>
+                                    <input type="text" name="student_name" id="editStudentName" required
+                                        class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                        Jenis Kelamin
+                                    </label>
+                                    <select name="gender" id="editGender" class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs bg-white">
+                                        <option value="L">Laki-laki (L)</option>
+                                        <option value="P">Perempuan (P)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                        Asal Sekolah <span class="text-rose-500">*</span>
+                                    </label>
+                                    <select name="school_id" id="editSchoolId" onchange="toggleEditSchoolOther()" class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs bg-white">
+                                        <option value="">-- Pilih Sekolah --</option>
+                                        @if(isset($schools))
+                                            @foreach($schools as $sch)
+                                                <option value="{{ $sch->id }}">{{ $sch->name }} ({{ $sch->district->name ?? 'Wilayah' }})</option>
+                                            @endforeach
+                                        @endif
+                                        <option value="other">&bull; Sekolah Lainnya / Tidak Terdaftar &bull;</option>
+                                    </select>
+                                </div>
+                                <div id="editSchoolOtherWrapper" class="hidden">
+                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                        Ketik Nama Sekolah (Lainnya)
+                                    </label>
+                                    <input type="text" name="school_name" id="editSchoolName" placeholder="Contoh: SMA Swasta Nusantara"
+                                        class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                        Kelas <span class="text-rose-500">*</span>
+                                    </label>
+                                    <input type="text" name="student_class" id="editStudentClass" required placeholder="Contoh: XII IPA 1 / XII RPL"
+                                        class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                        Jurusan <span class="text-rose-500">*</span>
+                                    </label>
+                                    <input type="text" name="student_major" id="editStudentMajor" required placeholder="Contoh: IPA / IPS / TKJ"
+                                        class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Kontak & Komunikasi -->
+                        <div class="space-y-3 pt-2">
+                            <h4 class="text-xs font-black uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-1 flex items-center gap-1.5">
+                                <i data-lucide="phone" class="w-3.5 h-3.5 text-emerald-500"></i>
+                                <span>Kontak & WhatsApp</span>
+                            </h4>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                        No. HP / WhatsApp Siswa <span class="text-rose-500">*</span>
+                                    </label>
+                                    <input type="text" name="student_phone" id="editStudentPhone" required placeholder="08xxxxxxxxxx"
+                                        class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                        Email Siswa
+                                    </label>
+                                    <input type="email" name="student_email" id="editStudentEmail" placeholder="siswa@gmail.com"
+                                        class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                        Nama Orang Tua / Wali
+                                    </label>
+                                    <input type="text" name="guardian_name" id="editGuardianName" placeholder="Nama ayah/ibu/wali"
+                                        class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                        No. HP Orang Tua / Wali
+                                    </label>
+                                    <input type="text" name="guardian_phone" id="editGuardianPhone" placeholder="08xxxxxxxxxx"
+                                        class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Event & Minat Beasiswa -->
+                        <div class="space-y-3 pt-2">
+                            <h4 class="text-xs font-black uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-1 flex items-center gap-1.5">
+                                <i data-lucide="award" class="w-3.5 h-3.5 text-amber-500"></i>
+                                <span>Event Terkait & Minat Beasiswa</span>
+                            </h4>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                        Kegiatan / Event Terkait
+                                    </label>
+                                    <select name="school_event_proposal_id" id="editEventProposalId" class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs bg-white">
+                                        <option value="">-- Tanpa Proposal Event Tertentu --</option>
+                                        @foreach($events as $ev)
+                                            <option value="{{ $ev->id }}">{{ $ev->event_name }} ({{ $ev->school_name }})</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                        Berminat Program Beasiswa? <span class="text-rose-500">*</span>
+                                    </label>
+                                    <div class="flex items-center gap-4 mt-2">
+                                        <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs font-bold text-slate-700">
+                                            <input type="radio" name="scholarship_interest" id="editScholarshipYes" value="ya" class="text-emerald-600 focus:ring-emerald-500">
+                                            <span>Ya, Berminat</span>
+                                        </label>
+                                        <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs font-bold text-slate-700">
+                                            <input type="radio" name="scholarship_interest" id="editScholarshipNo" value="tidak" class="text-slate-600 focus:ring-slate-500">
+                                            <span>Tidak / Reguler</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                        Status Follow Up
+                                    </label>
+                                    <select name="followup_status" id="editFollowupStatus" class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs bg-white font-semibold">
+                                        <option value="belum_dihubungi">Belum Dihubungi</option>
+                                        <option value="no_respon">No Respon</option>
+                                        <option value="respon">Respon</option>
+                                        <option value="berminat">Berminat</option>
+                                        <option value="daftar_aplikasi">Daftar Aplikasi</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                        Catatan Follow Up
+                                    </label>
+                                    <input type="text" name="followup_notes" id="editFollowupNotes" placeholder="Catatan interaksi atau progres..."
+                                        class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 border-t border-slate-100 flex items-center justify-end space-x-2 shrink-0">
+                            <button type="button" onclick="closeEditEventStudentModal()"
+                                class="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
+                                Batal
+                            </button>
+                            <button type="submit"
+                                class="px-5 py-2.5 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white shadow-md shadow-amber-600/20 transition">
+                                Simpan Perubahan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Modal Konfirmasi Hapus Siswa Event -->
+            <div id="deleteEventStudentModal" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+                <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-slate-800 space-y-4 animate-in fade-in zoom-in duration-200">
+                    <div class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
+                        <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+                    </div>
+
+                    <div class="text-center space-y-1">
+                        <h3 class="text-base font-extrabold text-slate-900">Hapus Data Siswa Event?</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Apakah Anda yakin ingin menghapus data siswa <strong id="deleteEventStudentNameText" class="text-slate-900"></strong>?
+                        </p>
+                        <p class="text-[11px] text-rose-600 font-medium pt-1">
+                            Data akan dihapus dari daftar event, dan riwayat follow up serta data prospek CRM terkait (jika ada) juga akan diselaraskan.
+                        </p>
+                    </div>
+
+                    <form id="deleteEventStudentForm" action="" method="POST" class="pt-2">
+                        @csrf
+                        @method('DELETE')
+                        <div class="flex items-center justify-center gap-2">
+                            <button type="button" onclick="closeDeleteEventStudentModal()"
+                                class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition flex-1">
+                                Batal
+                            </button>
+                            <button type="submit"
+                                class="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-600/20 transition flex-1">
+                                Ya, Hapus Data
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        @endif
+
     </div>
+
+    @push('scripts')
+        <script>
+            function openEditEventStudentModal(student) {
+                const form = document.getElementById('editEventStudentForm');
+                form.action = '/hasil-support-event-data/' + student.id;
+
+                document.getElementById('editStudentName').value = student.student_name || '';
+                document.getElementById('editGender').value = student.gender || 'L';
+
+                // School selection
+                const schoolSelect = document.getElementById('editSchoolId');
+                const otherWrapper = document.getElementById('editSchoolOtherWrapper');
+                const otherInput = document.getElementById('editSchoolName');
+
+                if (student.school_id) {
+                    schoolSelect.value = student.school_id;
+                    otherWrapper.classList.add('hidden');
+                    otherInput.value = '';
+                } else {
+                    schoolSelect.value = 'other';
+                    otherWrapper.classList.remove('hidden');
+                    otherInput.value = student.school_name || '';
+                }
+
+                document.getElementById('editStudentClass').value = student.student_class || '';
+                document.getElementById('editStudentMajor').value = student.student_major || '';
+                document.getElementById('editStudentPhone').value = student.student_phone || '';
+                document.getElementById('editStudentEmail').value = student.student_email || '';
+                document.getElementById('editGuardianName').value = student.guardian_name || '';
+                document.getElementById('editGuardianPhone').value = student.guardian_phone || '';
+
+                const isScholarship = (student.scholarship_interest === 'ya');
+                document.getElementById('editScholarshipYes').checked = isScholarship;
+                document.getElementById('editScholarshipNo').checked = !isScholarship;
+
+                document.getElementById('editEventProposalId').value = student.school_event_proposal_id || '';
+                document.getElementById('editFollowupStatus').value = student.followup_status || 'belum_dihubungi';
+                document.getElementById('editFollowupNotes').value = student.followup_notes || '';
+
+                document.getElementById('editEventStudentModal').classList.remove('hidden');
+                if (window.lucide) { window.lucide.createIcons(); }
+            }
+
+            function closeEditEventStudentModal() {
+                const modal = document.getElementById('editEventStudentModal');
+                if (modal) {
+                    modal.classList.add('hidden');
+                }
+            }
+
+            function toggleEditSchoolOther() {
+                const schoolSelect = document.getElementById('editSchoolId');
+                const otherWrapper = document.getElementById('editSchoolOtherWrapper');
+                if (schoolSelect.value === 'other') {
+                    otherWrapper.classList.remove('hidden');
+                    document.getElementById('editSchoolName').focus();
+                } else {
+                    otherWrapper.classList.add('hidden');
+                }
+            }
+
+            function confirmDeleteEventStudent(studentId, studentName) {
+                document.getElementById('deleteEventStudentNameText').textContent = studentName;
+                document.getElementById('deleteEventStudentForm').action = '/hasil-support-event-data/' + studentId;
+                document.getElementById('deleteEventStudentModal').classList.remove('hidden');
+                if (window.lucide) { window.lucide.createIcons(); }
+            }
+
+            function closeDeleteEventStudentModal() {
+                const modal = document.getElementById('deleteEventStudentModal');
+                if (modal) {
+                    modal.classList.add('hidden');
+                }
+            }
+        </script>
+    @endpush
 </x-app-layout>
