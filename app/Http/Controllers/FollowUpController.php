@@ -6,6 +6,7 @@ use App\Models\FollowUp;
 use App\Models\MarketingActivity;
 use App\Models\School;
 use App\Models\SchoolActivity;
+use App\Models\SchoolVisit;
 use App\Models\User;
 use App\Services\FollowUpExportService;
 use App\Services\FollowUpSyncService;
@@ -58,24 +59,6 @@ class FollowUpController extends Controller
             });
         }
 
-        if ($request->filled('agenda_category')) {
-            $cat = $request->input('agenda_category');
-            $query->where(function ($q) use ($cat) {
-                $q->where('agenda_category', $cat)
-                  ->orWhereHas('visit', fn($vq) => $vq->where('agenda_category', $cat));
-
-                if ($cat === SchoolVisit::AGENDA_PENJADWALAN_SOSIALISASI) {
-                    $q->orWhere(function ($sub) {
-                        $sub->whereNull('agenda_category')
-                            ->where(function ($vsub) {
-                                $vsub->whereNull('visit_id')
-                                     ->orWhereHas('visit', fn($vq) => $vq->whereNull('agenda_category')->orWhere('agenda_category', 'penjadwalan_sosialisasi'));
-                            });
-                    });
-                }
-            });
-        }
-
         $selectedCategory = $request->input('agenda_category');
         if ($request->filled('agenda_category')) {
             $cat = $request->input('agenda_category');
@@ -83,7 +66,7 @@ class FollowUpController extends Controller
                 $q->where('agenda_category', $cat)
                   ->orWhereHas('visit', fn($vq) => $vq->where('agenda_category', $cat));
 
-                if ($cat === SchoolVisit::AGENDA_PENJADWALAN_SOSIALISASI) {
+                if ($cat === FollowUp::AGENDA_PENJADWALAN_SOSIALISASI || $cat === SchoolVisit::AGENDA_PENJADWALAN_SOSIALISASI) {
                     $q->orWhere(function ($sub) {
                         $sub->whereNull('agenda_category')
                             ->where(function ($vsub) {
