@@ -117,10 +117,29 @@ class FollowUp extends Model
         return $this->visit?->agenda_category ?: self::AGENDA_PENJADWALAN_SOSIALISASI;
     }
 
+    public function getAgendaCategoriesAttribute(): array
+    {
+        $raw = $this->agenda_category ?: self::AGENDA_PENJADWALAN_SOSIALISASI;
+        $items = array_map('trim', explode(',', $raw));
+        return array_values(array_filter($items));
+    }
+
+    public function hasAgendaCategory(string $category): bool
+    {
+        return in_array($category, $this->agenda_categories);
+    }
+
     public function getAgendaCategoryLabelAttribute(): string
     {
         $options = self::agendaCategoryOptions();
-        return $options[$this->agenda_category] ?? 'Penjadwalan Sosialisasi';
+        $cats = $this->agenda_categories;
+        $labels = [];
+        foreach ($cats as $cat) {
+            if (isset($options[$cat])) {
+                $labels[] = $options[$cat];
+            }
+        }
+        return !empty($labels) ? implode(' & ', $labels) : 'Penjadwalan Sosialisasi';
     }
 
     public function getInvitationAttendanceLabelAttribute(): ?string

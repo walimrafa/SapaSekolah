@@ -173,27 +173,32 @@
                                 <div>{{ \Carbon\Carbon::parse($v->visit_date)->translatedFormat('d M Y') }}</div>
                                 
                                 <div class="mt-1 flex flex-col gap-1 items-start">
-                                    @if(($v->agenda_category ?? 'penjadwalan_sosialisasi') === 'mengantar_undangan')
-                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-50 text-amber-800 border border-amber-200">
-                                            <i data-lucide="mail" class="w-3 h-3 text-amber-600"></i>
-                                            <span>Antar Undangan</span>
-                                        </span>
-                                        @if($v->invitation_attendance_status)
-                                            <span class="inline-block px-1.5 py-0.2 rounded text-[9.5px] font-bold {{ $v->invitation_attendance_status === 'akan_hadir' ? 'bg-emerald-100 text-emerald-800' : ($v->invitation_attendance_status === 'minta_ijin_dulu' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800') }}">
-                                                ● {{ $v->invitation_attendance_label }}
+                                    @php
+                                        $cats = $v->agenda_categories;
+                                    @endphp
+                                    @foreach($cats as $cat)
+                                        @if($cat === 'mengantar_undangan')
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-50 text-amber-800 border border-amber-200">
+                                                <i data-lucide="mail" class="w-3 h-3 text-amber-600"></i>
+                                                <span>Antar Undangan</span>
+                                            </span>
+                                            @if($v->invitation_attendance_status)
+                                                <span class="inline-block px-1.5 py-0.2 rounded text-[9.5px] font-bold {{ $v->invitation_attendance_status === 'akan_hadir' ? 'bg-emerald-100 text-emerald-800' : ($v->invitation_attendance_status === 'minta_ijin_dulu' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800') }}">
+                                                    ● {{ $v->invitation_attendance_label }}
+                                                </span>
+                                            @endif
+                                        @elseif($cat === 'kunjungan_lainnya')
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-50 text-purple-800 border border-purple-200">
+                                                <i data-lucide="clipboard-list" class="w-3 h-3 text-purple-600"></i>
+                                                <span>Kunjungan Lain</span>
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-brand-50 text-brand-800 border border-brand-200">
+                                                <i data-lucide="presentation" class="w-3 h-3 text-brand-600"></i>
+                                                <span>Sosialisasi</span>
                                             </span>
                                         @endif
-                                    @elseif(($v->agenda_category ?? '') === 'kunjungan_lainnya')
-                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-50 text-purple-800 border border-purple-200">
-                                            <i data-lucide="clipboard-list" class="w-3 h-3 text-purple-600"></i>
-                                            <span>Kunjungan Lain</span>
-                                        </span>
-                                    @else
-                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-brand-50 text-brand-800 border border-brand-200">
-                                            <i data-lucide="presentation" class="w-3 h-3 text-brand-600"></i>
-                                            <span>Sosialisasi</span>
-                                        </span>
-                                    @endif
+                                    @endforeach
 
                                     @if($v->visitPlan)
                                         <span class="inline-block px-1.5 py-0.2 text-[9px] rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold">

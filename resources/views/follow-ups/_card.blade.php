@@ -12,7 +12,14 @@
         </div>
 
         @php
-            $cat = $item->agenda_category ?: ($item->visit?->agenda_category ?? 'penjadwalan_sosialisasi');
+            $cats = $item->agenda_categories;
+            if (empty($cats) && $item->visit) {
+                $cats = $item->visit->agenda_categories;
+            }
+            if (empty($cats)) {
+                $cats = ['penjadwalan_sosialisasi'];
+            }
+            $cat = in_array(request('agenda_category'), $cats) ? request('agenda_category') : $cats[0];
             $attStatus = $item->invitation_attendance_status ?: ($item->visit?->invitation_attendance_status ?? null);
             $picPhone = $item->pic_phone ?: ($item->visit?->recipient_phone ?? '');
             $cleanPhone = preg_replace('/[^0-9]/', '', $picPhone);
@@ -22,9 +29,9 @@
             $picName = $item->pic_name ?: ($item->visit?->recipient_name ?: 'Bapak/Ibu');
             $schName = $item->school?->name ?: 'Sekolah';
 
-            if ($cat === 'mengantar_undangan') {
+            if (in_array('mengantar_undangan', $cats) && request('agenda_category') === 'mengantar_undangan') {
                 $waMsg = "Halo {$picName}, kami dari Tim Marketing Universitas BSI (UBSI). Kami ingin mengonfirmasi respon/kehadiran terkait surat undangan acara kampus yang telah kami serahkan ke {$schName}. Apakah sudah ada konfirmasi kehadiran dari sekolah? Terima kasih.";
-            } elseif ($cat === 'kunjungan_lainnya') {
+            } elseif (in_array('kunjungan_lainnya', $cats) && request('agenda_category') === 'kunjungan_lainnya') {
                 $waMsg = "Halo {$picName}, kami dari Tim Marketing Universitas BSI (UBSI). Menindaklanjuti kunjungan silaturahmi/audiensi kami ke {$schName}, kami ingin mengonfirmasi tindak lanjut terkait pembicaraan kemarin. Terima kasih.";
             } else {
                 $waMsg = "Halo {$picName}, kami dari Tim Marketing Universitas BSI (UBSI). Kami ingin menindaklanjuti rencana jadwal sosialisasi PMB & Beasiswa kampus UBSI di {$schName}. Terima kasih.";
@@ -32,22 +39,26 @@
             $customWaLink = $cleanPhone ? "https://wa.me/{$cleanPhone}?text=" . rawurlencode($waMsg) : null;
         @endphp
 
-        @if($cat === 'mengantar_undangan')
-            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shrink-0" title="Kategori: Mengantar Undangan Acara">
-                <i data-lucide="mail" class="w-3 h-3 text-amber-600"></i>
-                <span>Antar Undangan</span>
-            </span>
-        @elseif($cat === 'kunjungan_lainnya')
-            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200 shrink-0" title="Kategori: Kunjungan Lainnya">
-                <i data-lucide="clipboard-list" class="w-3 h-3 text-purple-600"></i>
-                <span>Kunjungan Lain</span>
-            </span>
-        @else
-            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 shrink-0" title="Kategori: Penjadwalan Sosialisasi">
-                <i data-lucide="calendar" class="w-3 h-3 text-blue-600"></i>
-                <span>Sosialisasi</span>
-            </span>
-        @endif
+        <div class="flex flex-col gap-1 items-end shrink-0">
+            @foreach($cats as $c)
+                @if($c === 'mengantar_undangan')
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200" title="Kategori: Mengantar Undangan Acara">
+                        <i data-lucide="mail" class="w-3 h-3 text-amber-600"></i>
+                        <span>Antar Undangan</span>
+                    </span>
+                @elseif($c === 'kunjungan_lainnya')
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200" title="Kategori: Kunjungan Lainnya">
+                        <i data-lucide="clipboard-list" class="w-3 h-3 text-purple-600"></i>
+                        <span>Kunjungan Lain</span>
+                    </span>
+                @else
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200" title="Kategori: Penjadwalan Sosialisasi">
+                        <i data-lucide="calendar" class="w-3 h-3 text-blue-600"></i>
+                        <span>Sosialisasi</span>
+                    </span>
+                @endif
+            @endforeach
+        </div>
     </div>
 
     @if($cat === 'mengantar_undangan')

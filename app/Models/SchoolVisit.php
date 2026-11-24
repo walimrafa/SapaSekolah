@@ -114,12 +114,37 @@ class SchoolVisit extends Model
     }
 
     /**
+     * Get list of agenda categories as array.
+     */
+    public function getAgendaCategoriesAttribute(): array
+    {
+        $raw = $this->agenda_category ?: self::AGENDA_PENJADWALAN_SOSIALISASI;
+        $items = array_map('trim', explode(',', $raw));
+        return array_values(array_filter($items));
+    }
+
+    /**
+     * Check if a specific agenda category is present in this record.
+     */
+    public function hasAgendaCategory(string $category): bool
+    {
+        return in_array($category, $this->agenda_categories);
+    }
+
+    /**
      * Label Kategori Agenda
      */
     public function getAgendaCategoryLabelAttribute(): string
     {
-        $val = $this->agenda_category ?? self::AGENDA_PENJADWALAN_SOSIALISASI;
-        return self::agendaCategoryOptions()[$val] ?? 'Penjadwalan Sosialisasi';
+        $options = self::agendaCategoryOptions();
+        $cats = $this->agenda_categories;
+        $labels = [];
+        foreach ($cats as $cat) {
+            if (isset($options[$cat])) {
+                $labels[] = $options[$cat];
+            }
+        }
+        return !empty($labels) ? implode(' & ', $labels) : 'Penjadwalan Sosialisasi';
     }
 
     /**

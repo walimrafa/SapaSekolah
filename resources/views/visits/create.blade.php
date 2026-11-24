@@ -10,10 +10,13 @@
         </a>
     </div>
 
+    @php
+        $initAgendaCategories = old('agenda_categories', old('agenda_category') ? (is_array(old('agenda_category')) ? old('agenda_category') : explode(',', old('agenda_category'))) : ['penjadwalan_sosialisasi']);
+    @endphp
     <div class="max-w-4xl" @school-selected.window="selectedSchoolId = $event.detail.schoolId; schoolChanged()" x-data="{
         districts: {{ json_encode($districts) }},
         allSchools: {{ json_encode($schools) }},
-        agendaCategory: '{{ old('agenda_category', 'penjadwalan_sosialisasi') }}',
+        agendaCategories: @json($initAgendaCategories),
         invitationStatus: '{{ old('invitation_attendance_status', 'akan_hadir') }}',
         selectedDistrictId: '{{ old('district_id', '') }}',
         selectedSchoolId: '{{ old('school_id', '') }}',
@@ -34,8 +37,40 @@
         isCameraLoading: false,
         cameraError: null,
 
+        hasCat(cat) {
+            return this.agendaCategories.includes(cat);
+        },
+
+        toggleCat(cat) {
+            if (this.hasCat(cat)) {
+                if (this.agendaCategories.length > 1) {
+                    this.agendaCategories = this.agendaCategories.filter(c => c !== cat);
+                }
+            } else {
+                this.agendaCategories.push(cat);
+            }
+            this.$nextTick(() => {
+                if (window.lucide) window.lucide.createIcons();
+            });
+        },
+
+        get agendaCategoriesText() {
+            const labels = {
+                'penjadwalan_sosialisasi': '1. Penjadwalan Sosialisasi',
+                'mengantar_undangan': '2. Mengantar Undangan Acara',
+                'kunjungan_lainnya': '3. Kunjungan Lainnya'
+            };
+            if (this.agendaCategories.length === 3) {
+                return 'Semua Agenda Kunjungan Terpilih (3 Agenda)';
+            }
+            if (this.agendaCategories.length === 0) {
+                return '-- Pilih Kategori Agenda --';
+            }
+            return this.agendaCategories.map(c => labels[c] || c).join(' + ');
+        },
+
         init() {
-            this.$watch('agendaCategory', () => {
+            this.$watch('agendaCategories', () => {
                 this.$nextTick(() => {
                     if (window.lucide) window.lucide.createIcons();
                 });
@@ -315,44 +350,120 @@
                 </div>
             @endif
 
-            <!-- Card 0: Pilihan Kategori Agenda Kunjungan (Combobox) -->
-            <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-soft">
+            <!-- Card 0: Pilihan Kategori Agenda Kunjungan (Multi-Select Combobox) -->
+            <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-soft" x-data="{ openDropdown: false }" @click.outside="openDropdown = false">
+                <!-- Hidden inputs to submit array and joined string -->
+                <template x-for="cat in agendaCategories" :key="cat">
+                    <input type="hidden" name="agenda_categories[]" :value="cat">
+                </template>
+                <input type="hidden" name="agenda_category" :value="agendaCategories.join(',')">
+
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-xl bg-brand-50 border border-brand-100 flex items-center justify-center text-brand-600 shrink-0">
                             <i data-lucide="layers" class="w-5 h-5"></i>
                         </div>
                         <div>
-                            <label for="agenda_category_select" class="block text-xs font-extrabold text-slate-900">
-                                Kategori Agenda Kunjungan <span class="text-rose-500">*</span>
-                            </label>
-                            <p class="text-[11px] text-slate-500">Pilih agenda kunjungan untuk menyesuaikan formulir</p>
+                            <div class="flex items-center gap-2">
+                                <label class="block text-xs font-extrabold text-slate-900">
+                                    Kategori Agenda Kunjungan <span class="text-rose-500">*</span>
+                                </label>
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-brand-100 text-brand-800">
+                                    Bisa Pilih Lebih Dari 1
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-slate-500">Centang agenda kunjungan untuk menggabungkan isian formulir tanpa duplikasi</p>
                         </div>
                     </div>
-                    <div class="w-full sm:w-80">
-                        <select id="agenda_category_select" name="agenda_category" x-model="agendaCategory"
-                            class="w-full px-3.5 py-2.5 rounded-xl border-2 border-brand-500/40 bg-white font-extrabold text-xs text-slate-800 shadow-xs focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 transition cursor-pointer">
-                            <option value="penjadwalan_sosialisasi">1. Penjadwalan Sosialisasi</option>
-                            <option value="mengantar_undangan">2. Mengantar Undangan Acara</option>
-                            <option value="kunjungan_lainnya">3. Kunjungan Lainnya</option>
-                        </select>
+
+                    <!-- Combobox Multi-Select Dropdown Container -->
+                    <div class="relative w-full sm:w-96">
+                        <button type="button" @click="openDropdown = !openDropdown"
+                            class="w-full px-3.5 py-2.5 rounded-xl border-2 border-brand-500/50 bg-white font-extrabold text-xs text-slate-800 shadow-xs hover:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition flex items-center justify-between gap-2 text-left">
+                            <span class="truncate" x-text="agendaCategoriesText"></span>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-brand-600 shrink-0 transition-transform duration-200" :class="openDropdown ? 'rotate-180' : ''"></i>
+                        </button>
+
+                        <!-- Dropdown Menu -->
+                        <div x-show="openDropdown" x-transition.origin.top.right x-cloak
+                            class="absolute right-0 mt-2 w-full sm:w-[380px] bg-white rounded-2xl border border-slate-200 shadow-xl z-30 p-2 space-y-1.5">
+                            <div class="px-2.5 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 flex items-center justify-between">
+                                <span>Pilihan Agenda (Multi-Select)</span>
+                                <span class="text-brand-600 font-extrabold" x-text="agendaCategories.length + ' Terpilih'"></span>
+                            </div>
+
+                            <!-- Opsi 1 -->
+                            <div @click="toggleCat('penjadwalan_sosialisasi')" 
+                                class="p-2.5 rounded-xl cursor-pointer transition flex items-start gap-2.5"
+                                :class="hasCat('penjadwalan_sosialisasi') ? 'bg-brand-50/80 border border-brand-200 text-brand-950 font-bold' : 'hover:bg-slate-50 border border-transparent text-slate-700'">
+                                <input type="checkbox" :checked="hasCat('penjadwalan_sosialisasi')" class="mt-0.5 rounded text-brand-600 focus:ring-brand-500 pointer-events-none">
+                                <div class="text-xs">
+                                    <div class="flex items-center gap-1.5 font-extrabold">
+                                        <i data-lucide="presentation" class="w-3.5 h-3.5 text-brand-600"></i>
+                                        <span>1. Penjadwalan Sosialisasi</span>
+                                    </div>
+                                    <p class="text-[10px] text-slate-500 font-normal mt-0.5">Form estimasi rombel kelas 12, target jadwal waktu &amp; metode sosialisasi</p>
+                                </div>
+                            </div>
+
+                            <!-- Opsi 2 -->
+                            <div @click="toggleCat('mengantar_undangan')" 
+                                class="p-2.5 rounded-xl cursor-pointer transition flex items-start gap-2.5"
+                                :class="hasCat('mengantar_undangan') ? 'bg-amber-50/80 border border-amber-200 text-amber-950 font-bold' : 'hover:bg-slate-50 border border-transparent text-slate-700'">
+                                <input type="checkbox" :checked="hasCat('mengantar_undangan')" class="mt-0.5 rounded text-amber-600 focus:ring-amber-500 pointer-events-none">
+                                <div class="text-xs">
+                                    <div class="flex items-center gap-1.5 font-extrabold">
+                                        <i data-lucide="mail" class="w-3.5 h-3.5 text-amber-600"></i>
+                                        <span>2. Mengantar Undangan Acara</span>
+                                    </div>
+                                    <p class="text-[10px] text-slate-500 font-normal mt-0.5">Penerima undangan, konfirmasi kehadiran (Akan Hadir / Ijin / Tidak)</p>
+                                </div>
+                            </div>
+
+                            <!-- Opsi 3 -->
+                            <div @click="toggleCat('kunjungan_lainnya')" 
+                                class="p-2.5 rounded-xl cursor-pointer transition flex items-start gap-2.5"
+                                :class="hasCat('kunjungan_lainnya') ? 'bg-purple-50/80 border border-purple-200 text-purple-950 font-bold' : 'hover:bg-slate-50 border border-transparent text-slate-700'">
+                                <input type="checkbox" :checked="hasCat('kunjungan_lainnya')" class="mt-0.5 rounded text-purple-600 focus:ring-purple-500 pointer-events-none">
+                                <div class="text-xs">
+                                    <div class="flex items-center gap-1.5 font-extrabold">
+                                        <i data-lucide="clipboard-list" class="w-3.5 h-3.5 text-purple-600"></i>
+                                        <span>3. Kunjungan Lainnya</span>
+                                    </div>
+                                    <p class="text-[10px] text-slate-500 font-normal mt-0.5">Silaturahmi, audiensi kepala sekolah &amp; urusan dinas lainnya</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Info Hint Ringkas -->
-                <div class="mt-3 pt-2.5 border-t border-slate-100">
-                    <div x-show="agendaCategory === 'penjadwalan_sosialisasi'" class="text-[11px] text-brand-700 bg-brand-50/80 px-3 py-1.5 rounded-xl border border-brand-200/60 flex items-center gap-2">
-                        <i data-lucide="info" class="w-3.5 h-3.5 text-brand-600 shrink-0"></i>
-                        <span><strong>Form Lengkap:</strong> Pengisian rombel siswa kelas 12, target jadwal waktu &amp; metode kegiatan sosialisasi.</span>
-                    </div>
-                    <div x-show="agendaCategory === 'mengantar_undangan'" class="text-[11px] text-amber-800 bg-amber-50/80 px-3 py-1.5 rounded-xl border border-amber-200/60 flex items-center gap-2">
-                        <i data-lucide="mail" class="w-3.5 h-3.5 text-amber-600 shrink-0"></i>
-                        <span><strong>Mode Undangan:</strong> Pengisian data penerima undangan, konfirmasi kehadiran (Akan Hadir / Ijin / Tidak) &amp; catatan respon.</span>
-                    </div>
-                    <div x-show="agendaCategory === 'kunjungan_lainnya'" class="text-[11px] text-purple-800 bg-purple-50/80 px-3 py-1.5 rounded-xl border border-purple-200/60 flex items-center gap-2">
-                        <i data-lucide="clipboard-list" class="w-3.5 h-3.5 text-purple-600 shrink-0"></i>
-                        <span><strong>Mode Kunjungan Lainnya:</strong> Pengisian data penerima kunjungan, catatan hasil dinas &amp; bukti dokumentasi.</span>
-                    </div>
+                <!-- Quick Toggle Pills & Status Terpilih -->
+                <div class="mt-3 pt-2.5 border-t border-slate-100 flex flex-wrap items-center gap-2">
+                    <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mr-1">Klik Cepat:</span>
+
+                    <button type="button" @click="toggleCat('penjadwalan_sosialisasi')"
+                        class="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border"
+                        :class="hasCat('penjadwalan_sosialisasi') ? 'bg-brand-600 text-white border-brand-600 shadow-xs' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'">
+                        <i data-lucide="presentation" class="w-3.5 h-3.5"></i>
+                        <span>1. Penjadwalan Sosialisasi</span>
+                        <span x-show="hasCat('penjadwalan_sosialisasi')" class="text-brand-200 text-[10px]">✓</span>
+                    </button>
+
+                    <button type="button" @click="toggleCat('mengantar_undangan')"
+                        class="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border"
+                        :class="hasCat('mengantar_undangan') ? 'bg-amber-600 text-white border-amber-600 shadow-xs' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'">
+                        <i data-lucide="mail" class="w-3.5 h-3.5"></i>
+                        <span>2. Mengantar Undangan Acara</span>
+                        <span x-show="hasCat('mengantar_undangan')" class="text-amber-200 text-[10px]">✓</span>
+                    </button>
+
+                    <button type="button" @click="toggleCat('kunjungan_lainnya')"
+                        class="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border"
+                        :class="hasCat('kunjungan_lainnya') ? 'bg-purple-600 text-white border-purple-600 shadow-xs' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'">
+                        <i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i>
+                        <span>3. Kunjungan Lainnya</span>
+                        <span x-show="hasCat('kunjungan_lainnya')" class="text-purple-200 text-[10px]">✓</span>
+                    </button>
                 </div>
             </div>
 
@@ -428,7 +539,7 @@
                 <div class="pb-3 border-b border-slate-100 flex items-center justify-between">
                     <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
                         <i data-lucide="user-check" class="w-4 h-4 text-amber-500"></i>
-                        <span x-text="agendaCategory === 'mengantar_undangan' ? 'Detail Penerima Undangan Acara' : 'Detail Penerima Kunjungan & Kepala Sekolah'"></span>
+                        <span x-text="agendaCategories.length === 1 && hasCat('mengantar_undangan') ? 'Detail Penerima Undangan Acara' : 'Detail Penerima Kunjungan & Kepala Sekolah'"></span>
                     </h3>
                     <span class="text-[11px] text-slate-400 font-normal">Kontak PIC &amp; Pimpinan Sekolah</span>
                 </div>
@@ -442,13 +553,13 @@
                     </div>
                     <div>
                         <label class="block font-bold text-slate-800 mb-1">
-                            <span x-text="agendaCategory === 'mengantar_undangan' ? 'Nama Penerima Undangan Beserta Gelarnya' : '1. Nama Penerima Beserta Gelarnya'"></span> <span class="text-red-500">*</span>
+                            <span x-text="agendaCategories.length === 1 && hasCat('mengantar_undangan') ? 'Nama Penerima Undangan Beserta Gelarnya' : '1. Nama Penerima Beserta Gelarnya'"></span> <span class="text-red-500">*</span>
                         </label>
                         <input type="text" name="recipient_name" value="{{ old('recipient_name') }}" placeholder="Contoh: Drs. H. Mulyadi, M.Pd." required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-semibold focus:border-brand-500">
                     </div>
                     <div>
                         <label class="block font-bold text-slate-800 mb-1">
-                            <span x-text="agendaCategory === 'mengantar_undangan' ? 'Jabatan Penerima Undangan' : '2. Jabatan Penerima'"></span> <span class="text-red-500">*</span>
+                            <span x-text="agendaCategories.length === 1 && hasCat('mengantar_undangan') ? 'Jabatan Penerima Undangan' : '2. Jabatan Penerima'"></span> <span class="text-red-500">*</span>
                         </label>
                         <input type="text" name="recipient_position" value="{{ old('recipient_position') }}" placeholder="Contoh: Kepala Sekolah / Guru BK / Wakasek Humas" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-semibold focus:border-brand-500">
                     </div>
@@ -461,48 +572,45 @@
                 </div>
 
                 <!-- Bagian Konfirmasi Kehadiran Khusus Undangan (Opsi 2) -->
-                <div x-show="agendaCategory === 'mengantar_undangan'" x-transition class="pt-4 border-t border-slate-100 space-y-3">
+                <div x-show="hasCat('mengantar_undangan')" x-transition class="pt-4 border-t border-slate-100 space-y-3">
                     <label class="block font-bold text-slate-800 text-xs">
                         Konfirmasi Kehadiran Undangan Acara <span class="text-red-500">*</span>
                     </label>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
                         <label class="flex items-center p-3 rounded-xl border-2 cursor-pointer transition"
                             :class="invitationStatus === 'akan_hadir' ? 'border-emerald-500 bg-emerald-50 text-emerald-900 font-bold shadow-xs' : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'">
-                            <input type="radio" name="invitation_attendance_status" value="akan_hadir" x-model="invitationStatus" :disabled="agendaCategory !== 'mengantar_undangan'" class="sr-only">
+                            <input type="radio" name="invitation_attendance_status" value="akan_hadir" x-model="invitationStatus" :disabled="!hasCat('mengantar_undangan')" class="sr-only">
                             <i data-lucide="check-circle-2" class="w-4 h-4 mr-2" :class="invitationStatus === 'akan_hadir' ? 'text-emerald-600' : 'text-slate-400'"></i>
                             <span>Akan Hadir</span>
                         </label>
 
                         <label class="flex items-center p-3 rounded-xl border-2 cursor-pointer transition"
                             :class="invitationStatus === 'minta_ijin_dulu' ? 'border-amber-500 bg-amber-50 text-amber-900 font-bold shadow-xs' : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'">
-                            <input type="radio" name="invitation_attendance_status" value="minta_ijin_dulu" x-model="invitationStatus" :disabled="agendaCategory !== 'mengantar_undangan'" class="sr-only">
+                            <input type="radio" name="invitation_attendance_status" value="minta_ijin_dulu" x-model="invitationStatus" :disabled="!hasCat('mengantar_undangan')" class="sr-only">
                             <i data-lucide="clock" class="w-4 h-4 mr-2" :class="invitationStatus === 'minta_ijin_dulu' ? 'text-amber-600' : 'text-slate-400'"></i>
                             <span>Minta Ijin Dulu</span>
                         </label>
 
                         <label class="flex items-center p-3 rounded-xl border-2 cursor-pointer transition"
                             :class="invitationStatus === 'tidak_bisa_hadir' ? 'border-rose-500 bg-rose-50 text-rose-900 font-bold shadow-xs' : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'">
-                            <input type="radio" name="invitation_attendance_status" value="tidak_bisa_hadir" x-model="invitationStatus" :disabled="agendaCategory !== 'mengantar_undangan'" class="sr-only">
+                            <input type="radio" name="invitation_attendance_status" value="tidak_bisa_hadir" x-model="invitationStatus" :disabled="!hasCat('mengantar_undangan')" class="sr-only">
                             <i data-lucide="x-circle" class="w-4 h-4 mr-2" :class="invitationStatus === 'tidak_bisa_hadir' ? 'text-rose-600' : 'text-slate-400'"></i>
                             <span>Tidak Bisa Hadir</span>
                         </label>
                     </div>
-
-                    <div class="pt-2">
-                        <label class="block font-bold text-slate-700 text-xs mb-1">Catatan Respon Penerima Undangan</label>
-                        <textarea name="notes" rows="2" :disabled="agendaCategory !== 'mengantar_undangan'" placeholder="Contoh: Undangan diterima oleh Wakasek Humas, kepsek berhalangan hadir..." class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:border-brand-500"></textarea>
-                    </div>
                 </div>
 
-                <!-- Bagian Catatan Khusus Kunjungan Lainnya (Opsi 3) -->
-                <div x-show="agendaCategory === 'kunjungan_lainnya'" x-transition class="pt-4 border-t border-slate-100 space-y-2">
-                    <label class="block font-bold text-slate-800 text-xs mb-1">Catatan Hasil Kunjungan Lainnya</label>
-                    <textarea name="notes" rows="3" :disabled="agendaCategory !== 'kunjungan_lainnya'" placeholder="Tuliskan catatan hasil silaturahmi, audiensi, atau keperluan dinas lainnya..." class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:border-brand-500"></textarea>
+                <!-- Bagian Khusus Kunjungan Lainnya (Opsi 3) -->
+                <div x-show="hasCat('kunjungan_lainnya')" x-transition class="pt-4 border-t border-slate-100">
+                    <div class="p-3 bg-purple-50/70 rounded-xl border border-purple-200/70 text-xs text-purple-900 flex items-center gap-2">
+                        <i data-lucide="clipboard-check" class="w-4 h-4 text-purple-600 shrink-0"></i>
+                        <span><strong>Agenda Kunjungan Lainnya Aktif:</strong> Keperluan audiensi, silaturahmi &amp; catatan dinas dapat dicatat pada kolom catatan terpadu di bawah.</span>
+                    </div>
                 </div>
             </div>
 
             <!-- KONTEN KHUSUS OPSI 1 (PENJADWALAN SOSIALISASI) -->
-            <div x-show="agendaCategory === 'penjadwalan_sosialisasi'" x-transition class="space-y-6">
+            <div x-show="hasCat('penjadwalan_sosialisasi')" x-transition class="space-y-6">
                 <!-- Form Card 3: Jumlah Siswa & Rombel (Field 3 & 7) -->
                 <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-soft">
                     <h3 class="text-sm font-bold text-slate-900 pb-3 mb-4 border-b border-slate-100 flex items-center gap-2">
@@ -513,11 +621,11 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                         <div>
                             <label class="block font-bold text-slate-700 mb-1">3. Jumlah Kelas 12 <span class="text-red-500">*</span></label>
-                            <input type="number" name="grade_12_class_count" x-model="grade12ClassCount" min="1" placeholder="Contoh: 6" :required="agendaCategory === 'penjadwalan_sosialisasi'" :disabled="agendaCategory !== 'penjadwalan_sosialisasi'" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-bold">
+                            <input type="number" name="grade_12_class_count" x-model="grade12ClassCount" min="1" placeholder="Contoh: 6" :required="hasCat('penjadwalan_sosialisasi')" :disabled="!hasCat('penjadwalan_sosialisasi')" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-bold">
                         </div>
                         <div>
                             <label class="block font-bold text-slate-700 mb-1">7. Rata-Rata Jumlah Siswa Per Kelas <span class="text-red-500">*</span></label>
-                            <input type="number" name="students_per_class" x-model="studentsPerClass" min="1" placeholder="Contoh: 36" :required="agendaCategory === 'penjadwalan_sosialisasi'" :disabled="agendaCategory !== 'penjadwalan_sosialisasi'" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-bold">
+                            <input type="number" name="students_per_class" x-model="studentsPerClass" min="1" placeholder="Contoh: 36" :required="hasCat('penjadwalan_sosialisasi')" :disabled="!hasCat('penjadwalan_sosialisasi')" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-bold">
                         </div>
                     </div>
 
@@ -537,15 +645,15 @@
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
                         <div>
                             <label class="block font-bold text-slate-800 mb-1">4. Target Bulan &amp; Tahun <span class="text-red-500">*</span></label>
-                            <input type="text" name="target_month_year" value="{{ old('target_month_year') }}" placeholder="Contoh: Oktober 2026" :required="agendaCategory === 'penjadwalan_sosialisasi'" :disabled="agendaCategory !== 'penjadwalan_sosialisasi'" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-bold text-brand-600">
+                            <input type="text" name="target_month_year" value="{{ old('target_month_year') }}" placeholder="Contoh: Oktober 2026" :required="hasCat('penjadwalan_sosialisasi')" :disabled="!hasCat('penjadwalan_sosialisasi')" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-bold text-brand-600">
                         </div>
                         <div>
                             <label class="block font-bold text-slate-800 mb-1">5. Target Tanggal <span class="text-amber-600 font-normal">(Opsional)</span></label>
-                            <input type="date" name="target_date" value="{{ old('target_date') }}" :disabled="agendaCategory !== 'penjadwalan_sosialisasi'" class="w-full px-3 py-2.5 rounded-xl border border-slate-300">
+                            <input type="date" name="target_date" value="{{ old('target_date') }}" :disabled="!hasCat('penjadwalan_sosialisasi')" class="w-full px-3 py-2.5 rounded-xl border border-slate-300">
                         </div>
                         <div>
                             <label class="block font-bold text-slate-800 mb-1">6. Target Waktu Sosialisasi <span class="text-red-500">*</span></label>
-                            <input type="text" name="target_time" value="{{ old('target_time') }}" placeholder="Contoh: 08:30 WIB" :required="agendaCategory === 'penjadwalan_sosialisasi'" :disabled="agendaCategory !== 'penjadwalan_sosialisasi'" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-semibold">
+                            <input type="text" name="target_time" value="{{ old('target_time') }}" placeholder="Contoh: 08:30 WIB" :required="hasCat('penjadwalan_sosialisasi')" :disabled="!hasCat('penjadwalan_sosialisasi')" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-semibold">
                         </div>
                     </div>
                 </div>
@@ -560,7 +668,7 @@
                     <div class="space-y-4 text-xs">
                         <div>
                             <label class="block font-bold text-slate-900 mb-1">8. Metode Sosialisasi <span class="text-red-500">*</span></label>
-                            <select name="socialization_method" x-model="selectedMethod" :required="agendaCategory === 'penjadwalan_sosialisasi'" :disabled="agendaCategory !== 'penjadwalan_sosialisasi'" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-bold text-slate-900">
+                            <select name="socialization_method" x-model="selectedMethod" :required="hasCat('penjadwalan_sosialisasi')" :disabled="!hasCat('penjadwalan_sosialisasi')" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-bold text-slate-900">
                                 <option value="">-- Pilih Metode Sosialisasi --</option>
                                 <option value="Sosialisasi di Kelas">a. Sosialisasi di Kelas</option>
                                 <option value="Sosialisasi di Aula">b. Sosialisasi di Aula</option>
@@ -573,25 +681,38 @@
                         <!-- Dynamic Input Field if 'Lainnya' is selected -->
                         <div x-show="selectedMethod === 'Lainnya'" x-transition class="p-3 bg-amber-50 rounded-xl border border-amber-200">
                             <label class="block font-bold text-amber-900 mb-1">Input Nama Kegiatan Khusus / Lainnya <span class="text-red-500">*</span></label>
-                            <input type="text" name="other_activity_name" value="{{ old('other_activity_name') }}" :disabled="agendaCategory !== 'penjadwalan_sosialisasi'" placeholder="Tuliskan nama kegiatan sosialisasi khusus..." class="w-full px-3 py-2.5 rounded-xl border border-amber-300 bg-white font-semibold text-slate-900">
+                            <input type="text" name="other_activity_name" value="{{ old('other_activity_name') }}" :disabled="!hasCat('penjadwalan_sosialisasi')" placeholder="Tuliskan nama kegiatan sosialisasi khusus..." class="w-full px-3 py-2.5 rounded-xl border border-amber-300 bg-white font-semibold text-slate-900">
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block font-bold text-slate-700 mb-1">Status Hasil Visit <span class="text-red-500">*</span></label>
-                                <select name="status" :required="agendaCategory === 'penjadwalan_sosialisasi'" :disabled="agendaCategory !== 'penjadwalan_sosialisasi'" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-bold">
-                                    <option value="berhasil" selected>Berhasil (Diizinkan Sosialisasi)</option>
-                                    <option value="tidak_bertemu">Tidak Bertemu (Jadwal Ulang)</option>
-                                    <option value="tidak_berhasil">Tidak Berhasil (Ditolak)</option>
-                                    <option value="pending">Pending</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block font-bold text-slate-700 mb-1">Catatan Tambahan Visit</label>
-                                <input type="text" name="notes" value="{{ old('notes') }}" :disabled="agendaCategory !== 'penjadwalan_sosialisasi'" placeholder="Catatan respon penerima..." class="w-full px-3 py-2.5 rounded-xl border border-slate-300">
-                            </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Status Hasil Visit <span class="text-red-500">*</span></label>
+                            <select name="status" :required="hasCat('penjadwalan_sosialisasi')" :disabled="!hasCat('penjadwalan_sosialisasi')" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-bold">
+                                <option value="berhasil" selected>Berhasil (Diizinkan Sosialisasi)</option>
+                                <option value="tidak_bertemu">Tidak Bertemu (Jadwal Ulang)</option>
+                                <option value="tidak_berhasil">Tidak Berhasil (Ditolak)</option>
+                                <option value="pending">Pending</option>
+                            </select>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Form Card: Catatan Tambahan Visit & Hasil Kunjungan Lapangan (Terpadu / Tanpa Duplikasi) -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-soft space-y-4">
+                <div class="pb-3 border-b border-slate-100 flex items-center justify-between">
+                    <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                        <i data-lucide="file-text" class="w-4 h-4 text-brand-600"></i>
+                        <span>Catatan Tambahan &amp; Hasil Kunjungan Lapangan</span>
+                    </h3>
+                    <span class="text-[11px] text-slate-400 font-normal">Hasil Respon / Catatan Terpadu</span>
+                </div>
+
+                <div class="text-xs">
+                    <label class="block font-bold text-slate-700 mb-1.5">
+                        Catatan Hasil Kunjungan / Respon Penerima <span class="text-slate-400 font-normal">(Opsional)</span>
+                    </label>
+                    <textarea name="notes" rows="3" placeholder="Tuliskan catatan hasil kunjungan lapangan, respon penerima (undangan/sosialisasi/audiensi), atau tindak lanjut yang diperlukan..." class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:border-brand-500 font-medium">{{ old('notes') }}</textarea>
+                    <p class="text-[10px] text-slate-400 mt-1">Catatan ini terpadu untuk semua agenda yang Anda pilih di atas tanpa duplikasi isian.</p>
                 </div>
             </div>
 

@@ -95,18 +95,36 @@ class PublicVisitController extends Controller
             return back()->with('error', 'Portal Input Kunjungan Lapangan untuk kampus ini saat ini sedang ditutup atau dinonaktifkan.');
         }
 
-        $agendaCategory = $request->input('agenda_category', SchoolVisit::AGENDA_PENJADWALAN_SOSIALISASI);
+        $rawCategories = $request->input('agenda_categories');
+        if (is_array($rawCategories) && !empty($rawCategories)) {
+            $agendaCategories = array_values(array_intersect($rawCategories, [
+                SchoolVisit::AGENDA_PENJADWALAN_SOSIALISASI,
+                SchoolVisit::AGENDA_MENGANTAR_UNDANGAN,
+                SchoolVisit::AGENDA_KUNJUNGAN_LAINNYA,
+            ]));
+        } else {
+            $rawCat = $request->input('agenda_category', SchoolVisit::AGENDA_PENJADWALAN_SOSIALISASI);
+            $agendaCategories = array_filter(array_map('trim', explode(',', $rawCat)));
+        }
+
+        if (empty($agendaCategories)) {
+            $agendaCategories = [SchoolVisit::AGENDA_PENJADWALAN_SOSIALISASI];
+        }
+
+        $agendaCategoryString = implode(',', $agendaCategories);
+        $hasSosialisasi = in_array(SchoolVisit::AGENDA_PENJADWALAN_SOSIALISASI, $agendaCategories);
+        $hasUndangan = in_array(SchoolVisit::AGENDA_MENGANTAR_UNDANGAN, $agendaCategories);
+        $hasLainnya = in_array(SchoolVisit::AGENDA_KUNJUNGAN_LAINNYA, $agendaCategories);
 
         $rules = [
             'school_id' => ['required', 'exists:schools,id'],
             'user_id' => ['required', 'exists:users,id'],
             'visit_date' => ['required', 'date'],
-            'agenda_category' => ['nullable', 'string', 'in:penjadwalan_sosialisasi,mengantar_undangan,kunjungan_lainnya'],
-            'invitation_attendance_status' => ['nullable', 'string', 'in:akan_hadir,minta_ijin_dulu,tidak_bisa_hadir'],
             'headmaster_name' => ['nullable', 'string', 'max:150'],
             'recipient_name' => ['required', 'string', 'max:150'],
             'recipient_position' => ['required', 'string', 'max:100'],
             'recipient_phone' => ['nullable', 'string', 'max:30'],
+            'purpose' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
             'photo' => [
                 'nullable',
@@ -124,7 +142,7 @@ class PublicVisitController extends Controller
             'photo_camera_base64' => ['nullable', 'string'],
         ];
 
-        if ($agendaCategory === SchoolVisit::AGENDA_PENJADWALAN_SOSIALISASI) {
+        if ($hasSosialisasi) {
             $rules['grade_12_class_count'] = ['required', 'integer', 'min:1'];
             $rules['target_month_year'] = ['required', 'string', 'max:50'];
             $rules['target_date'] = ['nullable', 'date'];
@@ -133,18 +151,7 @@ class PublicVisitController extends Controller
             $rules['socialization_method'] = ['required', 'string', 'max:100'];
             $rules['other_activity_name'] = ['nullable', 'required_if:socialization_method,Lainnya', 'string', 'max:200'];
             $rules['status'] = ['required', 'in:berhasil,tidak_bertemu,tidak_berhasil,pending'];
-        } elseif ($agendaCategory === SchoolVisit::AGENDA_MENGANTAR_UNDANGAN) {
-            $rules['invitation_attendance_status'] = ['required', 'string', 'in:akan_hadir,minta_ijin_dulu,tidak_bisa_hadir'];
-            $rules['grade_12_class_count'] = ['nullable', 'integer'];
-            $rules['target_month_year'] = ['nullable', 'string', 'max:50'];
-            $rules['target_date'] = ['nullable', 'date'];
-            $rules['target_time'] = ['nullable', 'string', 'max:20'];
-            $rules['students_per_class'] = ['nullable', 'integer'];
-            $rules['socialization_method'] = ['nullable', 'string', 'max:100'];
-            $rules['other_activity_name'] = ['nullable', 'string', 'max:200'];
-            $rules['status'] = ['nullable', 'in:berhasil,tidak_bertemu,tidak_berhasil,pending'];
         } else {
-            // Kunjungan Lainnya
             $rules['grade_12_class_count'] = ['nullable', 'integer'];
             $rules['target_month_year'] = ['nullable', 'string', 'max:50'];
             $rules['target_date'] = ['nullable', 'date'];
@@ -155,16 +162,27 @@ class PublicVisitController extends Controller
             $rules['status'] = ['nullable', 'in:berhasil,tidak_bertemu,tidak_berhasil,pending'];
         }
 
-        $validated = $request->validate($rules);
-        $validated['agenda_category'] = $agendaCategory;
+        if ($hasUndangan) {
+            $rules['invitation_attendance_status'] = ['required', 'string', 'in:akan_hadir,minta_ijin_dulu,tidak_bisa_hadir'];
+        } else {
+            $rules['invitation_attendance_status'] = ['nullable', 'string', 'in:akan_hadir,minta_ijin_dulu,tidak_bisa_hadir'];
+        }
 
-        if ($agendaCategory === SchoolVisit::AGENDA_MENGANTAR_UNDANGAN) {
-            $validated['status'] = $validated['status'] ?? 'berhasil';
-            $validated['purpose'] = 'Mengantar Undangan Acara';
-            $validated['result'] = 'Konfirmasi Kehadiran: ' . (SchoolVisit::invitationAttendanceOptions()[$validated['invitation_attendance_status']] ?? $validated['invitation_attendance_status']);
-        } elseif ($agendaCategory === SchoolVisit::AGENDA_KUNJUNGAN_LAINNYA) {
-            $validated['status'] = $validated['status'] ?? 'berhasil';
-            $validated['purpose'] = 'Kunjungan Lainnya';
+        $validated = $request->validate($rules);
+        $validated['agenda_category'] = $agendaCategoryString;
+        $validated['status'] = $validated['status'] ?? 'berhasil';
+
+        if (empty($validated['purpose'])) {
+            $purposes = [];
+            if ($hasSosialisasi) $purposes[] = 'Penjadwalan Sosialisasi';
+            if ($hasUndangan) $purposes[] = 'Mengantar Undangan Acara';
+            if ($hasLainnya) $purposes[] = 'Kunjungan Lainnya';
+            $validated['purpose'] = implode(' & ', $purposes);
+        }
+
+        if ($hasUndangan && !empty($validated['invitation_attendance_status'])) {
+            $resText = 'Konfirmasi Kehadiran: ' . (SchoolVisit::invitationAttendanceOptions()[$validated['invitation_attendance_status']] ?? $validated['invitation_attendance_status']);
+            $validated['result'] = !empty($validated['result']) ? $validated['result'] . ' | ' . $resText : $resText;
         }
 
         $school = School::findOrFail($validated['school_id']);

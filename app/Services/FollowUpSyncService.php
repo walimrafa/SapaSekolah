@@ -39,14 +39,23 @@ class FollowUpSyncService
             : null;
 
         $agendaCategory = $visit->agenda_category ?: SchoolVisit::AGENDA_PENJADWALAN_SOSIALISASI;
+        $cats = $visit->agenda_categories;
 
-        if ($agendaCategory === SchoolVisit::AGENDA_MENGANTAR_UNDANGAN) {
+        $parts = [];
+        if (in_array(SchoolVisit::AGENDA_PENJADWALAN_SOSIALISASI, $cats)) {
+            $parts[] = "Follow-up konfirmasi jadwal sosialisasi kampus UBSI (Target: {$targetDateStr}, Waktu: {$visit->target_time}, Metode: {$methodLabel})";
+        }
+        if (in_array(SchoolVisit::AGENDA_MENGANTAR_UNDANGAN, $cats)) {
             $attendanceLabel = $visit->invitation_attendance_label ?: 'Belum Konfirmasi';
-            $desc = "Follow-up konfirmasi kehadiran undangan acara kampus UBSI. Status respon: [{$attendanceLabel}]. PIC: {$visit->recipient_name} ({$visit->recipient_position}). Catatan: " . ($visit->notes ?: 'Undangan acara telah diantar');
-        } elseif ($agendaCategory === SchoolVisit::AGENDA_KUNJUNGAN_LAINNYA) {
-            $desc = "Follow-up hasil audiensi & kunjungan dinas lainnya. PIC: {$visit->recipient_name} ({$visit->recipient_position}). Catatan: " . ($visit->notes ?: 'Tindak lanjut kunjungan');
-        } else {
-            $desc = "Follow-up konfirmasi FIX jadwal sosialisasi kampus UBSI. Target hasil kunjungan: {$targetDateStr} (Waktu: {$visit->target_time}) - Metode: {$methodLabel} ({$visit->grade_12_class_count} kelas 12). PIC: {$visit->recipient_name} ({$visit->recipient_position}).";
+            $parts[] = "Follow-up respon undangan acara [Status: {$attendanceLabel}]";
+        }
+        if (in_array(SchoolVisit::AGENDA_KUNJUNGAN_LAINNYA, $cats)) {
+            $parts[] = "Follow-up hasil audiensi dinas & silaturahmi";
+        }
+
+        $desc = (!empty($parts) ? implode(' | ', $parts) : "Follow-up kunjungan sekolah") . ". PIC: {$visit->recipient_name} ({$visit->recipient_position}).";
+        if (!empty($visit->notes)) {
+            $desc .= " Catatan: " . $visit->notes;
         }
 
         $followupDate = $visit->next_followup_date;
