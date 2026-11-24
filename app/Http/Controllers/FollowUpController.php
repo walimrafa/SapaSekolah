@@ -90,11 +90,29 @@ class FollowUpController extends Controller
             if ($request->schedule_status === 'fixed') {
                 $query->where(function ($q) {
                     $q->where('is_schedule_fixed', true)
-                      ->orWhere('status', 'completed');
+                      ->orWhere('status', 'completed')
+                      ->orWhere('invitation_attendance_status', 'akan_hadir')
+                      ->orWhereHas('visit', fn($vq) => $vq->where('invitation_attendance_status', 'akan_hadir'));
                 });
             } elseif ($request->schedule_status === 'unfixed') {
                 $query->where('is_schedule_fixed', false)
-                      ->where('status', '!=', 'completed');
+                      ->where('status', '!=', 'completed')
+                      ->where(function ($q) {
+                          $q->whereNull('invitation_attendance_status')
+                            ->orWhere('invitation_attendance_status', '!=', 'akan_hadir');
+                      });
+            } elseif ($request->schedule_status === 'progress') {
+                $query->where(function ($q) {
+                    $q->where('status', 'progress')
+                      ->orWhere('invitation_attendance_status', 'minta_ijin_dulu')
+                      ->orWhereHas('visit', fn($vq) => $vq->where('invitation_attendance_status', 'minta_ijin_dulu'));
+                });
+            } elseif ($request->schedule_status === 'failed') {
+                $query->where(function ($q) {
+                    $q->where('status', 'failed')
+                      ->orWhere('invitation_attendance_status', 'tidak_bisa_hadir')
+                      ->orWhereHas('visit', fn($vq) => $vq->where('invitation_attendance_status', 'tidak_bisa_hadir'));
+                });
             }
         }
 
@@ -113,11 +131,18 @@ class FollowUpController extends Controller
 
         $allFollowups = $query->orderBy('followup_date', 'asc')->get();
 
-        // Categorize for Kanban: Ensure locked schedule or status moves card to appropriate column
-        $completed = $allFollowups->filter(fn($item) => $item->status === 'completed' || $item->is_schedule_fixed);
-        $failed = $allFollowups->filter(fn($item) => $item->status === 'failed');
-        $progress = $allFollowups->filter(fn($item) => $item->status === 'progress' && !$item->is_schedule_fixed);
-        $pending = $allFollowups->filter(fn($item) => ($item->status === 'pending' || empty($item->status)) && !$item->is_schedule_fixed);
+        // Categorize for Kanban based on category
+        if ($selectedCategory === 'mengantar_undangan') {
+            $completed = $allFollowups->filter(fn($item) => $item->status === 'completed' || $item->invitation_attendance_status === 'akan_hadir' || $item->visit?->invitation_attendance_status === 'akan_hadir');
+            $failed = $allFollowups->filter(fn($item) => ($item->status === 'failed' || $item->invitation_attendance_status === 'tidak_bisa_hadir' || $item->visit?->invitation_attendance_status === 'tidak_bisa_hadir') && !$completed->contains('id', $item->id));
+            $progress = $allFollowups->filter(fn($item) => ($item->status === 'progress' || $item->invitation_attendance_status === 'minta_ijin_dulu' || $item->visit?->invitation_attendance_status === 'minta_ijin_dulu') && !$completed->contains('id', $item->id) && !$failed->contains('id', $item->id));
+            $pending = $allFollowups->filter(fn($item) => !$completed->contains('id', $item->id) && !$failed->contains('id', $item->id) && !$progress->contains('id', $item->id));
+        } else {
+            $completed = $allFollowups->filter(fn($item) => $item->status === 'completed' || $item->is_schedule_fixed);
+            $failed = $allFollowups->filter(fn($item) => $item->status === 'failed');
+            $progress = $allFollowups->filter(fn($item) => $item->status === 'progress' && !$item->is_schedule_fixed);
+            $pending = $allFollowups->filter(fn($item) => ($item->status === 'pending' || empty($item->status)) && !$item->is_schedule_fixed);
+        }
 
         // Summary Statistics
         $totalCount = $allFollowups->count();
@@ -777,21 +802,34 @@ class FollowUpController extends Controller
             'notes' => ['nullable', 'string'],
             'result' => ['nullable', 'string'],
             'is_schedule_fixed' => ['nullable', 'boolean'],
-            'invitation_attendance_status' => ['nullable', 'string', 'in:akan_hadir,minta_ijin_dulu,tidak_bisa_hadir'],
+            'target_audience_count' => ['nullable', 'integer', 'min:0'],
+            'invitation_attendance_status' => ['nullable', 'string', 'in:akan_hadir,minta_ijin_dulu,tidak_bisa_hadir,belum_dikonfirmasi'],
         ]);
 
+        $agendaCat = $followUp->agenda_category ?: ($followUp->visit?->agenda_category ?? 'penjadwalan_sosialisasi');
+
         if ($request->has('invitation_attendance_status')) {
-            $validated['invitation_attendance_status'] = $request->input('invitation_attendance_status');
+            $att = $request->input('invitation_attendance_status');
+            $validated['invitation_attendance_status'] = ($att === 'belum_dikonfirmasi') ? null : $att;
+
+            if ($agendaCat === 'mengantar_undangan') {
+                if ($att === 'akan_hadir') {
+                    $validated['status'] = 'completed';
+                } elseif ($att === 'minta_ijin_dulu') {
+                    $validated['status'] = 'progress';
+                } elseif ($att === 'tidak_bisa_hadir') {
+                    $validated['status'] = 'failed';
+                } elseif ($att === 'belum_dikonfirmasi') {
+                    $validated['status'] = 'pending';
+                }
+            }
         }
 
-        $isFixed = !empty($validated['is_schedule_fixed']) || $validated['status'] === 'completed';
-        $validated['is_schedule_fixed'] = $isFixed;
+        $isFixed = (!empty($validated['is_schedule_fixed']) || ($validated['status'] === 'completed' && $agendaCat === 'penjadwalan_sosialisasi'));
+        $validated['is_schedule_fixed'] = ($agendaCat === 'penjadwalan_sosialisasi') ? $isFixed : false;
 
-        // When schedule is locked/FIX, ensure status is completed so it moves to Column 3 (Jadwal FIX)
-        if ($isFixed) {
+        if ($isFixed && $agendaCat === 'penjadwalan_sosialisasi') {
             $validated['status'] = 'completed';
-        } else {
-            $validated['is_schedule_fixed'] = false;
         }
 
         if (!empty($validated['notes'])) {
@@ -800,14 +838,24 @@ class FollowUpController extends Controller
 
         $followUp->update($validated);
 
-        if ($followUp->visit && !empty($validated['invitation_attendance_status'])) {
-            $followUp->visit->update([
-                'invitation_attendance_status' => $validated['invitation_attendance_status'],
-            ]);
+        if ($followUp->visit) {
+            $visitUpdates = [];
+            if ($request->has('invitation_attendance_status')) {
+                $visitUpdates['invitation_attendance_status'] = $validated['invitation_attendance_status'];
+            }
+            if (!empty($validated['pic_name'])) {
+                $visitUpdates['recipient_name'] = $validated['pic_name'];
+            }
+            if (!empty($validated['pic_phone'])) {
+                $visitUpdates['recipient_phone'] = $validated['pic_phone'];
+            }
+            if (!empty($visitUpdates)) {
+                $followUp->visit->update($visitUpdates);
+            }
         }
 
         // Jika jadwal sosialisasi berhasil di-FIX-kan, kirim notifikasi WhatsApp ke tim marketing
-        if ($isFixed && !empty($followUp->fixed_date)) {
+        if ($isFixed && $agendaCat === 'penjadwalan_sosialisasi' && !empty($followUp->fixed_date)) {
             try {
                 app(\App\Services\WhatsAppNotificationService::class)->notifySocializationH5($followUp);
             } catch (\Throwable $e) {
@@ -818,7 +866,7 @@ class FollowUpController extends Controller
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Jadwal sosialisasi berhasil diperbarui!',
+                'message' => 'Data follow up berhasil diperbarui!',
                 'follow_up' => $followUp->fresh(['school', 'user', 'visit']),
             ]);
         }
@@ -827,7 +875,14 @@ class FollowUpController extends Controller
             ? "Jadwal sosialisasi untuk {$followUp->school->name} BERHASIL DI-LOCK / FIX!" 
             : "Follow up untuk {$followUp->school->name} berhasil diperbarui.";
 
-        return redirect()->route('follow-ups.index')
+        $redirectParams = [];
+        if ($request->filled('agenda_category')) {
+            $redirectParams['agenda_category'] = $request->input('agenda_category');
+        } elseif ($agendaCat) {
+            $redirectParams['agenda_category'] = $agendaCat;
+        }
+
+        return redirect()->route('follow-ups.index', $redirectParams)
             ->with('toast', [
                 'type' => 'success',
                 'message' => $msg,
@@ -843,16 +898,43 @@ class FollowUpController extends Controller
             'status' => ['required', 'in:pending,progress,completed,failed'],
         ]);
 
-        $isFixed = ($validated['status'] === 'completed');
-        $followUp->update([
+        $cat = $followUp->agenda_category ?: ($followUp->visit?->agenda_category ?? 'penjadwalan_sosialisasi');
+        $isFixed = ($validated['status'] === 'completed' && $cat === 'penjadwalan_sosialisasi');
+
+        $data = [
             'status' => $validated['status'],
             'is_schedule_fixed' => $isFixed,
-        ]);
+        ];
 
-        return redirect()->route('follow-ups.index')
+        if ($cat === 'mengantar_undangan') {
+            if ($validated['status'] === 'completed') {
+                $data['invitation_attendance_status'] = 'akan_hadir';
+            } elseif ($validated['status'] === 'progress') {
+                $data['invitation_attendance_status'] = 'minta_ijin_dulu';
+            } elseif ($validated['status'] === 'failed') {
+                $data['invitation_attendance_status'] = 'tidak_bisa_hadir';
+            } elseif ($validated['status'] === 'pending') {
+                $data['invitation_attendance_status'] = null;
+            }
+        }
+
+        $followUp->update($data);
+
+        if ($followUp->visit && array_key_exists('invitation_attendance_status', $data)) {
+            $followUp->visit->update(['invitation_attendance_status' => $data['invitation_attendance_status']]);
+        }
+
+        $redirectParams = [];
+        if ($request->filled('agenda_category')) {
+            $redirectParams['agenda_category'] = $request->input('agenda_category');
+        } elseif ($cat) {
+            $redirectParams['agenda_category'] = $cat;
+        }
+
+        return redirect()->route('follow-ups.index', $redirectParams)
             ->with('toast', [
                 'type' => 'success',
-                'message' => "Status follow up {$followUp->school->name} diubah menjadi " . $followUp->status_label,
+                'message' => "Status follow up {$followUp->school->name} berhasil diperbarui.",
             ]);
     }
 

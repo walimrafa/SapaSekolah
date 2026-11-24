@@ -147,55 +147,157 @@
 
         <!-- KPI Summary Cards -->
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
-            <!-- Total Follow Up -->
-            <div class="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-soft">
-                <div class="flex items-center justify-between">
-                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Follow Up</span>
-                    <i data-lucide="building-2" class="w-4 h-4 text-slate-400"></i>
+            @if(request('agenda_category') === 'mengantar_undangan')
+                <!-- Card 1: Total Undangan -->
+                <div class="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-soft">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Undangan</span>
+                        <i data-lucide="mail" class="w-4 h-4 text-slate-400"></i>
+                    </div>
+                    <p class="text-2xl font-black text-slate-900 mt-2">{{ number_format($totalCount) }}</p>
+                    <p class="text-[11px] text-slate-500 mt-0.5">Undangan Diantar</p>
                 </div>
-                <p class="text-2xl font-black text-slate-900 mt-2">{{ number_format($totalCount) }}</p>
-                <p class="text-[11px] text-slate-500 mt-0.5">Sekolah Terdata</p>
-            </div>
 
-            <!-- Jadwal FIX (Completed) -->
-            <div class="p-4 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-teal-500/5 border border-emerald-300 shadow-soft">
-                <div class="flex items-center justify-between">
-                    <span class="text-[11px] font-extrabold text-emerald-800 uppercase tracking-wider">Jadwal FIX</span>
-                    <i data-lucide="calendar-check-2" class="w-4 h-4 text-emerald-600"></i>
+                <!-- Card 2: Akan Hadir -->
+                <div class="p-4 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-teal-500/5 border border-emerald-300 shadow-soft">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-extrabold text-emerald-800 uppercase tracking-wider">Akan Hadir</span>
+                        <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600"></i>
+                    </div>
+                    <p class="text-2xl font-black text-emerald-700 mt-2">{{ number_format($completed->count()) }}</p>
+                    <p class="text-[11px] font-bold text-emerald-600 mt-0.5">Konfirmasi Hadir di Acara</p>
                 </div>
-                <p class="text-2xl font-black text-emerald-700 mt-2">{{ number_format($fixedScheduleCount) }}</p>
-                <p class="text-[11px] font-bold text-emerald-600 mt-0.5">Terkonfirmasi Sekolah</p>
-            </div>
 
-            <!-- Dalam Koordinasi (Progress) -->
-            <div class="p-4 rounded-2xl bg-white border border-blue-200 shadow-soft">
-                <div class="flex items-center justify-between">
-                    <span class="text-[11px] font-bold text-blue-700 uppercase tracking-wider">Koordinasi</span>
-                    <i data-lucide="message-square" class="w-4 h-4 text-blue-500"></i>
+                <!-- Card 3: Minta Ijin Dulu -->
+                <div class="p-4 rounded-2xl bg-white border border-blue-200 shadow-soft">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-blue-700 uppercase tracking-wider">Minta Ijin Dulu</span>
+                        <i data-lucide="clock" class="w-4 h-4 text-blue-500"></i>
+                    </div>
+                    <p class="text-2xl font-black text-blue-600 mt-2">{{ number_format($progress->count()) }}</p>
+                    <p class="text-[11px] text-blue-500/80 mt-0.5">Proses Ijin Kepala Sekolah</p>
                 </div>
-                <p class="text-2xl font-black text-blue-600 mt-2">{{ number_format($progressCount) }}</p>
-                <p class="text-[11px] text-blue-500/80 mt-0.5">Sedang Diskusi Jadwal</p>
-            </div>
 
-            <!-- Menunggu Konfirmasi (Pending) -->
-            <div class="p-4 rounded-2xl bg-white border border-amber-200 shadow-soft">
-                <div class="flex items-center justify-between">
-                    <span class="text-[11px] font-bold text-amber-700 uppercase tracking-wider">Menunggu</span>
-                    <i data-lucide="clock" class="w-4 h-4 text-amber-500"></i>
+                <!-- Card 4: Menunggu Respon -->
+                <div class="p-4 rounded-2xl bg-white border border-amber-200 shadow-soft">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-amber-700 uppercase tracking-wider">Menunggu Respon</span>
+                        <i data-lucide="help-circle" class="w-4 h-4 text-amber-500"></i>
+                    </div>
+                    <p class="text-2xl font-black text-amber-600 mt-2">{{ number_format($pending->count()) }}</p>
+                    <p class="text-[11px] text-amber-500/80 mt-0.5">Belum Dikonfirmasi</p>
                 </div>
-                <p class="text-2xl font-black text-amber-600 mt-2">{{ number_format($pendingCount) }}</p>
-                <p class="text-[11px] text-amber-500/80 mt-0.5">Baru Masuk Kunjungan</p>
-            </div>
 
-            <!-- Estimasi Audiens Terkunci -->
-            <div class="p-4 rounded-2xl bg-white border border-purple-200 shadow-soft">
-                <div class="flex items-center justify-between">
-                    <span class="text-[11px] font-bold text-purple-700 uppercase tracking-wider">Estimasi Audiens</span>
-                    <i data-lucide="users" class="w-4 h-4 text-purple-500"></i>
+                <!-- Card 5: Tidak Bisa Hadir -->
+                <div class="p-4 rounded-2xl bg-white border border-rose-200 shadow-soft">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-rose-700 uppercase tracking-wider">Tidak Bisa Hadir</span>
+                        <i data-lucide="x-circle" class="w-4 h-4 text-rose-500"></i>
+                    </div>
+                    <p class="text-2xl font-black text-rose-700 mt-2">{{ number_format($failed->count()) }}</p>
+                    <p class="text-[11px] text-rose-500/80 mt-0.5">Berhalangan Hadir</p>
                 </div>
-                <p class="text-2xl font-black text-purple-700 mt-2">{{ number_format($totalEstimatedAudience) }}</p>
-                <p class="text-[11px] text-purple-500/80 mt-0.5">Target Siswa Kelas 12</p>
-            </div>
+            @elseif(request('agenda_category') === 'kunjungan_lainnya')
+                <!-- Card 1: Total Kunjungan Dinas -->
+                <div class="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-soft">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Kunjungan</span>
+                        <i data-lucide="clipboard-list" class="w-4 h-4 text-slate-400"></i>
+                    </div>
+                    <p class="text-2xl font-black text-slate-900 mt-2">{{ number_format($totalCount) }}</p>
+                    <p class="text-[11px] text-slate-500 mt-0.5">Silaturahmi / Audiensi</p>
+                </div>
+
+                <!-- Card 2: Tindak Lanjut Selesai -->
+                <div class="p-4 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-teal-500/5 border border-emerald-300 shadow-soft">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-extrabold text-emerald-800 uppercase tracking-wider">Tuntas</span>
+                        <i data-lucide="check-check" class="w-4 h-4 text-emerald-600"></i>
+                    </div>
+                    <p class="text-2xl font-black text-emerald-700 mt-2">{{ number_format($completed->count()) }}</p>
+                    <p class="text-[11px] font-bold text-emerald-600 mt-0.5">Tindak Lanjut Selesai</p>
+                </div>
+
+                <!-- Card 3: Sedang Diproses -->
+                <div class="p-4 rounded-2xl bg-white border border-blue-200 shadow-soft">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-blue-700 uppercase tracking-wider">Diproses</span>
+                        <i data-lucide="refresh-cw" class="w-4 h-4 text-blue-500"></i>
+                    </div>
+                    <p class="text-2xl font-black text-blue-600 mt-2">{{ number_format($progress->count()) }}</p>
+                    <p class="text-[11px] text-blue-500/80 mt-0.5">Sedang Koordinasi / Penyiapan</p>
+                </div>
+
+                <!-- Card 4: Perlu Tindak Lanjut -->
+                <div class="p-4 rounded-2xl bg-white border border-amber-200 shadow-soft">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-amber-700 uppercase tracking-wider">Perlu Follow-Up</span>
+                        <i data-lucide="clock" class="w-4 h-4 text-amber-500"></i>
+                    </div>
+                    <p class="text-2xl font-black text-amber-600 mt-2">{{ number_format($pending->count()) }}</p>
+                    <p class="text-[11px] text-amber-500/80 mt-0.5">Baru Masuk Kunjungan</p>
+                </div>
+
+                <!-- Card 5: Ditutup / Selesai -->
+                <div class="p-4 rounded-2xl bg-white border border-slate-300 shadow-soft">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Ditutup</span>
+                        <i data-lucide="archive" class="w-4 h-4 text-slate-500"></i>
+                    </div>
+                    <p class="text-2xl font-black text-slate-700 mt-2">{{ number_format($failed->count()) }}</p>
+                    <p class="text-[11px] text-slate-500/80 mt-0.5">Tanpa Lanjutan Tambahan</p>
+                </div>
+            @else
+                <!-- Total Follow Up -->
+                <div class="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-soft">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Follow Up</span>
+                        <i data-lucide="building-2" class="w-4 h-4 text-slate-400"></i>
+                    </div>
+                    <p class="text-2xl font-black text-slate-900 mt-2">{{ number_format($totalCount) }}</p>
+                    <p class="text-[11px] text-slate-500 mt-0.5">Sekolah Terdata</p>
+                </div>
+
+                <!-- Jadwal FIX (Completed) -->
+                <div class="p-4 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-teal-500/5 border border-emerald-300 shadow-soft">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-extrabold text-emerald-800 uppercase tracking-wider">Jadwal FIX</span>
+                        <i data-lucide="calendar-check-2" class="w-4 h-4 text-emerald-600"></i>
+                    </div>
+                    <p class="text-2xl font-black text-emerald-700 mt-2">{{ number_format($fixedScheduleCount) }}</p>
+                    <p class="text-[11px] font-bold text-emerald-600 mt-0.5">Terkonfirmasi Sekolah</p>
+                </div>
+
+                <!-- Dalam Koordinasi (Progress) -->
+                <div class="p-4 rounded-2xl bg-white border border-blue-200 shadow-soft">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-blue-700 uppercase tracking-wider">Koordinasi</span>
+                        <i data-lucide="message-square" class="w-4 h-4 text-blue-500"></i>
+                    </div>
+                    <p class="text-2xl font-black text-blue-600 mt-2">{{ number_format($progressCount) }}</p>
+                    <p class="text-[11px] text-blue-500/80 mt-0.5">Sedang Diskusi Jadwal</p>
+                </div>
+
+                <!-- Menunggu Konfirmasi (Pending) -->
+                <div class="p-4 rounded-2xl bg-white border border-amber-200 shadow-soft">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-amber-700 uppercase tracking-wider">Menunggu</span>
+                        <i data-lucide="clock" class="w-4 h-4 text-amber-500"></i>
+                    </div>
+                    <p class="text-2xl font-black text-amber-600 mt-2">{{ number_format($pendingCount) }}</p>
+                    <p class="text-[11px] text-amber-500/80 mt-0.5">Baru Masuk Kunjungan</p>
+                </div>
+
+                <!-- Estimasi Audiens Terkunci -->
+                <div class="p-4 rounded-2xl bg-white border border-purple-200 shadow-soft">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-purple-700 uppercase tracking-wider">Estimasi Audiens</span>
+                        <i data-lucide="users" class="w-4 h-4 text-purple-500"></i>
+                    </div>
+                    <p class="text-2xl font-black text-purple-700 mt-2">{{ number_format($totalEstimatedAudience) }}</p>
+                    <p class="text-[11px] text-purple-500/80 mt-0.5">Target Siswa Kelas 12</p>
+                </div>
+            @endif
         </div>
 
         <!-- ======================================================== -->
@@ -241,11 +343,33 @@
 
                 <!-- Status Filter -->
                 <div>
-                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Status Penetapan Jadwal</label>
+                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">
+                        @if(request('agenda_category') === 'mengantar_undangan')
+                            Status Respon Undangan
+                        @elseif(request('agenda_category') === 'kunjungan_lainnya')
+                            Status Tindak Lanjut
+                        @else
+                            Status Penetapan Jadwal
+                        @endif
+                    </label>
                     <select name="schedule_status" class="w-full py-2 px-3 rounded-xl border border-slate-300 text-xs font-semibold">
-                        <option value="">Semua Status Jadwal</option>
-                        <option value="fixed" {{ request('schedule_status') === 'fixed' ? 'selected' : '' }}>Jadwal Sudah FIX Terkonfirmasi</option>
-                        <option value="unfixed" {{ request('schedule_status') === 'unfixed' ? 'selected' : '' }}>Belum FIX (Menunggu/Koordinasi)</option>
+                        @if(request('agenda_category') === 'mengantar_undangan')
+                            <option value="">Semua Respon Undangan</option>
+                            <option value="fixed" {{ request('schedule_status') === 'fixed' ? 'selected' : '' }}>Akan Hadir (Terkonfirmasi)</option>
+                            <option value="progress" {{ request('schedule_status') === 'progress' ? 'selected' : '' }}>Minta Ijin Dulu</option>
+                            <option value="unfixed" {{ request('schedule_status') === 'unfixed' ? 'selected' : '' }}>Menunggu Respon</option>
+                            <option value="failed" {{ request('schedule_status') === 'failed' ? 'selected' : '' }}>Tidak Bisa Hadir</option>
+                        @elseif(request('agenda_category') === 'kunjungan_lainnya')
+                            <option value="">Semua Status Tindak Lanjut</option>
+                            <option value="fixed" {{ request('schedule_status') === 'fixed' ? 'selected' : '' }}>Tuntas / Selesai</option>
+                            <option value="progress" {{ request('schedule_status') === 'progress' ? 'selected' : '' }}>Sedang Diproses</option>
+                            <option value="unfixed" {{ request('schedule_status') === 'unfixed' ? 'selected' : '' }}>Perlu Tindak Lanjut</option>
+                            <option value="failed" {{ request('schedule_status') === 'failed' ? 'selected' : '' }}>Ditutup / Selesai</option>
+                        @else
+                            <option value="">Semua Status Jadwal</option>
+                            <option value="fixed" {{ request('schedule_status') === 'fixed' ? 'selected' : '' }}>Jadwal Sudah FIX Terkonfirmasi</option>
+                            <option value="unfixed" {{ request('schedule_status') === 'unfixed' ? 'selected' : '' }}>Belum FIX (Menunggu/Koordinasi)</option>
+                        @endif
                     </select>
                 </div>
 
@@ -291,87 +415,118 @@
             </form>
         </div>
 
+        @php
+            $catKey = request('agenda_category', $selectedCategory ?? 'all');
+            $columnConfigs = [
+                'mengantar_undangan' => [
+                    'col1' => ['title' => 'Menunggu Respon', 'badge' => 'Baru Masuk', 'border' => 'border-amber-200', 'header' => 'text-amber-800', 'badge_bg' => 'bg-amber-200/70 text-amber-900', 'dot' => 'bg-amber-500', 'empty_icon' => 'mail', 'empty' => 'Tidak ada undangan baru'],
+                    'col2' => ['title' => 'Minta Ijin Dulu', 'badge' => 'Proses Ijin', 'border' => 'border-blue-200', 'header' => 'text-blue-800', 'badge_bg' => 'bg-blue-200/70 text-blue-900', 'dot' => 'bg-blue-500', 'empty_icon' => 'clock', 'empty' => 'Tidak ada koordinasi ijin'],
+                    'col3' => ['title' => 'Akan Hadir', 'badge' => 'Terkonfirmasi', 'border' => 'border-emerald-300', 'header' => 'text-emerald-800', 'badge_bg' => 'bg-emerald-200/80 text-emerald-900', 'dot' => 'bg-emerald-500', 'empty_icon' => 'check-circle-2', 'empty' => 'Belum ada konfirmasi hadir'],
+                    'col4' => ['title' => 'Tidak Bisa Hadir', 'badge' => 'Berhalangan', 'border' => 'border-rose-200', 'header' => 'text-rose-800', 'badge_bg' => 'bg-rose-200/70 text-rose-900', 'dot' => 'bg-rose-500', 'empty_icon' => 'x-circle', 'empty' => 'Tidak ada penolakan hadir'],
+                ],
+                'kunjungan_lainnya' => [
+                    'col1' => ['title' => 'Perlu Tindak Lanjut', 'badge' => 'Baru Masuk', 'border' => 'border-amber-200', 'header' => 'text-amber-800', 'badge_bg' => 'bg-amber-200/70 text-amber-900', 'dot' => 'bg-amber-500', 'empty_icon' => 'clipboard-list', 'empty' => 'Tidak ada tindak lanjut baru'],
+                    'col2' => ['title' => 'Sedang Diproses', 'badge' => 'Koordinasi', 'border' => 'border-blue-200', 'header' => 'text-blue-800', 'badge_bg' => 'bg-blue-200/70 text-blue-900', 'dot' => 'bg-blue-500', 'empty_icon' => 'refresh-cw', 'empty' => 'Tidak ada proses berjalan'],
+                    'col3' => ['title' => 'Tindak Lanjut Selesai', 'badge' => 'Tuntas', 'border' => 'border-emerald-300', 'header' => 'text-emerald-800', 'badge_bg' => 'bg-emerald-200/80 text-emerald-900', 'dot' => 'bg-emerald-500', 'empty_icon' => 'check-check', 'empty' => 'Belum ada agenda tuntas'],
+                    'col4' => ['title' => 'Ditutup / Selesai', 'badge' => 'Arsip', 'border' => 'border-slate-300', 'header' => 'text-slate-800', 'badge_bg' => 'bg-slate-200/80 text-slate-800', 'dot' => 'bg-slate-500', 'empty_icon' => 'archive', 'empty' => 'Tidak ada agenda ditutup'],
+                ],
+                'penjadwalan_sosialisasi' => [
+                    'col1' => ['title' => 'Menunggu Konfirmasi', 'badge' => 'Baru Masuk', 'border' => 'border-amber-200', 'header' => 'text-amber-800', 'badge_bg' => 'bg-amber-200/70 text-amber-900', 'dot' => 'bg-amber-500', 'empty_icon' => 'inbox', 'empty' => 'Tidak ada antrean jadwal'],
+                    'col2' => ['title' => 'Koordinasi Jadwal', 'badge' => 'Diskusi', 'border' => 'border-blue-200', 'header' => 'text-blue-800', 'badge_bg' => 'bg-blue-200/70 text-blue-900', 'dot' => 'bg-blue-500', 'empty_icon' => 'message-square', 'empty' => 'Tidak ada diskusi aktif'],
+                    'col3' => ['title' => 'Jadwal FIX', 'badge' => 'Terkonfirmasi', 'border' => 'border-emerald-300', 'header' => 'text-emerald-800', 'badge_bg' => 'bg-emerald-200/80 text-emerald-900', 'dot' => 'bg-emerald-500', 'empty_icon' => 'calendar-check', 'empty' => 'Belum ada jadwal yang dikunci FIX'],
+                    'col4' => ['title' => 'Belum Diizinkan', 'badge' => 'Batal', 'border' => 'border-rose-200', 'header' => 'text-rose-800', 'badge_bg' => 'bg-rose-200/70 text-rose-900', 'dot' => 'bg-rose-500', 'empty_icon' => 'calendar-x', 'empty' => 'Tidak ada jadwal dibatalkan'],
+                ],
+                'all' => [
+                    'col1' => ['title' => 'Menunggu Konfirmasi', 'badge' => 'Baru Masuk', 'border' => 'border-amber-200', 'header' => 'text-amber-800', 'badge_bg' => 'bg-amber-200/70 text-amber-900', 'dot' => 'bg-amber-500', 'empty_icon' => 'inbox', 'empty' => 'Tidak ada data antrean'],
+                    'col2' => ['title' => 'Koordinasi & Proses', 'badge' => 'Diskusi', 'border' => 'border-blue-200', 'header' => 'text-blue-800', 'badge_bg' => 'bg-blue-200/70 text-blue-900', 'dot' => 'bg-blue-500', 'empty_icon' => 'refresh-cw', 'empty' => 'Tidak ada diskusi aktif'],
+                    'col3' => ['title' => 'FIX / Hadir / Selesai', 'badge' => 'Terkonfirmasi', 'border' => 'border-emerald-300', 'header' => 'text-emerald-800', 'badge_bg' => 'bg-emerald-200/80 text-emerald-900', 'dot' => 'bg-emerald-500', 'empty_icon' => 'check-circle-2', 'empty' => 'Belum ada data selesai'],
+                    'col4' => ['title' => 'Batal / Tidak Hadir', 'badge' => 'Batal/Ditutup', 'border' => 'border-rose-200', 'header' => 'text-rose-800', 'badge_bg' => 'bg-rose-200/70 text-rose-900', 'dot' => 'bg-rose-500', 'empty_icon' => 'x-circle', 'empty' => 'Tidak ada data dibatalkan'],
+                ]
+            ];
+            $col = $columnConfigs[$catKey] ?? $columnConfigs['all'];
+        @endphp
+
         <!-- Kanban Grid (4 Columns) -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <!-- Column 1: Menunggu Konfirmasi (Pending) -->
-            <div class="bg-slate-100/80 p-4 rounded-2xl border border-amber-200 flex flex-col min-h-[500px]">
-                <div class="flex items-center justify-between mb-3 pb-2 border-b border-amber-200/80">
-                    <h3 class="text-xs font-black uppercase text-amber-800 flex items-center gap-1.5">
-                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-                        <span>Menunggu Konfirmasi ({{ $pending->count() }})</span>
+            <!-- Column 1: Pending -->
+            <div class="bg-slate-100/80 p-4 rounded-2xl border {{ $col['col1']['border'] }} flex flex-col min-h-[500px]">
+                <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-200">
+                    <h3 class="text-xs font-black uppercase {{ $col['col1']['header'] }} flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full {{ $col['col1']['dot'] }}"></span>
+                        <span>{{ $col['col1']['title'] }} ({{ $pending->count() }})</span>
                     </h3>
-                    <span class="text-[10px] font-bold bg-amber-200/70 text-amber-900 px-2 py-0.5 rounded-full">Baru Masuk</span>
+                    <span class="text-[10px] font-bold {{ $col['col1']['badge_bg'] }} px-2 py-0.5 rounded-full">{{ $col['col1']['badge'] }}</span>
                 </div>
                 <div class="space-y-3 flex-1 overflow-y-auto">
                     @forelse($pending as $item)
-                        @include('follow-ups._card', ['item' => $item, 'borderClass' => 'border-amber-200 hover:border-amber-400'])
+                        @include('follow-ups._card', ['item' => $item, 'borderClass' => $col['col1']['border']])
                     @empty
                         <div class="text-center py-12 text-slate-400">
-                            <i data-lucide="inbox" class="w-6 h-6 mx-auto mb-1 opacity-50"></i>
-                            <p class="text-xs font-medium">Tidak ada data antrean</p>
+                            <i data-lucide="{{ $col['col1']['empty_icon'] }}" class="w-6 h-6 mx-auto mb-1 opacity-50"></i>
+                            <p class="text-xs font-medium">{{ $col['col1']['empty'] }}</p>
                         </div>
                     @endforelse
                 </div>
             </div>
 
-            <!-- Column 2: Dalam Koordinasi Jadwal (Progress) -->
-            <div class="bg-slate-100/80 p-4 rounded-2xl border border-blue-200 flex flex-col min-h-[500px]">
-                <div class="flex items-center justify-between mb-3 pb-2 border-b border-blue-200/80">
-                    <h3 class="text-xs font-black uppercase text-blue-800 flex items-center gap-1.5">
-                        <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
-                        <span>Koordinasi Jadwal ({{ $progress->count() }})</span>
+            <!-- Column 2: Progress -->
+            <div class="bg-slate-100/80 p-4 rounded-2xl border {{ $col['col2']['border'] }} flex flex-col min-h-[500px]">
+                <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-200">
+                    <h3 class="text-xs font-black uppercase {{ $col['col2']['header'] }} flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full {{ $col['col2']['dot'] }}"></span>
+                        <span>{{ $col['col2']['title'] }} ({{ $progress->count() }})</span>
                     </h3>
-                    <span class="text-[10px] font-bold bg-blue-200/70 text-blue-900 px-2 py-0.5 rounded-full">Diskusi</span>
+                    <span class="text-[10px] font-bold {{ $col['col2']['badge_bg'] }} px-2 py-0.5 rounded-full">{{ $col['col2']['badge'] }}</span>
                 </div>
                 <div class="space-y-3 flex-1 overflow-y-auto">
                     @forelse($progress as $item)
-                        @include('follow-ups._card', ['item' => $item, 'borderClass' => 'border-blue-200 hover:border-blue-400'])
+                        @include('follow-ups._card', ['item' => $item, 'borderClass' => $col['col2']['border']])
                     @empty
                         <div class="text-center py-12 text-slate-400">
-                            <i data-lucide="inbox" class="w-6 h-6 mx-auto mb-1 opacity-50"></i>
-                            <p class="text-xs font-medium">Tidak ada diskusi aktif</p>
+                            <i data-lucide="{{ $col['col2']['empty_icon'] }}" class="w-6 h-6 mx-auto mb-1 opacity-50"></i>
+                            <p class="text-xs font-medium">{{ $col['col2']['empty'] }}</p>
                         </div>
                     @endforelse
                 </div>
             </div>
 
-            <!-- Column 3: Jadwal Sosialisasi FIX (Completed) -->
-            <div class="bg-slate-100/80 p-4 rounded-2xl border border-emerald-300 flex flex-col min-h-[500px]">
-                <div class="flex items-center justify-between mb-3 pb-2 border-b border-emerald-200/80">
-                    <h3 class="text-xs font-black uppercase text-emerald-800 flex items-center gap-1.5">
-                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                        <span>Jadwal FIX ({{ $completed->count() }})</span>
+            <!-- Column 3: Completed / Fixed -->
+            <div class="bg-slate-100/80 p-4 rounded-2xl border {{ $col['col3']['border'] }} flex flex-col min-h-[500px]">
+                <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-200">
+                    <h3 class="text-xs font-black uppercase {{ $col['col3']['header'] }} flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full {{ $col['col3']['dot'] }}"></span>
+                        <span>{{ $col['col3']['title'] }} ({{ $completed->count() }})</span>
                     </h3>
-                    <span class="text-[10px] font-bold bg-emerald-200/80 text-emerald-900 px-2 py-0.5 rounded-full">Terkonfirmasi</span>
+                    <span class="text-[10px] font-bold {{ $col['col3']['badge_bg'] }} px-2 py-0.5 rounded-full">{{ $col['col3']['badge'] }}</span>
                 </div>
                 <div class="space-y-3 flex-1 overflow-y-auto">
                     @forelse($completed as $item)
-                        @include('follow-ups._card', ['item' => $item, 'borderClass' => 'border-emerald-300 bg-emerald-50/20 hover:border-emerald-500'])
+                        @include('follow-ups._card', ['item' => $item, 'borderClass' => $col['col3']['border'] . ' bg-emerald-50/20'])
                     @empty
                         <div class="text-center py-12 text-slate-400">
-                            <i data-lucide="calendar-x" class="w-6 h-6 mx-auto mb-1 opacity-50"></i>
-                            <p class="text-xs font-medium">Belum ada jadwal yang dikunci FIX</p>
+                            <i data-lucide="{{ $col['col3']['empty_icon'] }}" class="w-6 h-6 mx-auto mb-1 opacity-50"></i>
+                            <p class="text-xs font-medium">{{ $col['col3']['empty'] }}</p>
                         </div>
                     @endforelse
                 </div>
             </div>
 
-            <!-- Column 4: Tidak Berhasil / Batal (Failed) -->
-            <div class="bg-slate-100/80 p-4 rounded-2xl border border-rose-200 flex flex-col min-h-[500px]">
-                <div class="flex items-center justify-between mb-3 pb-2 border-b border-rose-200/80">
-                    <h3 class="text-xs font-black uppercase text-rose-800 flex items-center gap-1.5">
-                        <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
-                        <span>Belum Diizinkan ({{ $failed->count() }})</span>
+            <!-- Column 4: Failed / Batal -->
+            <div class="bg-slate-100/80 p-4 rounded-2xl border {{ $col['col4']['border'] }} flex flex-col min-h-[500px]">
+                <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-200">
+                    <h3 class="text-xs font-black uppercase {{ $col['col4']['header'] }} flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full {{ $col['col4']['dot'] }}"></span>
+                        <span>{{ $col['col4']['title'] }} ({{ $failed->count() }})</span>
                     </h3>
-                    <span class="text-[10px] font-bold bg-rose-200/70 text-rose-900 px-2 py-0.5 rounded-full">Batal</span>
+                    <span class="text-[10px] font-bold {{ $col['col4']['badge_bg'] }} px-2 py-0.5 rounded-full">{{ $col['col4']['badge'] }}</span>
                 </div>
                 <div class="space-y-3 flex-1 overflow-y-auto">
                     @forelse($failed as $item)
-                        @include('follow-ups._card', ['item' => $item, 'borderClass' => 'border-rose-200 hover:border-rose-400'])
+                        @include('follow-ups._card', ['item' => $item, 'borderClass' => $col['col4']['border']])
                     @empty
                         <div class="text-center py-12 text-slate-400">
-                            <i data-lucide="check" class="w-6 h-6 mx-auto mb-1 opacity-50"></i>
-                            <p class="text-xs font-medium">Tidak ada jadwal dibatalkan</p>
+                            <i data-lucide="{{ $col['col4']['empty_icon'] }}" class="w-6 h-6 mx-auto mb-1 opacity-50"></i>
+                            <p class="text-xs font-medium">{{ $col['col4']['empty'] }}</p>
                         </div>
                     @endforelse
                 </div>
@@ -469,6 +624,152 @@
                         <button type="submit" class="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl shadow-md transition flex items-center gap-1.5">
                             <i data-lucide="check" class="w-4 h-4"></i>
                             <span>Simpan Jadwal Sosialisasi</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- MODAL RESPO & KONFIRMASI KEHADIRAN UNDANGAN -->
+        <div id="invitationModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs hidden">
+            <div class="bg-white rounded-3xl border border-slate-200/80 shadow-2xl max-w-lg w-full overflow-hidden transform transition-all">
+                <div class="px-6 py-4 bg-slate-950 text-white flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <span class="p-1.5 rounded-xl bg-amber-500 text-white">
+                            <i data-lucide="mail-check" class="w-4 h-4"></i>
+                        </span>
+                        <div>
+                            <h3 class="font-extrabold text-sm tracking-tight">Respon Kehadiran Undangan Acara</h3>
+                            <p class="text-xs text-amber-400 mt-0.5" id="invitationModalSchoolName">Nama Sekolah</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="closeInvitationModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <form id="invitationForm" method="POST" action="" class="p-6 space-y-4 text-xs">
+                    @csrf
+                    @method('PUT')
+                    <input type="hidden" name="agenda_category" value="mengantar_undangan">
+                    <input type="hidden" name="status" id="invitationStatus" value="pending">
+
+                    <!-- Pilihan Respon Kehadiran -->
+                    <div>
+                        <label class="block font-bold text-slate-800 uppercase tracking-wider mb-1.5">
+                            Status Konfirmasi Kehadiran Sekolah <span class="text-rose-500">*</span>
+                        </label>
+                        <select name="invitation_attendance_status" id="formAttendanceStatus" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-bold text-slate-800">
+                            <option value="akan_hadir" class="text-emerald-700 font-bold">🟢 Akan Hadir (Konfirmasi Hadir di Acara)</option>
+                            <option value="minta_ijin_dulu" class="text-blue-700 font-bold">🔵 Minta Ijin Dulu (Sedang Koordinasi Internal)</option>
+                            <option value="tidak_bisa_hadir" class="text-rose-700 font-bold">🔴 Tidak Bisa Hadir (Berhalangan)</option>
+                            <option value="belum_dikonfirmasi" class="text-slate-600">⚪ Belum Dikonfirmasi / Menunggu Respon</option>
+                        </select>
+                    </div>
+
+                    <!-- Estimasi Jumlah Delegasi / Peserta -->
+                    <div class="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200 space-y-2">
+                        <label class="block font-bold text-amber-900 mb-1 flex items-center gap-1.5">
+                            <i data-lucide="users" class="w-4 h-4 text-amber-600"></i>
+                            Estimasi Jumlah Hadir (Guru / Siswa Delegasi)
+                        </label>
+                        <input type="number" name="target_audience_count" id="formAttendanceCount" min="0" placeholder="Contoh: 5 (Isi perkiraan jika akan hadir)" class="w-full px-3 py-2 rounded-xl border border-amber-300 bg-white font-bold text-amber-900">
+                    </div>
+
+                    <!-- PIC Kontak Penerima Undangan -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Nama PIC Penerima</label>
+                            <input type="text" name="pic_name" id="formInvitationPicName" class="w-full px-3 py-2 rounded-xl border border-slate-300">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">No. HP / WhatsApp PIC</label>
+                            <input type="text" name="pic_phone" id="formInvitationPicPhone" class="w-full px-3 py-2 rounded-xl border border-slate-300">
+                        </div>
+                    </div>
+
+                    <!-- Catatan Respon Sekolah -->
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Catatan Respon / Pesan dari Pihak Sekolah</label>
+                        <textarea name="notes" id="formInvitationNotes" rows="2.5" placeholder="Contoh: Surat undangan telah diteruskan ke Kepala Sekolah, konfirmasi delegasi diinfokan H-3..." class="w-full px-3 py-2 rounded-xl border border-slate-300"></textarea>
+                    </div>
+
+                    <!-- Footer Buttons -->
+                    <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100">
+                        <button type="button" onclick="closeInvitationModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">
+                            Batal
+                        </button>
+                        <button type="submit" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-md transition flex items-center gap-1.5">
+                            <i data-lucide="check" class="w-4 h-4"></i>
+                            <span>Simpan Respon Kehadiran</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- MODAL TINDAK LANJUT KUNJUNGAN LAINNYA -->
+        <div id="generalVisitModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs hidden">
+            <div class="bg-white rounded-3xl border border-slate-200/80 shadow-2xl max-w-lg w-full overflow-hidden transform transition-all">
+                <div class="px-6 py-4 bg-slate-950 text-white flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <span class="p-1.5 rounded-xl bg-purple-600 text-white">
+                            <i data-lucide="clipboard-edit" class="w-4 h-4"></i>
+                        </span>
+                        <div>
+                            <h3 class="font-extrabold text-sm tracking-tight">Tindak Lanjut Kunjungan &amp; Audiensi</h3>
+                            <p class="text-xs text-purple-300 mt-0.5" id="generalVisitModalSchoolName">Nama Sekolah</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="closeGeneralVisitModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <form id="generalVisitForm" method="POST" action="" class="p-6 space-y-4 text-xs">
+                    @csrf
+                    @method('PUT')
+                    <input type="hidden" name="agenda_category" value="kunjungan_lainnya">
+
+                    <!-- Status Tindak Lanjut -->
+                    <div>
+                        <label class="block font-bold text-slate-800 uppercase tracking-wider mb-1.5">
+                            Status Progres Tindak Lanjut <span class="text-rose-500">*</span>
+                        </label>
+                        <select name="status" id="formGeneralStatus" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-bold text-slate-800">
+                            <option value="pending" class="text-amber-700 font-bold">🟡 Perlu Tindak Lanjut (Baru Masuk / Ada Arahan)</option>
+                            <option value="progress" class="text-blue-700 font-bold">🔵 Sedang Diproses (Koordinasi / Penyiapan Berkas)</option>
+                            <option value="completed" class="text-emerald-700 font-bold">🟢 Tindak Lanjut Selesai (Tuntas / Selesai)</option>
+                            <option value="failed" class="text-slate-600">⚪ Ditutup / Selesai Tanpa Lanjutan</option>
+                        </select>
+                    </div>
+
+                    <!-- Pihak Sekolah yang Ditemui -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Nama Pihak Sekolah</label>
+                            <input type="text" name="pic_name" id="formGeneralPicName" class="w-full px-3 py-2 rounded-xl border border-slate-300">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">No. HP / WhatsApp</label>
+                            <input type="text" name="pic_phone" id="formGeneralPicPhone" class="w-full px-3 py-2 rounded-xl border border-slate-300">
+                        </div>
+                    </div>
+
+                    <!-- Catatan Hasil Audiensi -->
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Catatan Hasil Audiensi / Tindak Lanjut</label>
+                        <textarea name="notes" id="formGeneralNotes" rows="3" placeholder="Tuliskan catatan progres atau hasil arahan dari kunjungan ke sekolah..." class="w-full px-3 py-2 rounded-xl border border-slate-300"></textarea>
+                    </div>
+
+                    <!-- Footer Buttons -->
+                    <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100">
+                        <button type="button" onclick="closeGeneralVisitModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">
+                            Batal
+                        </button>
+                        <button type="submit" class="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-md transition flex items-center gap-1.5">
+                            <i data-lucide="check" class="w-4 h-4"></i>
+                            <span>Simpan Tindak Lanjut</span>
                         </button>
                     </div>
                 </form>
@@ -644,6 +945,39 @@
 
         function closeScheduleModal() {
             document.getElementById('scheduleModal').classList.add('hidden');
+        }
+
+        function openInvitationModal(id, schoolName, attStatus, delegatesCount, picName, picPhone, notes) {
+            document.getElementById('invitationModalSchoolName').textContent = schoolName;
+            document.getElementById('invitationForm').action = '/follow-ups/' + id + '/schedule';
+            document.getElementById('formAttendanceStatus').value = attStatus || 'belum_dikonfirmasi';
+            document.getElementById('formAttendanceCount').value = (delegatesCount && delegatesCount > 0) ? delegatesCount : '';
+            document.getElementById('formInvitationPicName').value = picName || '';
+            document.getElementById('formInvitationPicPhone').value = picPhone || '';
+            document.getElementById('formInvitationNotes').value = notes || '';
+
+            document.getElementById('invitationModal').classList.remove('hidden');
+            if (window.lucide) { window.lucide.createIcons(); }
+        }
+
+        function closeInvitationModal() {
+            document.getElementById('invitationModal').classList.add('hidden');
+        }
+
+        function openGeneralVisitModal(id, schoolName, status, picName, picPhone, notes) {
+            document.getElementById('generalVisitModalSchoolName').textContent = schoolName;
+            document.getElementById('generalVisitForm').action = '/follow-ups/' + id + '/schedule';
+            document.getElementById('formGeneralStatus').value = status || 'pending';
+            document.getElementById('formGeneralPicName').value = picName || '';
+            document.getElementById('formGeneralPicPhone').value = picPhone || '';
+            document.getElementById('formGeneralNotes').value = notes || '';
+
+            document.getElementById('generalVisitModal').classList.remove('hidden');
+            if (window.lucide) { window.lucide.createIcons(); }
+        }
+
+        function closeGeneralVisitModal() {
+            document.getElementById('generalVisitModal').classList.add('hidden');
         }
 
         // Sinkronisasi status dropdown dengan checkbox Kunci Jadwal FIX
