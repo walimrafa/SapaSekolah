@@ -13,255 +13,267 @@
     @php
         $initAgendaCategories = old('agenda_categories', old('agenda_category') ? (is_array(old('agenda_category')) ? old('agenda_category') : explode(',', old('agenda_category'))) : ['penjadwalan_sosialisasi']);
     @endphp
-    <div class="max-w-4xl" @school-selected.window="selectedSchoolId = $event.detail.schoolId; schoolChanged()" x-data="{
-        districts: {{ json_encode($districts) }},
-        allSchools: {{ json_encode($schools) }},
-        agendaCategories: @json($initAgendaCategories),
-        invitationStatus: '{{ old('invitation_attendance_status', 'akan_hadir') }}',
-        selectedDistrictId: '{{ old('district_id', $selectedPlan?->school?->district_id ?? '') }}',
-        selectedSchoolId: '{{ old('school_id', $initialSchoolId ?? '') }}',
-        selectedMethod: '{{ old('socialization_method', '') }}',
-        grade12ClassCount: '{{ old('grade_12_class_count', '') }}',
-        studentsPerClass: '{{ old('students_per_class', '') }}',
-        checkinLatitude: '',
-        checkinLongitude: '',
-        locationReady: false,
-        locationStatus: 'Check-in GPS diperlukan saat berada maksimal 500 meter dari sekolah.',
-        showCameraModal: false,
-        cameraStream: null,
-        facingMode: 'environment',
-        photoPreviewUrl: null,
-        photoCameraBase64: '',
-        photoFileName: '',
-        photoSource: '',
-        isCameraLoading: false,
-        cameraError: null,
 
-        hasCat(cat) {
-            return this.agendaCategories.includes(cat);
-        },
+    <script>
+        function visitCreateManager() {
+            return {
+                districts: @json($districts),
+                allSchools: @json($schools),
+                agendaCategories: @json($initAgendaCategories),
+                invitationStatus: '{{ old('invitation_attendance_status', 'akan_hadir') }}',
+                selectedDistrictId: '{{ old('district_id', $selectedPlan?->school?->district_id ?? '') }}',
+                selectedSchoolId: '{{ old('school_id', $initialSchoolId ?? '') }}',
+                selectedMethod: '{{ old('socialization_method', '') }}',
+                grade12ClassCount: '{{ old('grade_12_class_count', '') }}',
+                studentsPerClass: '{{ old('students_per_class', '') }}',
+                checkinLatitude: '',
+                checkinLongitude: '',
+                locationReady: false,
+                locationStatus: 'Check-in GPS diperlukan saat berada maksimal 500 meter dari sekolah.',
+                showCameraModal: false,
+                cameraStream: null,
+                facingMode: 'environment',
+                photoPreviewUrl: null,
+                photoCameraBase64: '',
+                photoFileName: '',
+                photoSource: '',
+                isCameraLoading: false,
+                cameraError: null,
 
-        toggleCat(cat) {
-            if (this.hasCat(cat)) {
-                if (this.agendaCategories.length > 1) {
-                    this.agendaCategories = this.agendaCategories.filter(c => c !== cat);
-                }
-            } else {
-                this.agendaCategories.push(cat);
-            }
-            this.$nextTick(() => {
-                if (window.lucide) window.lucide.createIcons();
-            });
-        },
+                hasCat(cat) {
+                    return this.agendaCategories.includes(cat);
+                },
 
-        get agendaCategoriesText() {
-            const labels = {
-                'penjadwalan_sosialisasi': '1. Penjadwalan Sosialisasi',
-                'mengantar_undangan': '2. Mengantar Undangan Acara',
-                'kunjungan_lainnya': '3. Kunjungan Lainnya'
-            };
-            if (this.agendaCategories.length === 3) {
-                return 'Semua Agenda Kunjungan Terpilih (3 Agenda)';
-            }
-            if (this.agendaCategories.length === 0) {
-                return '-- Pilih Kategori Agenda --';
-            }
-            return this.agendaCategories.map(c => labels[c] || c).join(' + ');
-        },
-
-        init() {
-            this.$watch('agendaCategories', () => {
-                this.$nextTick(() => {
-                    if (window.lucide) window.lucide.createIcons();
-                });
-            });
-        },
-
-        async openCamera() {
-            this.showCameraModal = true;
-            this.isCameraLoading = true;
-            this.cameraError = null;
-            this.$nextTick(async () => {
-                if (window.lucide) window.lucide.createIcons();
-                await this.startStream();
-            });
-        },
-
-        async startStream() {
-            try {
-                this.stopStream();
-                const constraints = {
-                    video: {
-                        facingMode: { ideal: this.facingMode },
-                        width: { ideal: 1920 },
-                        height: { ideal: 1080 }
-                    },
-                    audio: false
-                };
-                this.cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
-                const videoEl = document.getElementById('camera_video_feed_internal');
-                if (videoEl) {
-                    videoEl.srcObject = this.cameraStream;
-                    await videoEl.play();
-                }
-                this.isCameraLoading = false;
-            } catch (err) {
-                console.error('Camera access error:', err);
-                this.isCameraLoading = false;
-                this.cameraError = 'Tidak dapat mengakses kamera. Pastikan izin kamera telah diizinkan di browser Anda.';
-            }
-        },
-
-        async switchCamera() {
-            this.facingMode = this.facingMode === 'environment' ? 'user' : 'environment';
-            this.isCameraLoading = true;
-            await this.startStream();
-        },
-
-        capturePhoto() {
-            const videoEl = document.getElementById('camera_video_feed_internal');
-            if (!videoEl || !this.cameraStream) return;
-
-            const canvas = document.createElement('canvas');
-            canvas.width = videoEl.videoWidth || 1280;
-            canvas.height = videoEl.videoHeight || 720;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
-            this.photoPreviewUrl = dataUrl;
-            this.photoCameraBase64 = dataUrl;
-            this.photoFileName = 'kamera_kunjungan_' + (new Date().toISOString().replace(/[:.-]/g, '_')) + '.jpg';
-            this.photoSource = 'camera';
-
-            const fileInput = document.getElementById('visit_photo_internal');
-            if (fileInput) fileInput.value = '';
-
-            this.closeCamera();
-            this.$nextTick(() => {
-                if (window.lucide) window.lucide.createIcons();
-            });
-        },
-
-        closeCamera() {
-            this.stopStream();
-            this.showCameraModal = false;
-        },
-
-        stopStream() {
-            if (this.cameraStream) {
-                this.cameraStream.getTracks().forEach(track => track.stop());
-                this.cameraStream = null;
-            }
-        },
-
-        handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            this.photoFileName = file.name;
-            this.photoSource = 'file';
-            this.photoCameraBase64 = '';
-
-            if (file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    this.photoPreviewUrl = e.target.result;
+                toggleCat(cat) {
+                    if (this.hasCat(cat)) {
+                        if (this.agendaCategories.length > 1) {
+                            this.agendaCategories = this.agendaCategories.filter(c => c !== cat);
+                        }
+                    } else {
+                        this.agendaCategories.push(cat);
+                    }
                     this.$nextTick(() => {
                         if (window.lucide) window.lucide.createIcons();
                     });
-                };
-                reader.readAsDataURL(file);
-            } else {
-                this.photoPreviewUrl = null;
-            }
-        },
+                },
 
-        downloadPhoto() {
-            if (!this.photoPreviewUrl) return;
-            const link = document.createElement('a');
-            link.href = this.photoPreviewUrl;
-            link.download = this.photoFileName || 'bukti_dokumentasi_kunjungan.jpg';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        },
+                get agendaCategoriesText() {
+                    const labels = {
+                        'penjadwalan_sosialisasi': '1. Penjadwalan Sosialisasi',
+                        'mengantar_undangan': '2. Mengantar Undangan Acara',
+                        'kunjungan_lainnya': '3. Kunjungan Lainnya'
+                    };
+                    if (this.agendaCategories.length === 3) {
+                        return 'Semua Agenda Kunjungan Terpilih (3 Agenda)';
+                    }
+                    if (this.agendaCategories.length === 0) {
+                        return '-- Pilih Kategori Agenda --';
+                    }
+                    return this.agendaCategories.map(c => labels[c] || c).join(' + ');
+                },
 
-        clearPhoto() {
-            this.photoPreviewUrl = null;
-            this.photoCameraBase64 = '';
-            this.photoFileName = '';
-            this.photoSource = '';
-            const fileInput = document.getElementById('visit_photo_internal');
-            if (fileInput) fileInput.value = '';
-        },
-        captureCheckIn() {
-            const school = this.allSchools.find(item => String(item.id) === String(this.selectedSchoolId));
-            if (!school || school.latitude === null || school.longitude === null || school.latitude === '' || school.longitude === '') {
-                this.locationReady = false;
-                this.locationStatus = 'Sekolah belum memiliki koordinat. Lengkapi koordinat sekolah sebelum check-in.';
-                return;
-            }
-            if (!navigator.geolocation) {
-                this.locationReady = false;
-                this.locationStatus = 'Browser ini tidak mendukung GPS.';
-                return;
-            }
+                init() {
+                    this.$watch('agendaCategories', () => {
+                        this.$nextTick(() => {
+                            if (window.lucide) window.lucide.createIcons();
+                        });
+                    });
+                },
 
-            this.locationReady = false;
-            this.locationStatus = 'Mengambil lokasi GPS...';
-            navigator.geolocation.getCurrentPosition(position => {
-                const toRadians = value => value * Math.PI / 180;
-                const earthRadius = 6371000;
-                const lat1 = toRadians(Number(school.latitude));
-                const lat2 = toRadians(position.coords.latitude);
-                const deltaLat = lat2 - lat1;
-                const deltaLng = toRadians(position.coords.longitude - Number(school.longitude));
-                const a = Math.sin(deltaLat / 2) ** 2 +
-                    Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLng / 2) ** 2;
-                const distance = 2 * earthRadius * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                async openCamera() {
+                    this.showCameraModal = true;
+                    this.isCameraLoading = true;
+                    this.cameraError = null;
+                    this.$nextTick(async () => {
+                        if (window.lucide) window.lucide.createIcons();
+                        await this.startStream();
+                    });
+                },
 
-                if (distance > 500) {
+                async startStream() {
+                    try {
+                        this.stopStream();
+                        const constraints = {
+                            video: {
+                                facingMode: { ideal: this.facingMode },
+                                width: { ideal: 1920 },
+                                height: { ideal: 1080 }
+                            },
+                            audio: false
+                        };
+                        this.cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+                        const videoEl = document.getElementById('camera_video_feed_internal');
+                        if (videoEl) {
+                            videoEl.srcObject = this.cameraStream;
+                            await videoEl.play();
+                        }
+                        this.isCameraLoading = false;
+                    } catch (err) {
+                        console.error('Camera access error:', err);
+                        this.isCameraLoading = false;
+                        this.cameraError = 'Tidak dapat mengakses kamera. Pastikan izin kamera telah diizinkan di browser Anda.';
+                    }
+                },
+
+                async switchCamera() {
+                    this.facingMode = this.facingMode === 'environment' ? 'user' : 'environment';
+                    this.isCameraLoading = true;
+                    await this.startStream();
+                },
+
+                capturePhoto() {
+                    const videoEl = document.getElementById('camera_video_feed_internal');
+                    if (!videoEl || !this.cameraStream) return;
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = videoEl.videoWidth || 1280;
+                    canvas.height = videoEl.videoHeight || 720;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+                    this.photoPreviewUrl = dataUrl;
+                    this.photoCameraBase64 = dataUrl;
+                    this.photoFileName = 'kamera_kunjungan_' + (new Date().toISOString().replace(/[:.-]/g, '_')) + '.jpg';
+                    this.photoSource = 'camera';
+
+                    const fileInput = document.getElementById('visit_photo_internal');
+                    if (fileInput) fileInput.value = '';
+
+                    this.closeCamera();
+                    this.$nextTick(() => {
+                        if (window.lucide) window.lucide.createIcons();
+                    });
+                },
+
+                closeCamera() {
+                    this.stopStream();
+                    this.showCameraModal = false;
+                },
+
+                stopStream() {
+                    if (this.cameraStream) {
+                        this.cameraStream.getTracks().forEach(track => track.stop());
+                        this.cameraStream = null;
+                    }
+                },
+
+                handleFileSelect(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+
+                    this.photoFileName = file.name;
+                    this.photoSource = 'file';
+                    this.photoCameraBase64 = '';
+
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            this.photoPreviewUrl = e.target.result;
+                            this.$nextTick(() => {
+                                if (window.lucide) window.lucide.createIcons();
+                            });
+                        };
+                        reader.readAsDataURL(file);
+                    } else {
+                        this.photoPreviewUrl = null;
+                    }
+                },
+
+                downloadPhoto() {
+                    if (!this.photoPreviewUrl) return;
+                    const link = document.createElement('a');
+                    link.href = this.photoPreviewUrl;
+                    link.download = this.photoFileName || 'bukti_dokumentasi_kunjungan.jpg';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                },
+
+                clearPhoto() {
+                    this.photoPreviewUrl = null;
+                    this.photoCameraBase64 = '';
+                    this.photoFileName = '';
+                    this.photoSource = '';
+                    const fileInput = document.getElementById('visit_photo_internal');
+                    if (fileInput) fileInput.value = '';
+                },
+
+                captureCheckIn() {
+                    const school = this.allSchools.find(item => String(item.id) === String(this.selectedSchoolId));
+                    if (!school || school.latitude === null || school.longitude === null || school.latitude === '' || school.longitude === '') {
+                        this.locationReady = false;
+                        this.locationStatus = 'Sekolah belum memiliki koordinat. Lengkapi koordinat sekolah sebelum check-in.';
+                        return;
+                    }
+                    if (!navigator.geolocation) {
+                        this.locationReady = false;
+                        this.locationStatus = 'Browser ini tidak mendukung GPS.';
+                        return;
+                    }
+
+                    this.locationReady = false;
+                    this.locationStatus = 'Mengambil lokasi GPS...';
+                    navigator.geolocation.getCurrentPosition(position => {
+                        const toRadians = value => value * Math.PI / 180;
+                        const earthRadius = 6371000;
+                        const lat1 = toRadians(Number(school.latitude));
+                        const lat2 = toRadians(position.coords.latitude);
+                        const deltaLat = lat2 - lat1;
+                        const deltaLng = toRadians(position.coords.longitude - Number(school.longitude));
+                        const a = Math.sin(deltaLat / 2) ** 2 +
+                            Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLng / 2) ** 2;
+                        const distance = 2 * earthRadius * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+                        if (distance > 500) {
+                            this.checkinLatitude = '';
+                            this.checkinLongitude = '';
+                            this.locationStatus = `Lokasi berjarak ${Math.round(distance)} m dari sekolah. Check-in hanya tersedia dalam radius 500 m.`;
+                            return;
+                        }
+
+                        this.checkinLatitude = position.coords.latitude;
+                        this.checkinLongitude = position.coords.longitude;
+                        this.locationReady = true;
+                        this.locationStatus = `Lokasi valid, ${Math.round(distance)} m dari sekolah.`;
+                    }, error => {
+                        this.locationReady = false;
+                        this.locationStatus = error.code === error.PERMISSION_DENIED
+                            ? 'Izin GPS ditolak. Aktifkan izin lokasi untuk check-in.'
+                            : 'Lokasi GPS tidak tersedia. Periksa sinyal dan coba lagi.';
+                    }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+                },
+
+                submitVisit(event) {
+                    if (!this.locationReady) {
+                        this.locationStatus = 'Ambil dan validasi GPS sekolah sebelum menyimpan laporan.';
+                        return;
+                    }
+                    event.target.submit();
+                },
+
+                schoolChanged() {
                     this.checkinLatitude = '';
                     this.checkinLongitude = '';
-                    this.locationStatus = `Lokasi berjarak ${Math.round(distance)} m dari sekolah. Check-in hanya tersedia dalam radius 500 m.`;
-                    return;
-                }
+                    this.locationReady = false;
+                    this.locationStatus = 'Sekolah berubah. Ambil ulang GPS dalam radius 500 meter.';
+                },
 
-                this.checkinLatitude = position.coords.latitude;
-                this.checkinLongitude = position.coords.longitude;
-                this.locationReady = true;
-                this.locationStatus = `Lokasi valid, ${Math.round(distance)} m dari sekolah.`;
-            }, error => {
-                this.locationReady = false;
-                this.locationStatus = error.code === error.PERMISSION_DENIED
-                    ? 'Izin GPS ditolak. Aktifkan izin lokasi untuk check-in.'
-                    : 'Lokasi GPS tidak tersedia. Periksa sinyal dan coba lagi.';
-            }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
-        },
-        submitVisit(event) {
-            if (!this.locationReady) {
-                this.locationStatus = 'Ambil dan validasi GPS sekolah sebelum menyimpan laporan.';
-                return;
-            }
-            event.target.submit();
-        },
-        schoolChanged() {
-            this.checkinLatitude = '';
-            this.checkinLongitude = '';
-            this.locationReady = false;
-            this.locationStatus = 'Sekolah berubah. Ambil ulang GPS dalam radius 500 meter.';
-        },
-        get filteredSchools() {
-            if (!this.selectedDistrictId) return this.allSchools;
-            return this.allSchools.filter(s => s.district_id == this.selectedDistrictId);
-        },
-        get totalStudents() {
-            const classes = parseInt(this.grade12ClassCount) || 0;
-            const students = parseInt(this.studentsPerClass) || 0;
-            return classes * students;
+                get filteredSchools() {
+                    if (!this.selectedDistrictId) return this.allSchools;
+                    return this.allSchools.filter(s => s.district_id == this.selectedDistrictId);
+                },
+
+                get totalStudents() {
+                    const classes = parseInt(this.grade12ClassCount) || 0;
+                    const students = parseInt(this.studentsPerClass) || 0;
+                    return classes * students;
+                }
+            };
         }
-    }">
+    </script>
+
+    <div class="max-w-4xl" @school-selected.window="selectedSchoolId = $event.detail.schoolId; schoolChanged()" x-data="visitCreateManager()">
         <form method="POST" action="{{ route('visits.store') }}" enctype="multipart/form-data" @submit.prevent="submitVisit($event)" class="space-y-6">
             @csrf
             <input type="hidden" name="latitude" x-model="checkinLatitude">
