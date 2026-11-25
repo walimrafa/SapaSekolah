@@ -66,6 +66,7 @@ class FollowUp extends Model
         'academic_period_id',
         'visit_id',
         'agenda_category',
+        'event_name',
         'invitation_attendance_status',
         'user_id',
         'followup_date',

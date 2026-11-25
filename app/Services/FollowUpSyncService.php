@@ -47,7 +47,8 @@ class FollowUpSyncService
         }
         if (in_array(SchoolVisit::AGENDA_MENGANTAR_UNDANGAN, $cats)) {
             $attendanceLabel = $visit->invitation_attendance_label ?: 'Belum Konfirmasi';
-            $parts[] = "Follow-up respon undangan acara [Status: {$attendanceLabel}]";
+            $eventName = $visit->event_name ? " [Event: {$visit->event_name}]" : '';
+            $parts[] = "Follow-up respon undangan acara{$eventName} [Status: {$attendanceLabel}]";
         }
         if (in_array(SchoolVisit::AGENDA_KUNJUNGAN_LAINNYA, $cats)) {
             $parts[] = "Follow-up hasil audiensi dinas & silaturahmi";
@@ -79,6 +80,7 @@ class FollowUpSyncService
             'school_id' => $visit->school_id,
             'visit_id' => $visit->id,
             'agenda_category' => $agendaCategory,
+            'event_name' => $visit->event_name,
             'invitation_attendance_status' => $visit->invitation_attendance_status,
             'campus_id' => $campusId,
             'academic_period_id' => $periodId,
@@ -103,6 +105,9 @@ class FollowUpSyncService
             if ($visit->invitation_attendance_status) {
                 $data['invitation_attendance_status'] = $visit->invitation_attendance_status;
             }
+            if ($visit->event_name) {
+                $data['event_name'] = $visit->event_name;
+            }
             // Update agenda target date and drive links
             if ($visit->target_date) {
                 $data['fixed_date'] = $visit->target_date;
@@ -122,6 +127,16 @@ class FollowUpSyncService
 
             if ($followUp->status === 'pending' || $followUp->status === 'progress') {
                 $followUp->update($data);
+            } else {
+                $completedUpdates = array_filter([
+                    'event_name' => $visit->event_name,
+                    'invitation_attendance_status' => $visit->invitation_attendance_status,
+                    'google_drive_folder_url' => $visit->google_drive_folder_url,
+                    'google_drive_file_url' => $visit->google_drive_file_url,
+                ]);
+                if (!empty($completedUpdates)) {
+                    $followUp->update($completedUpdates);
+                }
             }
             return $followUp;
         }

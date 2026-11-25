@@ -654,6 +654,14 @@
                     <input type="hidden" name="agenda_category" value="mengantar_undangan">
                     <input type="hidden" name="status" id="invitationStatus" value="pending">
 
+                    <!-- Nama Event / Acara -->
+                    <div>
+                        <label class="block font-bold text-slate-800 uppercase tracking-wider mb-1.5">
+                            Nama Event / Acara Kampus yang Diundang
+                        </label>
+                        <input type="text" name="event_name" id="formInvitationEventName" placeholder="Contoh: BSI Flash 2026, Workshop Guru BK..." class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-bold text-slate-800 focus:border-amber-500">
+                    </div>
+
                     <!-- Pilihan Respon Kehadiran -->
                     <div>
                         <label class="block font-bold text-slate-800 uppercase tracking-wider mb-1.5">
@@ -947,9 +955,10 @@
             document.getElementById('scheduleModal').classList.add('hidden');
         }
 
-        function openInvitationModal(id, schoolName, attStatus, delegatesCount, picName, picPhone, notes) {
+        function openInvitationModal(id, schoolName, attStatus, delegatesCount, picName, picPhone, notes, eventName) {
             document.getElementById('invitationModalSchoolName').textContent = schoolName;
             document.getElementById('invitationForm').action = '/follow-ups/' + id + '/schedule';
+            document.getElementById('formInvitationEventName').value = eventName || '';
             document.getElementById('formAttendanceStatus').value = attStatus || 'belum_dikonfirmasi';
             document.getElementById('formAttendanceCount').value = (delegatesCount && delegatesCount > 0) ? delegatesCount : '';
             document.getElementById('formInvitationPicName').value = picName || '';

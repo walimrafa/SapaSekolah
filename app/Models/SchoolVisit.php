@@ -62,6 +62,7 @@ class SchoolVisit extends Model
         'user_id',
         'visit_plan_id',
         'agenda_category',
+        'event_name',
         'invitation_attendance_status',
         'visit_date',
         'start_time',

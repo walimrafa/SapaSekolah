@@ -6,6 +6,7 @@
         showStatusModal: false,
         activeStatus: 'akan_hadir',
         activeNotes: '',
+        activeEventName: '',
         previewOpen: false,
         previewSrc: '',
         previewTitle: '',
@@ -14,11 +15,12 @@
             this.activeSchoolName = name;
             this.showUploadModal = true;
         },
-        openStatus(id, name, status, notes) {
+        openStatus(id, name, status, notes, eventName) {
             this.activeFollowUpId = id;
             this.activeSchoolName = name;
             this.activeStatus = status || 'menunggu_respon';
             this.activeNotes = notes || '';
+            this.activeEventName = eventName || '';
             this.showStatusModal = true;
         }
     }">
@@ -166,6 +168,7 @@
                     <thead class="bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
                         <tr>
                             <th class="px-4 py-3">Sekolah &amp; Kecamatan</th>
+                            <th class="px-4 py-3">Nama Event / Acara</th>
                             <th class="px-4 py-3">Tanggal Antar</th>
                             <th class="px-4 py-3">Status Kehadiran</th>
                             <th class="px-4 py-3">Penerima Undangan (PIC)</th>
@@ -179,6 +182,7 @@
                         @forelse($invitations as $item)
                             @php
                                 $visit = $item->visit;
+                                $eventName = $item->event_name ?: ($visit?->event_name ?? null);
                                 $attStatus = $item->invitation_attendance_status ?: ($visit?->invitation_attendance_status ?? null);
                                 $picName = $item->pic_name ?: ($visit?->recipient_name ?: '-');
                                 $picPosition = $item->pic_position ?: ($visit?->recipient_position ?: '-');
@@ -208,9 +212,27 @@
                                     </div>
                                 </td>
 
+                                <!-- Nama Event / Acara -->
+                                <td class="px-4 py-3.5 whitespace-nowrap">
+                                    @if(!empty($eventName))
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-black bg-amber-100/80 text-amber-900 border border-amber-300/80 shadow-2xs">
+                                            <i data-lucide="calendar" class="w-3.5 h-3.5 text-amber-700"></i>
+                                            <span>{{ $eventName }}</span>
+                                        </span>
+                                    @else
+                                        <span class="text-slate-400 italic text-[11px]">Undangan Umum</span>
+                                    @endif
+                                </td>
+
                                 <!-- Tanggal Antar -->
                                 <td class="px-4 py-3.5 whitespace-nowrap">
                                     <div class="font-bold text-slate-800">
+                                        {{ $visitDate ? \Carbon\Carbon::parse($visitDate)->format('d M Y') : '-' }}
+                                    </div>
+                                    <div class="text-[10px] text-slate-400">
+                                        {{ $visitDate ? \Carbon\Carbon::parse($visitDate)->diffForHumans() : '' }}
+                                    </div>
+                                </td>
                                         {{ $visitDate ? \Carbon\Carbon::parse($visitDate)->format('d M Y') : '-' }}
                                     </div>
                                     <div class="text-[10px] text-slate-400">
@@ -317,7 +339,7 @@
                                     <div class="inline-flex items-center gap-1.5">
                                         <!-- Tombol Update Respon Kehadiran -->
                                         <button type="button"
-                                            @click="openStatus({{ $item->id }}, '{{ addslashes($item->school?->name ?? 'Sekolah') }}', '{{ $attStatus }}', '{{ addslashes($notesText) }}')"
+                                            @click="openStatus({{ $item->id }}, '{{ addslashes($item->school?->name ?? 'Sekolah') }}', '{{ $attStatus }}', '{{ addslashes($notesText) }}', '{{ addslashes($eventName ?? '') }}')"
                                             class="p-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 transition"
                                             title="Ubah Respon Kehadiran & Catatan">
                                             <i data-lucide="clipboard-edit" class="w-3.5 h-3.5"></i>
@@ -335,7 +357,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="px-4 py-14 text-center">
+                                <td colspan="9" class="px-4 py-14 text-center">
                                     <i data-lucide="mail" class="mx-auto mb-2 h-8 w-8 text-slate-300"></i>
                                     <p class="font-bold text-slate-600">Belum ada data undangan acara yang dicatat</p>
                                     <p class="mt-1 text-xs text-slate-400">Input kunjungan sekolah dengan kategori "Mengantar Undangan Acara".</p>
@@ -385,6 +407,11 @@
                 <form :action="'/invitations-completed/' + activeFollowUpId + '/status'" method="POST" class="space-y-4 text-xs">
                     @csrf
                     @method('PUT')
+
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Nama Event / Acara Kampus yang Diundang</label>
+                        <input type="text" name="event_name" x-model="activeEventName" placeholder="Contoh: BSI Flash 2026, Workshop Guru BK..." class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-amber-500 font-semibold text-slate-800 text-xs">
+                    </div>
 
                     <div>
                         <label class="block font-bold text-slate-700 mb-2">Konfirmasi Kehadiran Acara <span class="text-rose-500">*</span></label>

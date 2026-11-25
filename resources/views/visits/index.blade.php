@@ -182,6 +182,11 @@
                                                 <i data-lucide="mail" class="w-3 h-3 text-amber-600"></i>
                                                 <span>Antar Undangan</span>
                                             </span>
+                                            @if($v->event_name)
+                                                <span class="inline-block px-1.5 py-0.2 rounded text-[9.5px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                                                    {{ $v->event_name }}
+                                                </span>
+                                            @endif
                                             @if($v->invitation_attendance_status)
                                                 <span class="inline-block px-1.5 py-0.2 rounded text-[9.5px] font-bold {{ $v->invitation_attendance_status === 'akan_hadir' ? 'bg-emerald-100 text-emerald-800' : ($v->invitation_attendance_status === 'minta_ijin_dulu' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800') }}">
                                                     ● {{ $v->invitation_attendance_label }}

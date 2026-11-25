@@ -62,6 +62,9 @@
     </div>
 
     @if($cat === 'mengantar_undangan')
+        @php
+            $cardEventName = $item->event_name ?: ($item->visit?->event_name ?? null);
+        @endphp
         <!-- Box Mengantar Undangan -->
         <div class="p-2.5 rounded-xl bg-amber-50/70 border border-amber-200 space-y-1.5">
             <div class="flex items-center justify-between">
@@ -90,6 +93,12 @@
                     </span>
                 @endif
             </div>
+            @if(!empty($cardEventName))
+                <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-200/80 text-amber-950 font-black text-[10px]">
+                    <i data-lucide="calendar" class="w-3 h-3 text-amber-800"></i>
+                    <span>Event: {{ $cardEventName }}</span>
+                </div>
+            @endif
             <p class="text-[10.5px] text-amber-950">
                 {{ $item->notes ?: ($item->description ?: ($item->visit?->notes ?: 'Undangan acara kampus UBSI telah diantar ke pihak sekolah.')) }}
             </p>
@@ -388,7 +397,8 @@
                             {{ (int)($item->target_audience_count ?? 0) }}, 
                             '{{ addslashes($picName) }}', 
                             '{{ addslashes($picPhone) }}', 
-                            '{{ addslashes($item->notes ?: ($item->description ?? '')) }}'
+                            '{{ addslashes($item->notes ?: ($item->description ?? '')) }}',
+                            '{{ addslashes($cardEventName ?? '') }}'
                         )"
                         class="px-2.5 py-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] shadow-xs flex items-center gap-1 transition cursor-pointer"
                         title="Update Status Kehadiran Undangan">

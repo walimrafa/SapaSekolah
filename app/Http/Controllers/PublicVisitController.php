@@ -163,8 +163,10 @@ class PublicVisitController extends Controller
         }
 
         if ($hasUndangan) {
+            $rules['event_name'] = ['required', 'string', 'max:255'];
             $rules['invitation_attendance_status'] = ['required', 'string', 'in:akan_hadir,minta_ijin_dulu,tidak_bisa_hadir'];
         } else {
+            $rules['event_name'] = ['nullable', 'string', 'max:255'];
             $rules['invitation_attendance_status'] = ['nullable', 'string', 'in:akan_hadir,minta_ijin_dulu,tidak_bisa_hadir'];
         }
 
@@ -175,13 +177,14 @@ class PublicVisitController extends Controller
         if (empty($validated['purpose'])) {
             $purposes = [];
             if ($hasSosialisasi) $purposes[] = 'Penjadwalan Sosialisasi';
-            if ($hasUndangan) $purposes[] = 'Mengantar Undangan Acara';
+            if ($hasUndangan) $purposes[] = 'Mengantar Undangan Acara' . (!empty($validated['event_name']) ? " ({$validated['event_name']})" : '');
             if ($hasLainnya) $purposes[] = 'Kunjungan Lainnya';
             $validated['purpose'] = implode(' & ', $purposes);
         }
 
         if ($hasUndangan && !empty($validated['invitation_attendance_status'])) {
-            $resText = 'Konfirmasi Kehadiran: ' . (SchoolVisit::invitationAttendanceOptions()[$validated['invitation_attendance_status']] ?? $validated['invitation_attendance_status']);
+            $eventLabel = !empty($validated['event_name']) ? "Event: {$validated['event_name']} - " : '';
+            $resText = $eventLabel . 'Konfirmasi Kehadiran: ' . (SchoolVisit::invitationAttendanceOptions()[$validated['invitation_attendance_status']] ?? $validated['invitation_attendance_status']);
             $validated['result'] = !empty($validated['result']) ? $validated['result'] . ' | ' . $resText : $resText;
         }
 

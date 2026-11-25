@@ -346,30 +346,42 @@
 
                 <!-- Bagian Konfirmasi Kehadiran Khusus: Mengantar Undangan Acara (Opsi 2) -->
                 <div x-show="hasCat('mengantar_undangan')" x-transition class="pt-4 border-t border-slate-100 space-y-3">
-                    <label class="block font-bold text-slate-800 text-xs">
-                        Konfirmasi Kehadiran Undangan Acara <span class="text-red-500">*</span>
-                    </label>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
-                        <label class="flex items-center p-3 rounded-2xl border-2 cursor-pointer transition"
-                            :class="invitationStatus === 'akan_hadir' ? 'border-emerald-500 bg-emerald-50 text-emerald-900 font-bold shadow-sm' : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'">
-                            <input type="radio" name="invitation_attendance_status" value="akan_hadir" x-model="invitationStatus" :disabled="!hasCat('mengantar_undangan')" class="sr-only">
-                            <i data-lucide="check-circle-2" class="w-4 h-4 mr-2" :class="invitationStatus === 'akan_hadir' ? 'text-emerald-600' : 'text-slate-400'"></i>
-                            <span>Akan Hadir</span>
+                    <div>
+                        <label class="block font-bold text-slate-800 text-xs mb-1">
+                            Nama Event / Acara Kampus yang Diundang <span class="text-red-500" x-show="hasCat('mengantar_undangan')">*</span>
                         </label>
+                        <input type="text" name="event_name" value="{{ old('event_name') }}"
+                            placeholder="Contoh: BSI Flash 2026 / Workshop Guru BK / Seminar Nasional / Lomba..."
+                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-semibold text-slate-800 focus:border-amber-500 text-xs"
+                            :required="hasCat('mengantar_undangan')">
+                    </div>
 
-                        <label class="flex items-center p-3 rounded-2xl border-2 cursor-pointer transition"
-                            :class="invitationStatus === 'minta_ijin_dulu' ? 'border-amber-500 bg-amber-50 text-amber-900 font-bold shadow-sm' : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'">
-                            <input type="radio" name="invitation_attendance_status" value="minta_ijin_dulu" x-model="invitationStatus" :disabled="!hasCat('mengantar_undangan')" class="sr-only">
-                            <i data-lucide="clock" class="w-4 h-4 mr-2" :class="invitationStatus === 'minta_ijin_dulu' ? 'text-amber-600' : 'text-slate-400'"></i>
-                            <span>Minta Ijin Dulu</span>
+                    <div>
+                        <label class="block font-bold text-slate-800 text-xs mb-1">
+                            Konfirmasi Kehadiran Undangan Acara <span class="text-red-500">*</span>
                         </label>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                            <label class="flex items-center p-3 rounded-2xl border-2 cursor-pointer transition"
+                                :class="invitationStatus === 'akan_hadir' ? 'border-emerald-500 bg-emerald-50 text-emerald-900 font-bold shadow-sm' : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'">
+                                <input type="radio" name="invitation_attendance_status" value="akan_hadir" x-model="invitationStatus" :disabled="!hasCat('mengantar_undangan')" class="sr-only">
+                                <i data-lucide="check-circle-2" class="w-4 h-4 mr-2" :class="invitationStatus === 'akan_hadir' ? 'text-emerald-600' : 'text-slate-400'"></i>
+                                <span>Akan Hadir</span>
+                            </label>
 
-                        <label class="flex items-center p-3 rounded-2xl border-2 cursor-pointer transition"
-                            :class="invitationStatus === 'tidak_bisa_hadir' ? 'border-rose-500 bg-rose-50 text-rose-900 font-bold shadow-sm' : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'">
-                            <input type="radio" name="invitation_attendance_status" value="tidak_bisa_hadir" x-model="invitationStatus" :disabled="!hasCat('mengantar_undangan')" class="sr-only">
-                            <i data-lucide="x-circle" class="w-4 h-4 mr-2" :class="invitationStatus === 'tidak_bisa_hadir' ? 'text-rose-600' : 'text-slate-400'"></i>
-                            <span>Tidak Bisa Hadir</span>
-                        </label>
+                            <label class="flex items-center p-3 rounded-2xl border-2 cursor-pointer transition"
+                                :class="invitationStatus === 'minta_ijin_dulu' ? 'border-amber-500 bg-amber-50 text-amber-900 font-bold shadow-sm' : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'">
+                                <input type="radio" name="invitation_attendance_status" value="minta_ijin_dulu" x-model="invitationStatus" :disabled="!hasCat('mengantar_undangan')" class="sr-only">
+                                <i data-lucide="clock" class="w-4 h-4 mr-2" :class="invitationStatus === 'minta_ijin_dulu' ? 'text-amber-600' : 'text-slate-400'"></i>
+                                <span>Minta Ijin Dulu</span>
+                            </label>
+
+                            <label class="flex items-center p-3 rounded-2xl border-2 cursor-pointer transition"
+                                :class="invitationStatus === 'tidak_bisa_hadir' ? 'border-rose-500 bg-rose-50 text-rose-900 font-bold shadow-sm' : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'">
+                                <input type="radio" name="invitation_attendance_status" value="tidak_bisa_hadir" x-model="invitationStatus" :disabled="!hasCat('mengantar_undangan')" class="sr-only">
+                                <i data-lucide="x-circle" class="w-4 h-4 mr-2" :class="invitationStatus === 'tidak_bisa_hadir' ? 'text-rose-600' : 'text-slate-400'"></i>
+                                <span>Tidak Bisa Hadir</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
 

@@ -873,6 +873,7 @@ class FollowUpController extends Controller
     public function quickUpdateInvitationStatus(Request $request, FollowUp $followUp): RedirectResponse
     {
         $validated = $request->validate([
+            'event_name' => ['nullable', 'string', 'max:255'],
             'invitation_attendance_status' => ['required', 'in:akan_hadir,minta_ijin_dulu,tidak_bisa_hadir,menunggu_respon'],
             'notes' => ['nullable', 'string', 'max:5000'],
         ]);
@@ -880,6 +881,9 @@ class FollowUpController extends Controller
         $statusValue = $validated['invitation_attendance_status'] === 'menunggu_respon' ? null : $validated['invitation_attendance_status'];
         
         $updateData = ['invitation_attendance_status' => $statusValue];
+        if (!empty($validated['event_name'])) {
+            $updateData['event_name'] = $validated['event_name'];
+        }
         if ($validated['invitation_attendance_status'] === 'akan_hadir') {
             $updateData['status'] = 'completed';
         } elseif ($validated['invitation_attendance_status'] === 'minta_ijin_dulu') {
@@ -898,6 +902,9 @@ class FollowUpController extends Controller
 
         if ($followUp->visit) {
             $visitUpdate = ['invitation_attendance_status' => $statusValue];
+            if (!empty($validated['event_name'])) {
+                $visitUpdate['event_name'] = $validated['event_name'];
+            }
             if (!empty($validated['notes'])) {
                 $visitUpdate['notes'] = $validated['notes'];
             }
