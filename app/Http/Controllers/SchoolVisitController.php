@@ -89,17 +89,50 @@ class SchoolVisitController extends Controller
      */
     public function create(Request $request): View
     {
-        $districts = \App\Models\District::has('schools')
-            ->withCount('schools')
-            ->orderBy('name')
-            ->get();
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
 
-        $schools = School::with(['district', 'schoolType'])
+        $initialPlanId = $request->query('plan_id');
+        $initialSchoolId = $request->query('school_id');
+
+        $selectedPlan = null;
+        if ($initialPlanId) {
+            $selectedPlan = VisitPlan::with(['school.district', 'school.schoolType', 'user'])->find($initialPlanId);
+            if ($selectedPlan && !$initialSchoolId) {
+                $initialSchoolId = $selectedPlan->school_id;
+            }
+        }
+
+        $districtsQuery = \App\Models\District::has('schools')
+            ->withCount(['schools' => function($q) use ($activeCampus) {
+                if ($activeCampus) {
+                    $q->where('campus_id', $activeCampus->id);
+                }
+            }])
+            ->orderBy('name');
+        if ($activeCampus) {
+            $districtsQuery->whereHas('schools', function($q) use ($activeCampus, $initialSchoolId) {
+                $q->where('campus_id', $activeCampus->id);
+                if ($initialSchoolId) {
+                    $q->orWhere('id', $initialSchoolId);
+                }
+            });
+        }
+        $districts = $districtsQuery->get();
+
+        $schoolsQuery = School::with(['district', 'schoolType'])
             ->whereHas('district', function($q) {
                 $q->whereNotIn('name', \App\Models\District::EXCLUDED_DISTRICTS);
             })
-            ->orderBy('name')
-            ->get();
+            ->orderBy('name');
+        if ($activeCampus) {
+            $schoolsQuery->where(function($q) use ($activeCampus, $initialSchoolId) {
+                $q->where('campus_id', $activeCampus->id);
+                if ($initialSchoolId) {
+                    $q->orWhere('id', $initialSchoolId);
+                }
+            });
+        }
+        $schools = $schoolsQuery->get();
         
         $marketingUsersQuery = User::active()->fieldMarketing()->with('role');
         if ($activeCampus) {
@@ -110,15 +143,27 @@ class SchoolVisitController extends Controller
         $marketingUsers = $marketingUsersQuery->orderBy('name')->get();
 
         // Active planned visit plans
-        $visitPlans = VisitPlan::where('status', 'planned')
+        $visitPlansQuery = VisitPlan::where(function($q) use ($initialPlanId) {
+                $q->where('status', 'planned');
+                if ($initialPlanId) {
+                    $q->orWhere('id', $initialPlanId);
+                }
+            })
             ->with(['school.district', 'school.schoolType', 'user'])
-            ->orderBy('planned_date', 'asc')
-            ->get();
+            ->orderBy('planned_date', 'asc');
+        if ($activeCampus) {
+            $visitPlansQuery->where(function($q) use ($activeCampus, $initialPlanId) {
+                $q->where('campus_id', $activeCampus->id);
+                if ($initialPlanId) {
+                    $q->orWhere('id', $initialPlanId);
+                }
+            });
+        }
+        $visitPlans = $visitPlansQuery->get();
 
-        $initialPlanId = $request->query('plan_id');
-        $initialSchoolId = $request->query('school_id');
+        $initialUserId = $selectedPlan?->user_id;
 
-        return view('visits.create', compact('districts', 'schools', 'marketingUsers', 'visitPlans', 'initialPlanId', 'initialSchoolId'));
+        return view('visits.create', compact('districts', 'schools', 'marketingUsers', 'visitPlans', 'initialPlanId', 'initialSchoolId', 'initialUserId', 'selectedPlan'));
     }
 
     /**
@@ -356,19 +401,37 @@ class SchoolVisitController extends Controller
             abort(403, 'Akses ditolak. Anda tidak berhak mengubah data kunjungan ini.');
         }
 
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+
         $visit->load(['school.district', 'user']);
 
-        $districts = \App\Models\District::has('schools')
-            ->withCount('schools')
-            ->orderBy('name')
-            ->get();
+        $districtsQuery = \App\Models\District::has('schools')
+            ->withCount(['schools' => function($q) use ($activeCampus) {
+                if ($activeCampus) {
+                    $q->where('campus_id', $activeCampus->id);
+                }
+            }])
+            ->orderBy('name');
+        if ($activeCampus) {
+            $districtsQuery->whereHas('schools', function($q) use ($activeCampus, $visit) {
+                $q->where('campus_id', $activeCampus->id)
+                  ->orWhere('id', $visit->school_id);
+            });
+        }
+        $districts = $districtsQuery->get();
 
-        $schools = School::with(['district', 'schoolType'])
+        $schoolsQuery = School::with(['district', 'schoolType'])
             ->whereHas('district', function($q) {
                 $q->whereNotIn('name', \App\Models\District::EXCLUDED_DISTRICTS);
             })
-            ->orderBy('name')
-            ->get();
+            ->orderBy('name');
+        if ($activeCampus) {
+            $schoolsQuery->where(function ($q) use ($activeCampus, $visit) {
+                $q->where('campus_id', $activeCampus->id)
+                  ->orWhere('id', $visit->school_id);
+            });
+        }
+        $schools = $schoolsQuery->get();
 
         $marketingUsersQuery = User::active()->fieldMarketing()->with('role');
         if ($activeCampus) {

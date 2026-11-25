@@ -18,8 +18,8 @@
         allSchools: {{ json_encode($schools) }},
         agendaCategories: @json($initAgendaCategories),
         invitationStatus: '{{ old('invitation_attendance_status', 'akan_hadir') }}',
-        selectedDistrictId: '{{ old('district_id', '') }}',
-        selectedSchoolId: '{{ old('school_id', '') }}',
+        selectedDistrictId: '{{ old('district_id', $selectedPlan?->school?->district_id ?? '') }}',
+        selectedSchoolId: '{{ old('school_id', $initialSchoolId ?? '') }}',
         selectedMethod: '{{ old('socialization_method', '') }}',
         grade12ClassCount: '{{ old('grade_12_class_count', '') }}',
         studentsPerClass: '{{ old('students_per_class', '') }}',
@@ -283,10 +283,9 @@
                             $('#school_id').val(plan.school_id).trigger('change');
                             window.dispatchEvent(new CustomEvent('school-selected', { detail: { schoolId: plan.school_id } }));
                             
-                            // Pre-fill purpose if empty
-                            const purposeEl = document.querySelector('input[name=purpose]');
-                            if (purposeEl && !purposeEl.value && plan.purpose) {
-                                purposeEl.value = plan.purpose;
+                            if (plan.user_id) {
+                                const userSelect = document.querySelector('select[name=user_id]');
+                                if (userSelect) userSelect.value = plan.user_id;
                             }
                         }
                     }">
@@ -505,7 +504,7 @@
                                     data-npsn="{{ $s->npsn }}"
                                     data-type="{{ $s->schoolType?->name }}"
                                     data-prio="{{ $s->priority_level }}"
-                                    {{ old('school_id') == $s->id ? 'selected' : '' }}>
+                                    {{ old('school_id', $initialSchoolId ?? '') == $s->id ? 'selected' : '' }}>
                                     {{ $s->name }} (Kec. {{ $s->district ? $s->district->name : '-' }}) {{ $s->npsn ? '- NPSN ' . $s->npsn : '' }}
                                 </option>
                             @endforeach
@@ -521,7 +520,7 @@
                         <label class="block font-bold text-slate-700 mb-1">Staf Marketing PIC <span class="text-red-500">*</span></label>
                         <select name="user_id" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-semibold focus:border-brand-500">
                             @foreach($marketingUsers as $u)
-                                <option value="{{ $u->id }}" {{ old('user_id', auth()->id()) == $u->id ? 'selected' : '' }}>
+                                <option value="{{ $u->id }}" {{ old('user_id', $initialUserId ?? auth()->id()) == $u->id ? 'selected' : '' }}>
                                     {{ $u->name }} ({{ $u->role->name ?? 'Marketing' }})
                                 </option>
                             @endforeach
@@ -1005,7 +1004,7 @@
 
             // Initial load
             const initDistrict = $districtSelect.val();
-            const initSchool = '{{ old('school_id', '') }}';
+            const initSchool = '{{ old('school_id', $initialSchoolId ?? '') }}';
             if (initDistrict) {
                 filterSchools(initDistrict, initSchool);
             } else if (initSchool) {
