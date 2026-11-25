@@ -57,6 +57,32 @@
             </div>
         </div>
 
+        @if(session('toast'))
+            <div class="p-4 rounded-2xl {{ (session('toast')['type'] ?? '') === 'error' ? 'bg-rose-50 border border-rose-200 text-rose-800' : ((session('toast')['type'] ?? '') === 'warning' ? 'bg-amber-50 border border-amber-200 text-amber-800' : 'bg-emerald-50 border border-emerald-200 text-emerald-800') }} text-sm font-semibold flex items-center gap-3 shadow-sm">
+                <i data-lucide="{{ (session('toast')['type'] ?? '') === 'error' ? 'alert-triangle' : ((session('toast')['type'] ?? '') === 'warning' ? 'alert-circle' : 'check-circle') }}" class="w-5 h-5 shrink-0"></i>
+                <span>{{ session('toast')['message'] ?? 'Data berhasil diproses.' }}</span>
+            </div>
+        @endif
+        @if(session('success'))
+            <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-semibold flex items-center gap-3 shadow-sm">
+                <i data-lucide="check-circle" class="w-5 h-5 shrink-0"></i>
+                <span>{{ session('success') }}</span>
+            </div>
+        @endif
+        @if(isset($errors) && $errors->any())
+            <div class="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-sm font-semibold flex items-start gap-3 shadow-sm">
+                <i data-lucide="alert-circle" class="w-5 h-5 shrink-0 mt-0.5"></i>
+                <div>
+                    <p class="font-bold">Terjadi kesalahan input:</p>
+                    <ul class="list-disc list-inside text-xs mt-1 space-y-0.5">
+                        @foreach($errors->all() as $err)
+                            <li>{{ $err }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
+        @endif
+
         <!-- Metric Stat Cards -->
         <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
             <!-- Total Calon KOL -->
@@ -225,12 +251,8 @@
 
                 <div class="flex flex-wrap items-center gap-2">
                     <!-- Form Bulk Status Update -->
-                    <form method="POST" action="{{ route('kol-recommendations.bulk-status') }}" class="flex items-center gap-1.5"
-                        onsubmit="return confirm('Perbarui status untuk ' + selectedIds.length + ' kandidat KOL terpilih?')">
+                    <form method="POST" action="{{ route('kol-recommendations.bulk-status') }}" class="flex items-center gap-1.5" @submit="submitBulkStatus($event)">
                         @csrf
-                        <template x-for="id in selectedIds" :key="'status-'+id">
-                            <input type="hidden" name="selected_ids[]" :value="id">
-                        </template>
                         <select name="kol_status" required class="py-1.5 px-3 rounded-xl text-xs bg-slate-900 text-white border border-pink-500/40 font-bold focus:ring-pink-500">
                             <option value="kandidat">Kandidat (Baru)</option>
                             <option value="dihubungi">Sudah Dihubungi</option>
@@ -246,12 +268,8 @@
                     </form>
 
                     <!-- Form Bulk Verify Followers -->
-                    <form method="POST" action="{{ route('kol-recommendations.bulk-verify') }}" class="inline"
-                        onsubmit="return confirm('Lakukan pengecekan real followers Instagram masal untuk ' + selectedIds.length + ' akun terpilih?')">
+                    <form method="POST" action="{{ route('kol-recommendations.bulk-verify') }}" class="inline" @submit="submitBulkVerify($event)">
                         @csrf
-                        <template x-for="id in selectedIds" :key="'v-'+id">
-                            <input type="hidden" name="selected_ids[]" :value="id">
-                        </template>
                         <button type="submit" class="px-3.5 py-1.5 rounded-xl text-xs font-black bg-blue-600 hover:bg-blue-500 text-white transition shadow-sm flex items-center gap-1" title="Verifikasi otomatis followers riil Instagram">
                             <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
                             <span>Cek Real Followers</span>
@@ -259,12 +277,8 @@
                     </form>
 
                     <!-- Form Bulk Delete / Reject -->
-                    <form method="POST" action="{{ route('kol-recommendations.bulk-delete') }}" class="inline"
-                        onsubmit="return confirm('Keluarkan ' + selectedIds.length + ' data siswa yang tidak sesuai dari daftar Rekomendasi KOL?')">
+                    <form method="POST" action="{{ route('kol-recommendations.bulk-delete') }}" class="inline" @submit="submitBulkDelete($event)">
                         @csrf
-                        <template x-for="id in selectedIds" :key="'del-'+id">
-                            <input type="hidden" name="selected_ids[]" :value="id">
-                        </template>
                         <button type="submit" class="px-3.5 py-1.5 rounded-xl text-xs font-black bg-rose-600 hover:bg-rose-500 text-white transition shadow-sm flex items-center gap-1">
                             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                             <span>Hapus Terpilih</span>
@@ -757,9 +771,11 @@
             x-transition:leave-end="opacity-0">
             <div @click.away="showDeleteModal = false"
                 class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden transform transition-all">
-                <form :action="deleteCandidate ? deleteCandidate.delete_url : ''" method="POST">
+                <form id="formDeleteCandidate" :action="deleteCandidate && deleteCandidate.delete_url ? deleteCandidate.delete_url : '{{ route('kol-recommendations.destroy-general') }}'" method="POST" @submit="submitDelete($event)">
                     @csrf
                     @method('DELETE')
+                    <input type="hidden" name="candidate_id" :value="deleteCandidate ? deleteCandidate.id : ''">
+                    <input type="hidden" name="id" :value="deleteCandidate ? deleteCandidate.id : ''">
                     
                     <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-rose-50/50">
                         <div class="flex items-center space-x-3">
@@ -1116,10 +1132,89 @@
                     this.deleteCandidate = Object.assign({}, data);
                     this.showDeleteModal = true;
                     this.$nextTick(() => {
+                        const form = document.getElementById('formDeleteCandidate');
+                        if (form && data.delete_url) {
+                            form.action = data.delete_url;
+                        }
                         if (window.lucide) {
                             window.lucide.createIcons();
                         }
                     });
+                },
+                submitDelete(e) {
+                    if (!this.deleteCandidate || !this.deleteCandidate.id) {
+                        e.preventDefault();
+                        alert('Silakan pilih data calon KOL yang ingin diproses.');
+                        return false;
+                    }
+                    const form = e.target;
+                    if (this.deleteCandidate.delete_url) {
+                        form.action = this.deleteCandidate.delete_url;
+                    }
+                    return true;
+                },
+                submitBulkStatus(e) {
+                    if (this.selectedIds.length === 0) {
+                        e.preventDefault();
+                        alert('Silakan centang minimal 1 calon KOL terlebih dahulu.');
+                        return false;
+                    }
+                    if (!confirm('Perbarui status untuk ' + this.selectedIds.length + ' calon KOL terpilih?')) {
+                        e.preventDefault();
+                        return false;
+                    }
+                    const form = e.target;
+                    form.querySelectorAll('input[name="selected_ids[]"]').forEach(el => el.remove());
+                    this.selectedIds.forEach(id => {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'selected_ids[]';
+                        input.value = id;
+                        form.appendChild(input);
+                    });
+                    return true;
+                },
+                submitBulkVerify(e) {
+                    if (this.selectedIds.length === 0) {
+                        e.preventDefault();
+                        alert('Silakan centang minimal 1 calon KOL terlebih dahulu.');
+                        return false;
+                    }
+                    if (!confirm('Lakukan pengecekan real followers Instagram masal untuk ' + this.selectedIds.length + ' akun terpilih?')) {
+                        e.preventDefault();
+                        return false;
+                    }
+                    const form = e.target;
+                    form.querySelectorAll('input[name="selected_ids[]"]').forEach(el => el.remove());
+                    this.selectedIds.forEach(id => {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'selected_ids[]';
+                        input.value = id;
+                        form.appendChild(input);
+                    });
+                    return true;
+                },
+                submitBulkDelete(e) {
+                    if (this.selectedIds.length === 0) {
+                        e.preventDefault();
+                        alert('Silakan centang minimal 1 calon KOL terlebih dahulu.');
+                        return false;
+                    }
+                    if (!confirm('Keluarkan ' + this.selectedIds.length + ' data calon KOL terpilih dari daftar Rekomendasi KOL?')) {
+                        e.preventDefault();
+                        return false;
+                    }
+                    const form = e.target;
+                    form.querySelectorAll('input[name="selected_ids[]"]').forEach(el => el.remove());
+                    this.selectedIds.forEach(id => {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'selected_ids[]';
+                        input.value = id;
+                        form.appendChild(input);
+                    });
+                    return true;
                 }
             }
         }

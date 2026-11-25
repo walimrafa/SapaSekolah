@@ -39,12 +39,14 @@ class KolRecommendationController extends Controller
     protected function authorizeCampusAccess(StudentQuestionnaire $sq): void
     {
         $user = auth()->user();
-        if ($user && !\App\Services\AppContextService::canSwitchCampus($user)) {
-            $userCampusId = $user->campus_id ?? \App\Services\AppContextService::getActiveCampus()?->id;
-            $sqCampusId = $sq->campus_id ?: ($sq->school?->campus_id);
-            if ($sqCampusId && $userCampusId && (int)$sqCampusId !== (int)$userCampusId) {
-                abort(403, 'Akses ditolak. Rekomendasi KOL ini berada di luar wilayah kampus penugasan Anda.');
-            }
+        if (!$user || $user->isAdmin() || \App\Services\AppContextService::canSwitchCampus($user)) {
+            return;
+        }
+
+        $userCampusId = $user->campus_id ?? \App\Services\AppContextService::getActiveCampus()?->id;
+        $sqCampusId = $sq->campus_id ?: ($sq->school?->campus_id);
+        if ($sqCampusId && $userCampusId && (int)$sqCampusId !== (int)$userCampusId) {
+            abort(403, 'Akses ditolak. Rekomendasi KOL ini berada di luar wilayah kampus penugasan Anda.');
         }
     }
 
@@ -327,25 +329,55 @@ class KolRecommendationController extends Controller
     /**
      * Hapus / Keluarkan data siswa dari daftar Rekomendasi KOL jika follower tidak sesuai / tidak layak.
      */
-    public function destroy(Request $request, StudentQuestionnaire $studentQuestionnaire): RedirectResponse|JsonResponse
+    public function destroy(Request $request, ?StudentQuestionnaire $studentQuestionnaire = null): RedirectResponse|JsonResponse
     {
         $this->authorizeAccess();
+
+        // Resolusi ID kandidat jika tidak dioper melalui Route Parameter (misal form POST method spoofing)
+        if (!$studentQuestionnaire || !$studentQuestionnaire->exists) {
+            $candidateId = $request->input('candidate_id') ?? $request->input('id') ?? $request->input('student_questionnaire_id');
+            if ($candidateId) {
+                $studentQuestionnaire = StudentQuestionnaire::withTrashed()->find($candidateId);
+            }
+        }
+
+        if (!$studentQuestionnaire) {
+            $msg = 'Data calon KOL tidak ditemukan atau telah dihapus.';
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $msg], 404);
+            }
+            return back()->with('toast', [
+                'type' => 'error',
+                'message' => $msg,
+            ]);
+        }
+
         $this->authorizeCampusAccess($studentQuestionnaire);
 
         $mode = $request->input('mode', 'remove_kol'); // 'remove_kol' (default) atau 'delete_permanent'
         $studentName = $studentQuestionnaire->student_name;
+        $studentId = $studentQuestionnaire->id;
 
         if ($mode === 'delete_permanent') {
-            if ($studentQuestionnaire->prospect) {
-                $studentQuestionnaire->prospect->delete();
-            }
-            $studentQuestionnaire->followUps()->delete();
-            $studentQuestionnaire->delete();
+            \Illuminate\Support\Facades\DB::transaction(function () use ($studentQuestionnaire, $studentId) {
+                // Lepaskan atau hapus relasi prospek agar integritas data terjaga
+                if ($studentQuestionnaire->prospect) {
+                    $studentQuestionnaire->prospect->forceDelete();
+                } else {
+                    \App\Models\Prospect::where('student_questionnaire_id', $studentId)->forceDelete();
+                }
+
+                // Hapus riwayat follow-up
+                $studentQuestionnaire->followUps()->delete();
+
+                // Hapus permanen rekaman kuesioner siswa
+                $studentQuestionnaire->forceDelete();
+            });
 
             ActivityLogService::log(
                 'DELETE_STUDENT_FROM_KOL',
                 'student_questionnaire',
-                $studentQuestionnaire->id,
+                $studentId,
                 "Menghapus permanen data siswa {$studentName} dari menu Rekomendasi KOL."
             );
 
@@ -355,17 +387,17 @@ class KolRecommendationController extends Controller
                 'is_kol' => false,
                 'kol_status' => StudentQuestionnaire::KOL_STATUS_DITOLAK,
                 'kol_verification_status' => StudentQuestionnaire::KOL_VERIFY_REJECTED,
-                'kol_verification_notes' => 'Dikeluarkan dari rekomendasi KOL karena follower tidak sesuai / tidak layak.',
+                'kol_verification_notes' => 'Dikeluarkan dari rekomendasi KOL oleh ' . (auth()->user()?->name ?? 'Pengguna') . '.',
             ]);
 
             ActivityLogService::log(
                 'REMOVE_KOL',
                 'student_questionnaire',
-                $studentQuestionnaire->id,
+                $studentId,
                 "Mengeluarkan siswa {$studentName} dari daftar Rekomendasi KOL karena follower tidak sesuai / tidak layak."
             );
 
-            $msg = "Siswa {$studentName} berhasil dikeluarkan dari daftar Rekomendasi KOL karena tidak memenuhi kriteria kelayakan.";
+            $msg = "Siswa {$studentName} berhasil dikeluarkan dari daftar Rekomendasi KOL.";
         }
 
         if ($request->wantsJson()) {
@@ -509,27 +541,49 @@ class KolRecommendationController extends Controller
         $validated = $request->validate([
             'selected_ids' => ['required', 'array'],
             'selected_ids.*' => ['exists:student_questionnaires,id'],
+            'mode' => ['nullable', 'string', 'in:remove_kol,delete_permanent'],
         ]);
 
         $ids = $validated['selected_ids'];
+        $mode = $request->input('mode', 'remove_kol');
 
-        $count = StudentQuestionnaire::whereIn('id', $ids)->update([
-            'is_kol' => false,
-            'kol_status' => StudentQuestionnaire::KOL_STATUS_DITOLAK,
-            'kol_verification_status' => StudentQuestionnaire::KOL_VERIFY_REJECTED,
-            'kol_verification_notes' => 'Dikeluarkan dari rekomendasi KOL karena data tidak sesuai / tidak valid.',
-        ]);
+        if ($mode === 'delete_permanent') {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($ids) {
+                \App\Models\Prospect::whereIn('student_questionnaire_id', $ids)->forceDelete();
+                \App\Models\StudentFollowUp::whereIn('student_questionnaire_id', $ids)->delete();
+                StudentQuestionnaire::whereIn('id', $ids)->forceDelete();
+            });
 
-        ActivityLogService::log(
-            'BULK_REMOVE_KOL',
-            'student_questionnaire',
-            null,
-            "Mengeluarkan sebanyak {$count} siswa dari daftar Rekomendasi KOL."
-        );
+            $count = count($ids);
+            ActivityLogService::log(
+                'BULK_DELETE_PERMANENT_KOL',
+                'student_questionnaire',
+                null,
+                "Menghapus permanen sebanyak {$count} data siswa dari sistem."
+            );
+
+            $msg = "Berhasil menghapus permanen {$count} data siswa terpilih dari sistem.";
+        } else {
+            $count = StudentQuestionnaire::whereIn('id', $ids)->update([
+                'is_kol' => false,
+                'kol_status' => StudentQuestionnaire::KOL_STATUS_DITOLAK,
+                'kol_verification_status' => StudentQuestionnaire::KOL_VERIFY_REJECTED,
+                'kol_verification_notes' => 'Dikeluarkan dari rekomendasi KOL oleh ' . (auth()->user()?->name ?? 'Pengguna') . '.',
+            ]);
+
+            ActivityLogService::log(
+                'BULK_REMOVE_KOL',
+                'student_questionnaire',
+                null,
+                "Mengeluarkan sebanyak {$count} siswa dari daftar Rekomendasi KOL."
+            );
+
+            $msg = "Berhasil mengeluarkan {$count} data siswa dari daftar Rekomendasi KOL.";
+        }
 
         return back()->with('toast', [
             'type' => 'success',
-            'message' => "Berhasil menghapus {$count} data yang tidak sesuai dari Rekomendasi KOL.",
+            'message' => $msg,
         ]);
     }
 
