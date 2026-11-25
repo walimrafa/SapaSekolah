@@ -203,8 +203,8 @@ class SchoolVisitController extends Controller
             'recipient_phone' => ['nullable', 'string', 'max:30'],
             'purpose' => ['nullable', 'string', 'max:255'],
             'result' => ['nullable', 'string'],
-            'latitude' => ['required', 'numeric', 'between:-90,90'],
-            'longitude' => ['required', 'numeric', 'between:-180,180'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'photo' => [
                 'nullable',
                 'file',
@@ -270,11 +270,9 @@ class SchoolVisitController extends Controller
         }
 
         $school = School::findOrFail($validated['school_id']);
-        $this->ensureCheckInWithinSchoolRadius(
-            $school,
-            (float) $validated['latitude'],
-            (float) $validated['longitude']
-        );
+        // Check-in GPS bersifat opsional: konversi atau biarkan null jika tidak diisi
+        $validated['latitude'] = !empty($validated['latitude']) ? (float) $validated['latitude'] : null;
+        $validated['longitude'] = !empty($validated['longitude']) ? (float) $validated['longitude'] : null;
 
         $validated['contact_person'] = $validated['recipient_name'] . ' (' . $validated['recipient_position'] . ')';
 
@@ -551,21 +549,11 @@ class SchoolVisitController extends Controller
         }
 
         $schoolChanged = (int) $validated['school_id'] !== (int) $visit->school_id;
-        if ($schoolChanged && !isset($validated['latitude'], $validated['longitude'])) {
-            if (!$user->hasFullMenuAccess()) {
-                throw ValidationException::withMessages([
-                    'latitude' => 'Ambil ulang GPS check-in saat mengubah sekolah kunjungan.',
-                ]);
-            }
+        if (isset($validated['latitude'])) {
+            $validated['latitude'] = !empty($validated['latitude']) ? (float) $validated['latitude'] : null;
         }
-
-        if (isset($validated['latitude'], $validated['longitude']) && !$user->hasFullMenuAccess()) {
-            $school = School::findOrFail($validated['school_id']);
-            $this->ensureCheckInWithinSchoolRadius(
-                $school,
-                (float) $validated['latitude'],
-                (float) $validated['longitude']
-            );
+        if (isset($validated['longitude'])) {
+            $validated['longitude'] = !empty($validated['longitude']) ? (float) $validated['longitude'] : null;
         }
 
         $validated['contact_person'] = $validated['recipient_name'] . ' (' . $validated['recipient_position'] . ')';
@@ -809,27 +797,9 @@ class SchoolVisitController extends Controller
             ]);
     }
 
-    private function ensureCheckInWithinSchoolRadius(School $school, float $latitude, float $longitude): void
+    private function ensureCheckInWithinSchoolRadius(School $school, ?float $latitude, ?float $longitude): void
     {
-        if ($school->latitude === null || $school->longitude === null) {
-            throw ValidationException::withMessages([
-                'school_id' => 'Sekolah belum memiliki koordinat. Lengkapi koordinat sekolah sebelum check-in.',
-            ]);
-        }
-
-        $earthRadiusMeters = 6371000;
-        $lat1 = deg2rad((float) $school->latitude);
-        $lat2 = deg2rad($latitude);
-        $deltaLat = $lat2 - $lat1;
-        $deltaLng = deg2rad($longitude - (float) $school->longitude);
-        $a = sin($deltaLat / 2) ** 2 +
-            cos($lat1) * cos($lat2) * sin($deltaLng / 2) ** 2;
-        $distanceMeters = 2 * $earthRadiusMeters * atan2(sqrt($a), sqrt(1 - $a));
-
-        if ($distanceMeters > 500) {
-            throw ValidationException::withMessages([
-                'latitude' => 'Check-in ditolak. Lokasi harus berada maksimal 500 meter dari sekolah.',
-            ]);
-        }
+        // Fitur check-in GPS bersifat opsional dan tidak memblokir proses penyimpanan data
+        return;
     }
 }

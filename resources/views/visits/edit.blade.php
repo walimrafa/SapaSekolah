@@ -29,7 +29,7 @@
                 checkinLatitude: '',
                 checkinLongitude: '',
                 locationReady: false,
-                locationStatus: 'Jika sekolah diubah, ambil GPS baru dalam radius 500 meter.',
+                locationStatus: 'Check-in GPS bersifat opsional.',
                 showCameraModal: false,
                 cameraStream: null,
                 facingMode: 'environment',
@@ -202,12 +202,12 @@
                     const school = this.allSchools.find(item => String(item.id) === String(this.selectedSchoolId));
                     if (!school || school.latitude === null || school.longitude === null || school.latitude === '' || school.longitude === '') {
                         this.locationReady = false;
-                        this.locationStatus = 'Sekolah belum memiliki koordinat. Lengkapi koordinat sebelum check-in.';
+                        this.locationStatus = 'Sekolah belum memiliki koordinat GPS (opsional). Anda tetap dapat memperbarui data.';
                         return;
                     }
                     if (!navigator.geolocation) {
                         this.locationReady = false;
-                        this.locationStatus = 'Browser ini tidak mendukung GPS.';
+                        this.locationStatus = 'Browser tidak mendukung GPS. Anda tetap dapat memperbarui data.';
                         return;
                     }
 
@@ -223,28 +223,28 @@
                         const a = Math.sin(deltaLat / 2) ** 2 +
                             Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLng / 2) ** 2;
                         const distance = 2 * earthRadius * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-                        if (distance > 500) {
-                            this.checkinLatitude = '';
-                            this.checkinLongitude = '';
-                            this.locationStatus = `Lokasi berjarak ${Math.round(distance)} m dari sekolah. Check-in hanya tersedia dalam radius 500 m.`;
-                            return;
-                        }
+
                         this.checkinLatitude = position.coords.latitude;
                         this.checkinLongitude = position.coords.longitude;
                         this.locationReady = true;
-                        this.locationStatus = `Lokasi valid, ${Math.round(distance)} m dari sekolah.`;
+
+                        if (distance > 500) {
+                            this.locationStatus = `Lokasi GPS tercatat (${Math.round(distance)} m dari sekolah). Tetap dapat disimpan.`;
+                        } else {
+                            this.locationStatus = `Lokasi GPS valid (${Math.round(distance)} m dari sekolah).`;
+                        }
                     }, error => {
                         this.locationReady = false;
                         this.locationStatus = error.code === error.PERMISSION_DENIED
-                            ? 'Izin GPS ditolak. Aktifkan izin lokasi untuk check-in.'
-                            : 'Lokasi GPS tidak tersedia. Periksa sinyal dan coba lagi.';
+                            ? 'Izin GPS ditolak. Anda tetap dapat memperbarui data tanpa GPS.'
+                            : 'Lokasi GPS tidak tersedia. Anda tetap dapat memperbarui data tanpa GPS.';
                     }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
                 },
                 schoolChanged() {
                     this.checkinLatitude = '';
                     this.checkinLongitude = '';
                     this.locationReady = false;
-                    this.locationStatus = 'Sekolah berubah. Ambil ulang GPS dalam radius 500 meter.';
+                    this.locationStatus = 'Sekolah berubah. Check-in GPS bersifat opsional.';
                 },
                 get filteredSchools() {
                     if (!this.selectedDistrictId) return this.allSchools;
@@ -433,18 +433,21 @@
                 </div>
 
                 <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-soft mt-4">
-                    <h3 class="text-sm font-bold text-slate-900 pb-3 mb-4 border-b border-slate-100 flex items-center gap-2">
-                        <i data-lucide="map-pin-check" class="w-4 h-4 text-emerald-600"></i>
-                        Check-in Lokasi Sekolah
-                    </h3>
+                    <div class="pb-3 mb-4 border-b border-slate-100 flex items-center justify-between">
+                        <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                            <i data-lucide="map-pin-check" class="w-4 h-4 text-emerald-600"></i>
+                            Check-in Lokasi Sekolah
+                        </h3>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">Opsional</span>
+                    </div>
                     <div class="flex flex-wrap items-center gap-3 text-xs">
                         <button type="button" @click="captureCheckIn()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl flex items-center gap-2">
                             <i data-lucide="locate-fixed" class="w-4 h-4"></i>
-                            Ambil GPS Check-in
+                            Ambil GPS Check-in (Opsional)
                         </button>
-                        <span class="font-semibold" :class="locationReady ? 'text-emerald-700' : 'text-amber-700'" x-text="locationStatus" aria-live="polite"></span>
+                        <span class="font-semibold" :class="locationReady ? 'text-emerald-700' : 'text-slate-600'" x-text="locationStatus" aria-live="polite"></span>
                         @if($visit->latitude && $visit->longitude)
-                            <span class="w-full text-[10px] text-slate-500">Koordinat tersimpan: {{ $visit->latitude }}, {{ $visit->longitude }}. Check-in baru hanya diwajibkan jika sekolah diganti.</span>
+                            <span class="w-full text-[10px] text-slate-500">Koordinat tersimpan: {{ $visit->latitude }}, {{ $visit->longitude }} (opsional untuk diperbarui).</span>
                         @endif
                     </div>
                     @error('latitude')
