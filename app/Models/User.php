@@ -323,12 +323,13 @@ class User extends Authenticatable
 
     /**
      * Scope: user yang bertugas di lapangan / operasional kunjungan sekolah
-     * (Pimpinan, Koordinator Marketing, Marketing, Admin - mengecualikan staf & koordinator Customer Service).
+     * (Pimpinan, Koordinator Marketing, Marketing - mengecualikan Admin serta staf & koordinator Customer Service).
      */
     public function scopeFieldMarketing($query)
     {
         return $query->whereHas('role', function ($q) {
-            $q->whereNotIn('name', ['Customer Service', 'Koordinator Customer Service']);
+            $q->whereIn('name', ['Marketing', 'Koordinator Marketing', 'Pimpinan'])
+              ->whereNotIn('name', ['Admin', 'Administrator', 'Super Administrator']);
         });
     }
 }
