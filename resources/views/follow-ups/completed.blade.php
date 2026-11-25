@@ -45,6 +45,9 @@
             </div>
         </div>
 
+        <!-- Quick Switcher Tabs Output Lapangan -->
+        @include('follow-ups._output-tabs')
+
         @if(session('toast'))
             <div class="mb-6 flex items-center gap-3 rounded-2xl border {{ (session('toast')['type'] ?? '') === 'error' ? 'border-rose-200 bg-rose-50 text-rose-800' : 'border-emerald-200 bg-emerald-50 text-emerald-800' }} p-4 text-sm font-semibold shadow-sm">
                 <i data-lucide="{{ (session('toast')['type'] ?? '') === 'error' ? 'alert-circle' : 'circle-check' }}" class="h-5 w-5 shrink-0"></i>

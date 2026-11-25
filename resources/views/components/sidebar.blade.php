@@ -8,7 +8,7 @@
     
     // Check active states for auto-expanding current menu
     $isSchoolActive = request()->routeIs('map.*', 'schools.*', 'priorities.*');
-    $isFieldActive = request()->routeIs('visit-plans.*', 'visits.*', 'follow-ups.*', 'socializations.completed.*', 'marketing-routes.*', 'activities.*');
+    $isFieldActive = request()->routeIs('visit-plans.*', 'visits.*', 'follow-ups.*', 'socializations.completed.*', 'invitations.completed.*', 'other-visits.completed.*', 'marketing-routes.*', 'activities.*');
     $isCrmActive = request()->routeIs('prospects.*', 'new-students.*', 'student-questionnaires.*', 'student-follow-ups.*', 'cs-progress.*', 'study-programs.*');
     $isKolActive = request()->routeIs('kol-recommendations.*');
     $isEventActive = request()->routeIs('event-proposals.*', 'school-events.*', 'event-students.*');
@@ -201,6 +201,18 @@
                     class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('socializations.completed.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <i data-lucide="presentation" class="w-3.5 h-3.5 text-emerald-400"></i>
                     <span>{{ $lbl('submenu_socializations_completed', 'Sosialisasi') }}</span>
+                </a>
+
+                <a href="{{ route('invitations.completed.index') }}"
+                    class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('invitations.completed.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <i data-lucide="mail-check" class="w-3.5 h-3.5 text-amber-400"></i>
+                    <span>{{ $lbl('submenu_invitations_completed', 'Undangan Acara') }}</span>
+                </a>
+
+                <a href="{{ route('other-visits.completed.index') }}"
+                    class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('other-visits.completed.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <i data-lucide="clipboard-list" class="w-3.5 h-3.5 text-purple-400"></i>
+                    <span>{{ $lbl('submenu_other_visits_completed', 'Kunjungan Lainnya') }}</span>
                 </a>
 
                 <a href="{{ route('marketing-routes.index') }}"

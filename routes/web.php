@@ -273,6 +273,16 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/follow-ups/{followUp}/complete-socialization', [FollowUpController::class, 'confirmSocialization'])->name('socializations.completed.confirm');
         Route::delete('/follow-ups/{followUp}/complete-socialization', [FollowUpController::class, 'reopenSocialization'])->name('socializations.completed.reopen');
 
+        // Output Kategori 2: Mengantar Undangan Acara
+        Route::get('/invitations-completed', [FollowUpController::class, 'completedInvitations'])->name('invitations.completed.index');
+        Route::post('/invitations-completed/{followUp}/documentation', [FollowUpController::class, 'uploadInvitationDocumentation'])->name('invitations.completed.documentation');
+        Route::put('/invitations-completed/{followUp}/status', [FollowUpController::class, 'quickUpdateInvitationStatus'])->name('invitations.completed.update-status');
+
+        // Output Kategori 3: Kunjungan Lainnya & Audiensi Dinas
+        Route::get('/other-visits-completed', [FollowUpController::class, 'completedOtherVisits'])->name('other-visits.completed.index');
+        Route::post('/other-visits-completed/{followUp}/documentation', [FollowUpController::class, 'uploadOtherVisitDocumentation'])->name('other-visits.completed.documentation');
+        Route::put('/other-visits-completed/{followUp}/status', [FollowUpController::class, 'quickUpdateOtherVisitStatus'])->name('other-visits.completed.update-status');
+
         // Rute Marketing (Daily 10-School Clustering & 10-Day Outing Campaign)
         Route::get('/marketing-routes', [MarketingRouteController::class, 'index'])->name('marketing-routes.index');
         Route::post('/marketing-routes/auto-cluster', [MarketingRouteController::class, 'storeAutoCluster'])->name('marketing-routes.store-cluster');

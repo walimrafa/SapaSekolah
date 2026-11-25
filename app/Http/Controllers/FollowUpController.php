@@ -393,12 +393,245 @@ class FollowUpController extends Controller
 
         $totalCount = FollowUp::whereNotNull('socialization_completed_at')->count();
         $totalAudience = FollowUp::whereNotNull('socialization_completed_at')->sum('target_audience_count');
+        $navCounts = $this->getCategoryOutputsCounts($activeCampus, $activePeriod);
 
         return view('follow-ups.completed', compact(
             'completedSocializations',
             'totalCount',
-            'totalAudience'
+            'totalAudience',
+            'navCounts'
         ));
+    }
+
+    /**
+     * Show schools that received event invitations and their attendance response status.
+     */
+    public function completedInvitations(Request $request): View
+    {
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $activePeriod = \App\Services\AppContextService::getActivePeriod();
+
+        $query = FollowUp::with(['school.district', 'user', 'visit'])
+            ->where(function ($q) {
+                $q->where('agenda_category', 'like', '%mengantar_undangan%')
+                  ->orWhereHas('visit', fn($vq) => $vq->where('agenda_category', 'like', '%mengantar_undangan%'));
+            });
+
+        if ($activeCampus) {
+            $query->whereHas('school', function ($sq) use ($activeCampus) {
+                $sq->where('campus_id', $activeCampus->id);
+            });
+        }
+
+        if ($activePeriod) {
+            $query->where(function ($q) use ($activePeriod) {
+                $q->where('academic_period_id', $activePeriod->id)
+                  ->orWhere(function ($sub) use ($activePeriod) {
+                      $sub->whereNull('academic_period_id')
+                          ->whereHas('visit', fn($vq) => $vq->where('academic_period_id', $activePeriod->id));
+                  });
+            });
+        }
+
+        // Base query clone for KPI counts
+        $baseQuery = clone $query;
+        $totalInvitations = (clone $baseQuery)->count();
+
+        $akanHadirCount = (clone $baseQuery)->where(function($q) {
+            $q->where('invitation_attendance_status', 'akan_hadir')
+              ->orWhere(function($sub) {
+                  $sub->whereNull('invitation_attendance_status')
+                      ->whereHas('visit', fn($vq) => $vq->where('invitation_attendance_status', 'akan_hadir'));
+              });
+        })->count();
+
+        $mintaIjinCount = (clone $baseQuery)->where(function($q) {
+            $q->where('invitation_attendance_status', 'minta_ijin_dulu')
+              ->orWhere(function($sub) {
+                  $sub->whereNull('invitation_attendance_status')
+                      ->whereHas('visit', fn($vq) => $vq->where('invitation_attendance_status', 'minta_ijin_dulu'));
+              });
+        })->count();
+
+        $tidakHadirCount = (clone $baseQuery)->where(function($q) {
+            $q->where('invitation_attendance_status', 'tidak_bisa_hadir')
+              ->orWhere(function($sub) {
+                  $sub->whereNull('invitation_attendance_status')
+                      ->whereHas('visit', fn($vq) => $vq->where('invitation_attendance_status', 'tidak_bisa_hadir'));
+              });
+        })->count();
+
+        $menungguResponCount = (clone $baseQuery)->where(function($q) {
+            $q->where(function($sub) {
+                $sub->whereNull('invitation_attendance_status')
+                    ->orWhere('invitation_attendance_status', 'pending');
+            })->where(function($sub) {
+                $sub->whereDoesntHave('visit')
+                    ->orWhereHas('visit', fn($vq) => $vq->whereNull('invitation_attendance_status'));
+            });
+        })->count();
+
+        // Filter by attendance status
+        if ($request->filled('attendance_status')) {
+            $att = $request->input('attendance_status');
+            if ($att === 'menunggu_respon') {
+                $query->where(function($q) {
+                    $q->where(function($sub) {
+                        $sub->whereNull('invitation_attendance_status')
+                            ->orWhere('invitation_attendance_status', 'pending');
+                    })->where(function($sub) {
+                        $sub->whereDoesntHave('visit')
+                            ->orWhereHas('visit', fn($vq) => $vq->whereNull('invitation_attendance_status'));
+                    });
+                });
+            } else {
+                $query->where(function($q) use ($att) {
+                    $q->where('invitation_attendance_status', $att)
+                      ->orWhereHas('visit', fn($vq) => $vq->where('invitation_attendance_status', $att));
+                });
+            }
+        }
+
+        // Search
+        if ($request->filled('search')) {
+            $search = trim($request->search);
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('school', function ($schoolQuery) use ($search) {
+                    $schoolQuery->where('name', 'like', "%{$search}%")
+                        ->orWhereHas('district', fn ($districtQuery) => $districtQuery->where('name', 'like', "%{$search}%"));
+                })
+                    ->orWhere('pic_name', 'like', "%{$search}%")
+                    ->orWhere('pic_phone', 'like', "%{$search}%")
+                    ->orWhere('notes', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        $invitations = $query->orderByDesc('id')->paginate(20)->withQueryString();
+        $navCounts = $this->getCategoryOutputsCounts($activeCampus, $activePeriod);
+
+        return view('follow-ups.completed-invitations', compact(
+            'invitations',
+            'totalInvitations',
+            'akanHadirCount',
+            'mintaIjinCount',
+            'tidakHadirCount',
+            'menungguResponCount',
+            'navCounts'
+        ));
+    }
+
+    /**
+     * Show general visits & audiensi dinas results.
+     */
+    public function completedOtherVisits(Request $request): View
+    {
+        $activeCampus = \App\Services\AppContextService::getActiveCampus();
+        $activePeriod = \App\Services\AppContextService::getActivePeriod();
+
+        $query = FollowUp::with(['school.district', 'user', 'visit'])
+            ->where(function ($q) {
+                $q->where('agenda_category', 'like', '%kunjungan_lainnya%')
+                  ->orWhereHas('visit', fn($vq) => $vq->where('agenda_category', 'like', '%kunjungan_lainnya%'));
+            });
+
+        if ($activeCampus) {
+            $query->whereHas('school', function ($sq) use ($activeCampus) {
+                $sq->where('campus_id', $activeCampus->id);
+            });
+        }
+
+        if ($activePeriod) {
+            $query->where(function ($q) use ($activePeriod) {
+                $q->where('academic_period_id', $activePeriod->id)
+                  ->orWhere(function ($sub) use ($activePeriod) {
+                      $sub->whereNull('academic_period_id')
+                          ->whereHas('visit', fn($vq) => $vq->where('academic_period_id', $activePeriod->id));
+                  });
+            });
+        }
+
+        $baseQuery = clone $query;
+        $totalVisits = (clone $baseQuery)->count();
+        $completedCount = (clone $baseQuery)->where('status', 'completed')->count();
+        $progressCount = (clone $baseQuery)->where('status', 'progress')->count();
+        $pendingCount = (clone $baseQuery)->where('status', 'pending')->count();
+        $hasDocCount = (clone $baseQuery)->where(function($q) {
+            $q->whereNotNull('documentation_file')
+              ->orWhereNotNull('google_drive_file_url')
+              ->orWhereHas('visit', fn($vq) => $vq->whereNotNull('photo')->orWhereNotNull('google_drive_file_url'));
+        })->count();
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        if ($request->filled('search')) {
+            $search = trim($request->search);
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('school', function ($schoolQuery) use ($search) {
+                    $schoolQuery->where('name', 'like', "%{$search}%")
+                        ->orWhereHas('district', fn ($districtQuery) => $districtQuery->where('name', 'like', "%{$search}%"));
+                })
+                    ->orWhere('pic_name', 'like', "%{$search}%")
+                    ->orWhere('pic_phone', 'like', "%{$search}%")
+                    ->orWhere('notes', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        $otherVisits = $query->orderByDesc('id')->paginate(20)->withQueryString();
+        $navCounts = $this->getCategoryOutputsCounts($activeCampus, $activePeriod);
+
+        return view('follow-ups.completed-other-visits', compact(
+            'otherVisits',
+            'totalVisits',
+            'completedCount',
+            'progressCount',
+            'pendingCount',
+            'hasDocCount',
+            'navCounts'
+        ));
+    }
+
+    /**
+     * Get counts for category output switcher tabs.
+     */
+    private function getCategoryOutputsCounts(?\App\Models\Campus $activeCampus, ?\App\Models\AcademicPeriod $activePeriod): array
+    {
+        $baseQuery = function($catFilter) use ($activeCampus, $activePeriod) {
+            $q = FollowUp::query();
+            if ($activeCampus) {
+                $q->whereHas('school', fn($sq) => $sq->where('campus_id', $activeCampus->id));
+            }
+            if ($activePeriod) {
+                $q->where(function ($sq) use ($activePeriod) {
+                    $sq->where('academic_period_id', $activePeriod->id)
+                      ->orWhere(function ($sub) use ($activePeriod) {
+                          $sub->whereNull('academic_period_id')
+                              ->whereHas('visit', fn($vq) => $vq->where('academic_period_id', $activePeriod->id));
+                      });
+                });
+            }
+            $catFilter($q);
+            return $q->count();
+        };
+
+        $socializationsCount = $baseQuery(fn($q) => $q->whereNotNull('socialization_completed_at'));
+        $invitationsCount = $baseQuery(fn($q) => $q->where(function($sub) {
+            $sub->where('agenda_category', 'like', '%mengantar_undangan%')
+                ->orWhereHas('visit', fn($vq) => $vq->where('agenda_category', 'like', '%mengantar_undangan%'));
+        }));
+        $otherVisitsCount = $baseQuery(fn($q) => $q->where(function($sub) {
+            $sub->where('agenda_category', 'like', '%kunjungan_lainnya%')
+                ->orWhereHas('visit', fn($vq) => $vq->where('agenda_category', 'like', '%kunjungan_lainnya%'));
+        }));
+
+        return [
+            'socializations' => $socializationsCount,
+            'invitations' => $invitationsCount,
+            'otherVisits' => $otherVisitsCount,
+        ];
     }
 
     /**
@@ -517,6 +750,190 @@ class FollowUpController extends Controller
         return redirect()->route('socializations.completed.index')->with('toast', [
             'type' => 'success',
             'message' => "Dokumentasi kegiatan untuk {$schoolName} berhasil diunggah ke Google Drive dan disinkronkan dengan Data Kunjungan serta Aktivitas Sosialisasi!",
+        ]);
+    }
+
+    /**
+     * Upload documentation for invitation delivery and sync with Google Drive & SchoolVisit.
+     */
+    public function uploadInvitationDocumentation(Request $request, FollowUp $followUp): RedirectResponse
+    {
+        $validated = $request->validate([
+            'documentation' => [
+                'required',
+                'file',
+                'max:51200', // 50MB
+                'mimes:jpg,jpeg,png,webp,pdf,rar,zip,doc,docx,7z',
+            ],
+            'notes' => ['nullable', 'string', 'max:5000'],
+        ]);
+
+        $file = $request->file('documentation');
+        $school = $followUp->school;
+        $schoolName = $school ? $school->name : 'Sekolah';
+        $visitDate = $followUp->visit?->visit_date ?: ($followUp->fixed_date ?: now());
+        $date = Carbon::parse($visitDate)->format('Y-m-d');
+
+        $gdriveResult = \App\Services\GoogleDriveService::uploadDocumentation($file, $schoolName, $date, $school?->campus_id ?: $followUp->campus_id);
+
+        if ($followUp->documentation_file) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($followUp->documentation_file);
+        }
+
+        $updateData = [
+            'documentation_file' => $gdriveResult['stored_path'],
+            'google_drive_folder_url' => $gdriveResult['drive_folder_url'],
+            'google_drive_file_url' => $gdriveResult['drive_file_url'],
+        ];
+
+        if (!empty($validated['notes'])) {
+            $updateData['notes'] = $validated['notes'];
+        }
+
+        $followUp->update($updateData);
+
+        if ($followUp->visit) {
+            $visitUpdate = [
+                'photo' => $gdriveResult['stored_path'],
+                'google_drive_folder_url' => $gdriveResult['drive_folder_url'],
+                'google_drive_file_url' => $gdriveResult['drive_file_url'],
+            ];
+            if (!empty($validated['notes'])) {
+                $visitUpdate['notes'] = $validated['notes'];
+            }
+            $followUp->visit->update($visitUpdate);
+        }
+
+        return redirect()->route('invitations.completed.index')->with('toast', [
+            'type' => 'success',
+            'message' => "Bukti tanda terima penyerahan undangan untuk {$schoolName} berhasil diunggah ke Google Drive dan disinkronkan!",
+        ]);
+    }
+
+    /**
+     * Upload documentation for general visit / audiensi dinas.
+     */
+    public function uploadOtherVisitDocumentation(Request $request, FollowUp $followUp): RedirectResponse
+    {
+        $validated = $request->validate([
+            'documentation' => [
+                'required',
+                'file',
+                'max:51200', // 50MB
+                'mimes:jpg,jpeg,png,webp,pdf,rar,zip,doc,docx,7z',
+            ],
+            'notes' => ['nullable', 'string', 'max:5000'],
+        ]);
+
+        $file = $request->file('documentation');
+        $school = $followUp->school;
+        $schoolName = $school ? $school->name : 'Sekolah';
+        $visitDate = $followUp->visit?->visit_date ?: ($followUp->fixed_date ?: now());
+        $date = Carbon::parse($visitDate)->format('Y-m-d');
+
+        $gdriveResult = \App\Services\GoogleDriveService::uploadDocumentation($file, $schoolName, $date, $school?->campus_id ?: $followUp->campus_id);
+
+        if ($followUp->documentation_file) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($followUp->documentation_file);
+        }
+
+        $updateData = [
+            'documentation_file' => $gdriveResult['stored_path'],
+            'google_drive_folder_url' => $gdriveResult['drive_folder_url'],
+            'google_drive_file_url' => $gdriveResult['drive_file_url'],
+        ];
+
+        if (!empty($validated['notes'])) {
+            $updateData['notes'] = $validated['notes'];
+        }
+
+        $followUp->update($updateData);
+
+        if ($followUp->visit) {
+            $visitUpdate = [
+                'photo' => $gdriveResult['stored_path'],
+                'google_drive_folder_url' => $gdriveResult['drive_folder_url'],
+                'google_drive_file_url' => $gdriveResult['drive_file_url'],
+            ];
+            if (!empty($validated['notes'])) {
+                $visitUpdate['notes'] = $validated['notes'];
+            }
+            $followUp->visit->update($visitUpdate);
+        }
+
+        return redirect()->route('other-visits.completed.index')->with('toast', [
+            'type' => 'success',
+            'message' => "Dokumentasi kunjungan dinas untuk {$schoolName} berhasil diunggah ke Google Drive dan disinkronkan!",
+        ]);
+    }
+
+    /**
+     * Quick update attendance status from invitations page.
+     */
+    public function quickUpdateInvitationStatus(Request $request, FollowUp $followUp): RedirectResponse
+    {
+        $validated = $request->validate([
+            'invitation_attendance_status' => ['required', 'in:akan_hadir,minta_ijin_dulu,tidak_bisa_hadir,menunggu_respon'],
+            'notes' => ['nullable', 'string', 'max:5000'],
+        ]);
+
+        $statusValue = $validated['invitation_attendance_status'] === 'menunggu_respon' ? null : $validated['invitation_attendance_status'];
+        
+        $updateData = ['invitation_attendance_status' => $statusValue];
+        if ($validated['invitation_attendance_status'] === 'akan_hadir') {
+            $updateData['status'] = 'completed';
+        } elseif ($validated['invitation_attendance_status'] === 'minta_ijin_dulu') {
+            $updateData['status'] = 'progress';
+        } elseif ($validated['invitation_attendance_status'] === 'tidak_bisa_hadir') {
+            $updateData['status'] = 'failed';
+        } elseif ($validated['invitation_attendance_status'] === 'menunggu_respon') {
+            $updateData['status'] = 'pending';
+        }
+
+        if (!empty($validated['notes'])) {
+            $updateData['notes'] = $validated['notes'];
+        }
+
+        $followUp->update($updateData);
+
+        if ($followUp->visit) {
+            $visitUpdate = ['invitation_attendance_status' => $statusValue];
+            if (!empty($validated['notes'])) {
+                $visitUpdate['notes'] = $validated['notes'];
+            }
+            $followUp->visit->update($visitUpdate);
+        }
+
+        return redirect()->back()->with('toast', [
+            'type' => 'success',
+            'message' => "Status konfirmasi kehadiran untuk {$followUp->school?->name} berhasil diperbarui.",
+        ]);
+    }
+
+    /**
+     * Quick update status from other visits page.
+     */
+    public function quickUpdateOtherVisitStatus(Request $request, FollowUp $followUp): RedirectResponse
+    {
+        $validated = $request->validate([
+            'status' => ['required', 'in:pending,progress,completed,failed'],
+            'notes' => ['nullable', 'string', 'max:5000'],
+        ]);
+
+        $updateData = ['status' => $validated['status']];
+        if (!empty($validated['notes'])) {
+            $updateData['notes'] = $validated['notes'];
+        }
+
+        $followUp->update($updateData);
+
+        if ($followUp->visit && !empty($validated['notes'])) {
+            $followUp->visit->update(['notes' => $validated['notes']]);
+        }
+
+        return redirect()->back()->with('toast', [
+            'type' => 'success',
+            'message' => "Status hasil kunjungan dinas {$followUp->school?->name} berhasil diperbarui.",
         ]);
     }
 

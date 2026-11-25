@@ -474,5 +474,21 @@
                 </form>
             </div>
         @endif
+    @elseif($cat === 'mengantar_undangan')
+        @if(!empty($attStatus) && $attStatus !== 'menunggu_respon')
+            <a href="{{ route('invitations.completed.index', ['attendance_status' => $attStatus]) }}"
+                class="flex items-center justify-center gap-1.5 rounded-xl bg-amber-50 border border-amber-200 px-3 py-1.5 text-[11px] font-bold text-amber-800 hover:bg-amber-100 transition">
+                <i data-lucide="mail-check" class="w-3.5 h-3.5 text-amber-600"></i>
+                <span>Status: {{ $attStatus === 'akan_hadir' ? 'Akan Hadir' : ($attStatus === 'minta_ijin_dulu' ? 'Minta Ijin Dulu' : 'Tidak Bisa Hadir') }} &rarr; Rekap Undangan</span>
+            </a>
+        @endif
+    @elseif($cat === 'kunjungan_lainnya')
+        @if($item->status === 'completed' || $item->status === 'failed')
+            <a href="{{ route('other-visits.completed.index') }}"
+                class="flex items-center justify-center gap-1.5 rounded-xl bg-purple-50 border border-purple-200 px-3 py-1.5 text-[11px] font-bold text-purple-800 hover:bg-purple-100 transition">
+                <i data-lucide="clipboard-check" class="w-3.5 h-3.5 text-purple-600"></i>
+                <span>Tindak lanjut {{ $item->status === 'completed' ? 'selesai' : 'ditutup' }} &rarr; Rekap Kunjungan</span>
+            </a>
+        @endif
     @endif
 </div>
