@@ -14,6 +14,15 @@
     $isEventActive = request()->routeIs('event-proposals.*', 'school-events.*', 'event-students.*');
     $isReportActive = request()->routeIs('reports.*', 'comprehensive-reports.*', 'event-reports.*');
 
+    // Sub-group active states inside Operasional Lapangan
+    $isFieldPlanningActive = request()->routeIs('visit-plans.*', 'event-plans.*');
+    $isFieldCompletedActive = request()->routeIs('socializations.completed.*', 'invitations.completed.*', 'other-visits.completed.*');
+    $isFieldMobilityActive = request()->routeIs('marketing-routes.*', 'activities.*');
+
+    // Sub-group active states inside Prospek & CRM
+    $isCrmDatabaseActive = request()->routeIs('prospects.*', 'new-students.*', 'student-questionnaires.*');
+    $isCrmFollowUpActive = request()->routeIs('student-follow-ups.*', 'cs-progress.*');
+
     // Realtime scoped counts for Prospects and New Students (isolated per active campus and period)
     \App\Services\ProspectSyncService::syncMissingDaftarAplikasi();
     $sidebarCampus = \App\Services\AppContextService::getActiveCampus();
@@ -177,70 +186,119 @@
                 x-transition:leave="transition ease-in duration-150"
                 x-transition:leave-start="opacity-100 translate-y-0"
                 x-transition:leave-end="opacity-0 -translate-y-1"
-                class="pl-4 ml-4 border-l border-slate-800 space-y-1 pt-1" style="display: none;">
+                class="pl-3 ml-3 border-l border-slate-800 space-y-1.5 pt-1.5" style="display: none;">
                 
-                <a href="{{ route('visit-plans.index') }}"
-                    class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('visit-plans.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30 font-bold' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                    <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
-                    <span>{{ $lbl('submenu_visit_plans', 'Rencana') }}</span>
-                </a>
+                <!-- Sub 1: Perencanaan & Event (Sub-Accordion) -->
+                @php
+                    $upcomingEventsSidebarCount = \App\Models\EventPlan::upcoming()->when($sidebarCampus, fn($q) => $q->forCampus($sidebarCampus->id))->count();
+                @endphp
+                <div x-data="{ subPlanning: {{ $isFieldPlanningActive ? 'true' : 'false' }} }" class="space-y-1">
+                    <button @click="subPlanning = !subPlanning" type="button"
+                        class="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ $isFieldPlanningActive ? 'text-amber-300 bg-slate-800/80 font-bold border-l-2 border-amber-400' : 'text-slate-300 hover:text-white hover:bg-slate-800/60' }}">
+                        <div class="flex items-center space-x-2.5">
+                            <i data-lucide="calendar-clock" class="w-3.5 h-3.5 {{ $isFieldPlanningActive ? 'text-amber-400' : 'text-slate-400' }}"></i>
+                            <span>Perencanaan</span>
+                        </div>
+                        <div class="flex items-center space-x-1.5">
+                            @if($upcomingEventsSidebarCount > 0)
+                                <span class="px-1.5 py-0.2 text-[9px] font-bold bg-amber-400 text-slate-900 rounded-full">{{ $upcomingEventsSidebarCount }}</span>
+                            @endif
+                            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200" :class="subPlanning ? 'rotate-180 text-amber-400' : ''"></i>
+                        </div>
+                    </button>
 
-                <a href="{{ route('event-plans.index') }}"
-                    class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('event-plans.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30 font-bold' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}"
-                    title="Master Rencana Event Kampus (Tema, Tgl, Jam, Lokasi)">
-                    <div class="flex items-center space-x-2.5">
-                        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i>
-                        <span>{{ $lbl('submenu_event_plans', 'Rencana Event') }}</span>
+                    <div x-show="subPlanning" x-transition class="pl-3 ml-2 border-l border-slate-700/60 space-y-1 pt-1 pb-0.5" style="display: none;">
+                        <a href="{{ route('visit-plans.index') }}"
+                            class="flex items-center space-x-2 px-2.5 py-1.5 rounded-md text-[11px] font-medium transition duration-150 {{ request()->routeIs('visit-plans.*') ? 'bg-brand-600 text-white font-bold shadow-xs' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                            <i data-lucide="calendar" class="w-3 h-3"></i>
+                            <span>{{ $lbl('submenu_visit_plans', 'Rencana Kunjungan') }}</span>
+                        </a>
+
+                        <a href="{{ route('event-plans.index') }}"
+                            class="flex items-center justify-between px-2.5 py-1.5 rounded-md text-[11px] font-medium transition duration-150 {{ request()->routeIs('event-plans.*') ? 'bg-brand-600 text-white font-bold shadow-xs' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}"
+                            title="Master Rencana Event Kampus">
+                            <div class="flex items-center space-x-2">
+                                <i data-lucide="sparkles" class="w-3 h-3 text-amber-400"></i>
+                                <span>{{ $lbl('submenu_event_plans', 'Rencana Event') }}</span>
+                            </div>
+                            @if($upcomingEventsSidebarCount > 0)
+                                <span class="px-1.5 py-0.2 text-[8px] font-bold bg-amber-400 text-slate-900 rounded-full">{{ $upcomingEventsSidebarCount }}</span>
+                            @endif
+                        </a>
                     </div>
-                    @php
-                        $upcomingEventsSidebarCount = \App\Models\EventPlan::upcoming()->when($sidebarCampus, fn($q) => $q->forCampus($sidebarCampus->id))->count();
-                    @endphp
-                    @if($upcomingEventsSidebarCount > 0)
-                        <span class="px-1.5 py-0.2 text-[9px] font-bold bg-amber-400 text-slate-900 rounded-full">{{ $upcomingEventsSidebarCount }}</span>
-                    @endif
-                </a>
+                </div>
 
+                <!-- Link Langsung: Data Kunjungan -->
                 <a href="{{ route('visits.index') }}"
-                    class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('visits.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                    <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
-                    <span>{{ $lbl('submenu_visits', 'Kunjungan') }}</span>
+                    class="flex items-center space-x-2.5 px-2.5 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('visits.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30 font-bold' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
+                    <i data-lucide="map-pin" class="w-3.5 h-3.5 {{ request()->routeIs('visits.*') ? 'text-white' : 'text-brand-400' }}"></i>
+                    <span>{{ $lbl('submenu_visits', 'Data Kunjungan') }}</span>
                 </a>
 
+                <!-- Link Langsung: Follow Up Jadwal -->
                 <a href="{{ route('follow-ups.index') }}"
-                    class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('follow-ups.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                    <i data-lucide="phone-call" class="w-3.5 h-3.5"></i>
-                    <span>{{ $lbl('submenu_field_followups', 'Follow Up') }}</span>
+                    class="flex items-center space-x-2.5 px-2.5 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('follow-ups.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30 font-bold' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
+                    <i data-lucide="phone-call" class="w-3.5 h-3.5 {{ request()->routeIs('follow-ups.*') ? 'text-white' : 'text-emerald-400' }}"></i>
+                    <span>{{ $lbl('submenu_field_followups', 'Follow Up Jadwal') }}</span>
                 </a>
 
-                <a href="{{ route('socializations.completed.index') }}"
-                    class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('socializations.completed.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                    <i data-lucide="presentation" class="w-3.5 h-3.5 text-emerald-400"></i>
-                    <span>{{ $lbl('submenu_socializations_completed', 'Sosialisasi') }}</span>
-                </a>
+                <!-- Sub 2: Hasil Kunjungan Lapangan (Sub-Accordion) -->
+                <div x-data="{ subResults: {{ $isFieldCompletedActive ? 'true' : 'false' }} }" class="space-y-1">
+                    <button @click="subResults = !subResults" type="button"
+                        class="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ $isFieldCompletedActive ? 'text-emerald-300 bg-slate-800/80 font-bold border-l-2 border-emerald-400' : 'text-slate-300 hover:text-white hover:bg-slate-800/60' }}">
+                        <div class="flex items-center space-x-2.5">
+                            <i data-lucide="clipboard-check" class="w-3.5 h-3.5 {{ $isFieldCompletedActive ? 'text-emerald-400' : 'text-slate-400' }}"></i>
+                            <span>Hasil Kunjungan</span>
+                        </div>
+                        <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200" :class="subResults ? 'rotate-180 text-emerald-400' : ''"></i>
+                    </button>
 
-                <a href="{{ route('invitations.completed.index') }}"
-                    class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('invitations.completed.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                    <i data-lucide="mail-check" class="w-3.5 h-3.5 text-amber-400"></i>
-                    <span>{{ $lbl('submenu_invitations_completed', 'Undangan Acara') }}</span>
-                </a>
+                    <div x-show="subResults" x-transition class="pl-3 ml-2 border-l border-slate-700/60 space-y-1 pt-1 pb-0.5" style="display: none;">
+                        <a href="{{ route('socializations.completed.index') }}"
+                            class="flex items-center space-x-2 px-2.5 py-1.5 rounded-md text-[11px] font-medium transition duration-150 {{ request()->routeIs('socializations.completed.*') ? 'bg-brand-600 text-white font-bold shadow-xs' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                            <i data-lucide="presentation" class="w-3 h-3 text-emerald-400"></i>
+                            <span>{{ $lbl('submenu_socializations_completed', 'Sosialisasi') }}</span>
+                        </a>
 
-                <a href="{{ route('other-visits.completed.index') }}"
-                    class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('other-visits.completed.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                    <i data-lucide="clipboard-list" class="w-3.5 h-3.5 text-purple-400"></i>
-                    <span>{{ $lbl('submenu_other_visits_completed', 'Kunjungan Lainnya') }}</span>
-                </a>
+                        <a href="{{ route('invitations.completed.index') }}"
+                            class="flex items-center space-x-2 px-2.5 py-1.5 rounded-md text-[11px] font-medium transition duration-150 {{ request()->routeIs('invitations.completed.*') ? 'bg-brand-600 text-white font-bold shadow-xs' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                            <i data-lucide="mail-check" class="w-3 h-3 text-amber-400"></i>
+                            <span>{{ $lbl('submenu_invitations_completed', 'Undangan Acara') }}</span>
+                        </a>
 
-                <a href="{{ route('marketing-routes.index') }}"
-                    class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('marketing-routes.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                    <i data-lucide="route" class="w-3.5 h-3.5 text-amber-400"></i>
-                    <span>{{ $lbl('submenu_marketing_routes', 'Rute Mobil') }}</span>
-                </a>
+                        <a href="{{ route('other-visits.completed.index') }}"
+                            class="flex items-center space-x-2 px-2.5 py-1.5 rounded-md text-[11px] font-medium transition duration-150 {{ request()->routeIs('other-visits.completed.*') ? 'bg-brand-600 text-white font-bold shadow-xs' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                            <i data-lucide="clipboard-list" class="w-3 h-3 text-purple-400"></i>
+                            <span>{{ $lbl('submenu_other_visits_completed', 'Kunjungan Lainnya') }}</span>
+                        </a>
+                    </div>
+                </div>
 
-                <a href="{{ route('activities.index') }}"
-                    class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('activities.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                    <i data-lucide="megaphone" class="w-3.5 h-3.5 text-amber-400"></i>
-                    <span>{{ $lbl('submenu_activities', 'Aktivitas') }}</span>
-                </a>
+                <!-- Sub 3: Mobilitas & Aktivitas (Sub-Accordion) -->
+                <div x-data="{ subMobility: {{ $isFieldMobilityActive ? 'true' : 'false' }} }" class="space-y-1">
+                    <button @click="subMobility = !subMobility" type="button"
+                        class="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ $isFieldMobilityActive ? 'text-amber-300 bg-slate-800/80 font-bold border-l-2 border-amber-400' : 'text-slate-300 hover:text-white hover:bg-slate-800/60' }}">
+                        <div class="flex items-center space-x-2.5">
+                            <i data-lucide="route" class="w-3.5 h-3.5 {{ $isFieldMobilityActive ? 'text-amber-400' : 'text-slate-400' }}"></i>
+                            <span>Rute & Aktivitas</span>
+                        </div>
+                        <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200" :class="subMobility ? 'rotate-180 text-amber-400' : ''"></i>
+                    </button>
+
+                    <div x-show="subMobility" x-transition class="pl-3 ml-2 border-l border-slate-700/60 space-y-1 pt-1 pb-0.5" style="display: none;">
+                        <a href="{{ route('marketing-routes.index') }}"
+                            class="flex items-center space-x-2 px-2.5 py-1.5 rounded-md text-[11px] font-medium transition duration-150 {{ request()->routeIs('marketing-routes.*') ? 'bg-brand-600 text-white font-bold shadow-xs' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                            <i data-lucide="navigation" class="w-3 h-3 text-amber-400"></i>
+                            <span>{{ $lbl('submenu_marketing_routes', 'Rute Mobil') }}</span>
+                        </a>
+
+                        <a href="{{ route('activities.index') }}"
+                            class="flex items-center space-x-2 px-2.5 py-1.5 rounded-md text-[11px] font-medium transition duration-150 {{ request()->routeIs('activities.*') ? 'bg-brand-600 text-white font-bold shadow-xs' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                            <i data-lucide="megaphone" class="w-3 h-3 text-amber-400"></i>
+                            <span>{{ $lbl('submenu_activities', 'Aktivitas') }}</span>
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
         @endif
@@ -266,53 +324,85 @@
                 x-transition:leave="transition ease-in duration-150"
                 x-transition:leave-start="opacity-100 translate-y-0"
                 x-transition:leave-end="opacity-0 -translate-y-1"
-                class="pl-4 ml-4 border-l border-slate-800 space-y-1 pt-1" style="display: none;">
+                class="pl-3 ml-3 border-l border-slate-800 space-y-1.5 pt-1.5" style="display: none;">
                 
-                <a href="{{ route('prospects.index') }}"
-                    class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('prospects.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                    <div class="flex items-center space-x-2.5">
-                        <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
-                        <span>{{ $lbl('submenu_prospects', 'Prospek') }}</span>
+                <!-- Sub 1: Database Siswa & PMB (Sub-Accordion) -->
+                <div x-data="{ subCrmData: {{ $isCrmDatabaseActive ? 'true' : 'false' }} }" class="space-y-1">
+                    <button @click="subCrmData = !subCrmData" type="button"
+                        class="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ $isCrmDatabaseActive ? 'text-emerald-300 bg-slate-800/80 font-bold border-l-2 border-emerald-400' : 'text-slate-300 hover:text-white hover:bg-slate-800/60' }}">
+                        <div class="flex items-center space-x-2.5">
+                            <i data-lucide="user-check" class="w-3.5 h-3.5 {{ $isCrmDatabaseActive ? 'text-emerald-400' : 'text-slate-400' }}"></i>
+                            <span>Database Siswa</span>
+                        </div>
+                        <div class="flex items-center space-x-1.5">
+                            <span class="px-1.5 py-0.2 text-[9px] font-bold bg-slate-800 text-slate-300 rounded">{{ $prospectsCount + $newStudentsCount }}</span>
+                            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200" :class="subCrmData ? 'rotate-180 text-emerald-400' : ''"></i>
+                        </div>
+                    </button>
+
+                    <div x-show="subCrmData" x-transition class="pl-3 ml-2 border-l border-slate-700/60 space-y-1 pt-1 pb-0.5" style="display: none;">
+                        <a href="{{ route('prospects.index') }}"
+                            class="flex items-center justify-between px-2.5 py-1.5 rounded-md text-[11px] font-medium transition duration-150 {{ request()->routeIs('prospects.*') ? 'bg-brand-600 text-white font-bold shadow-xs' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                            <div class="flex items-center space-x-2">
+                                <i data-lucide="user-plus" class="w-3 h-3 text-sky-400"></i>
+                                <span>{{ $lbl('submenu_prospects', 'Prospek') }}</span>
+                            </div>
+                            <span class="px-1.5 py-0.2 text-[8px] font-bold bg-slate-800 text-slate-300 rounded">{{ $prospectsCount }}</span>
+                        </a>
+
+                        <a href="{{ route('new-students.index') }}"
+                            class="flex items-center justify-between px-2.5 py-1.5 rounded-md text-[11px] font-medium transition duration-150 {{ request()->routeIs('new-students.*') ? 'bg-brand-600 text-white font-bold shadow-xs' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                            <div class="flex items-center space-x-2">
+                                <i data-lucide="graduation-cap" class="w-3 h-3 text-amber-400"></i>
+                                <span>{{ $lbl('submenu_new_students', 'Mahasiswa Baru') }}</span>
+                            </div>
+                            <span class="px-1.5 py-0.2 text-[8px] font-bold bg-amber-400/20 text-amber-300 rounded">{{ $newStudentsCount }}</span>
+                        </a>
+
+                        <a href="{{ route('student-questionnaires.index') }}"
+                            class="flex items-center space-x-2 px-2.5 py-1.5 rounded-md text-[11px] font-medium transition duration-150 {{ request()->routeIs('student-questionnaires.*') ? 'bg-brand-600 text-white font-bold shadow-xs' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                            <i data-lucide="clipboard-list" class="w-3 h-3 text-teal-400"></i>
+                            <span>{{ $lbl('submenu_questionnaires', 'Kuisioner Siswa') }}</span>
+                        </a>
                     </div>
-                    <span class="px-1.5 py-0.2 text-[9px] font-bold bg-slate-800 text-slate-300 rounded">{{ $prospectsCount }}</span>
-                </a>
+                </div>
 
-                <a href="{{ route('new-students.index') }}"
-                    class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('new-students.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                    <div class="flex items-center space-x-2.5">
-                        <i data-lucide="graduation-cap" class="w-3.5 h-3.5 text-amber-400"></i>
-                        <span>{{ $lbl('submenu_new_students', 'Mahasiswa Baru') }}</span>
+                <!-- Sub 2: Follow Up & CS (Sub-Accordion) -->
+                <div x-data="{ subCrmFollow: {{ $isCrmFollowUpActive ? 'true' : 'false' }} }" class="space-y-1">
+                    <button @click="subCrmFollow = !subCrmFollow" type="button"
+                        class="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ $isCrmFollowUpActive ? 'text-teal-300 bg-slate-800/80 font-bold border-l-2 border-teal-400' : 'text-slate-300 hover:text-white hover:bg-slate-800/60' }}">
+                        <div class="flex items-center space-x-2.5">
+                            <i data-lucide="message-square" class="w-3.5 h-3.5 {{ $isCrmFollowUpActive ? 'text-teal-400' : 'text-slate-400' }}"></i>
+                            <span>Follow Up & CS</span>
+                        </div>
+                        <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200" :class="subCrmFollow ? 'rotate-180 text-teal-400' : ''"></i>
+                    </button>
+
+                    <div x-show="subCrmFollow" x-transition class="pl-3 ml-2 border-l border-slate-700/60 space-y-1 pt-1 pb-0.5" style="display: none;">
+                        <a href="{{ route('student-follow-ups.index') }}"
+                            class="flex items-center space-x-2 px-2.5 py-1.5 rounded-md text-[11px] font-medium transition duration-150 {{ request()->routeIs('student-follow-ups.*') ? 'bg-brand-600 text-white font-bold shadow-xs' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                            <i data-lucide="phone-forwarded" class="w-3 h-3 text-emerald-400"></i>
+                            <span>{{ $lbl('submenu_student_followups', 'Follow Up Siswa') }}</span>
+                        </a>
+
+                        @if(auth()->user()->canMonitorCsProgress())
+                        <a href="{{ route('cs-progress.index') }}"
+                            class="flex items-center justify-between px-2.5 py-1.5 rounded-md text-[11px] font-medium transition duration-150 {{ request()->routeIs('cs-progress.*') ? 'bg-brand-600 text-white font-bold shadow-xs' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                            <div class="flex items-center space-x-2">
+                                <i data-lucide="activity" class="w-3 h-3 text-teal-400"></i>
+                                <span>{{ $lbl('submenu_cs_progress', 'Kontrol Progres CS') }}</span>
+                            </div>
+                            <span class="px-1.5 py-0.2 text-[8px] font-bold bg-teal-500/20 text-teal-300 rounded">CS</span>
+                        </a>
+                        @endif
                     </div>
-                    <span class="px-1.5 py-0.2 text-[9px] font-bold bg-amber-400/20 text-amber-300 rounded">{{ $newStudentsCount }}</span>
-                </a>
+                </div>
 
-                <a href="{{ route('student-questionnaires.index') }}"
-                    class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('student-questionnaires.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                    <i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i>
-                    <span>{{ $lbl('submenu_questionnaires', 'Kuisioner') }}</span>
-                </a>
-
-                <a href="{{ route('student-follow-ups.index') }}"
-                    class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('student-follow-ups.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                    <i data-lucide="user-check" class="w-3.5 h-3.5 text-emerald-400"></i>
-                    <span>{{ $lbl('submenu_student_followups', 'Follow Up') }}</span>
-                </a>
-
-                @if(auth()->user()->canMonitorCsProgress())
-                <a href="{{ route('cs-progress.index') }}"
-                    class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('cs-progress.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                    <div class="flex items-center space-x-2.5">
-                        <i data-lucide="activity" class="w-3.5 h-3.5 text-teal-400"></i>
-                        <span>{{ $lbl('submenu_cs_progress', 'Kontrol Progres CS') }}</span>
-                    </div>
-                    <span class="px-1.5 py-0.2 text-[9px] font-bold bg-teal-500/20 text-teal-300 rounded">CS</span>
-                </a>
-                @endif
-
+                <!-- Link Langsung: Program Studi -->
                 <a href="{{ route('study-programs.index') }}"
-                    class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('study-programs.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                    <i data-lucide="graduation-cap" class="w-3.5 h-3.5"></i>
-                    <span>{{ $lbl('submenu_study_programs', 'Prodi') }}</span>
+                    class="flex items-center space-x-2.5 px-2.5 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('study-programs.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30 font-bold' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
+                    <i data-lucide="graduation-cap" class="w-3.5 h-3.5 {{ request()->routeIs('study-programs.*') ? 'text-white' : 'text-slate-400' }}"></i>
+                    <span>{{ $lbl('submenu_study_programs', 'Program Studi') }}</span>
                 </a>
             </div>
         </div>
