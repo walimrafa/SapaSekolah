@@ -163,7 +163,11 @@ class SchoolVisitController extends Controller
 
         $initialUserId = $selectedPlan?->user_id;
 
-        return view('visits.create', compact('districts', 'schools', 'marketingUsers', 'visitPlans', 'initialPlanId', 'initialSchoolId', 'initialUserId', 'selectedPlan'));
+        $upcomingEvents = \App\Models\EventPlan::upcoming()
+            ->when($activeCampus, fn($q) => $q->forCampus($activeCampus->id))
+            ->get();
+
+        return view('visits.create', compact('districts', 'schools', 'marketingUsers', 'visitPlans', 'initialPlanId', 'initialSchoolId', 'initialUserId', 'selectedPlan', 'upcomingEvents'));
     }
 
     /**
@@ -196,6 +200,7 @@ class SchoolVisitController extends Controller
             'school_id' => ['required', 'exists:schools,id'],
             'user_id' => ['required', 'exists:users,id'],
             'visit_plan_id' => ['nullable', 'exists:visit_plans,id'],
+            'event_plan_id' => ['nullable', 'exists:event_plans,id'],
             'visit_date' => ['required', 'date'],
             'headmaster_name' => ['nullable', 'string', 'max:150'],
             'recipient_name' => ['required', 'string', 'max:150'],
@@ -244,6 +249,12 @@ class SchoolVisitController extends Controller
         }
 
         if ($hasUndangan) {
+            if ($request->filled('event_plan_id') && empty($request->input('event_name'))) {
+                $eventPlan = \App\Models\EventPlan::find($request->input('event_plan_id'));
+                if ($eventPlan) {
+                    $request->merge(['event_name' => $eventPlan->title]);
+                }
+            }
             $rules['event_name'] = ['required', 'string', 'max:255'];
             $rules['invitation_attendance_status'] = ['required', 'string', 'in:akan_hadir,minta_ijin_dulu,tidak_bisa_hadir'];
         } else {
@@ -254,6 +265,9 @@ class SchoolVisitController extends Controller
         $validated = $request->validate($rules);
         $validated['agenda_category'] = $agendaCategoryString;
         $validated['status'] = $validated['status'] ?? 'berhasil';
+        if (!$hasUndangan) {
+            $validated['event_plan_id'] = null;
+        }
 
         if (empty($validated['purpose'])) {
             $purposes = [];
@@ -439,7 +453,21 @@ class SchoolVisitController extends Controller
         }
         $marketingUsers = $marketingUsersQuery->orderBy('name')->get();
 
-        return view('visits.edit', compact('visit', 'districts', 'schools', 'marketingUsers'));
+        $upcomingEvents = \App\Models\EventPlan::where('is_active', true)
+            ->where(function ($q) use ($visit) {
+                $q->where(function ($sub) {
+                    $sub->where('event_date', '>=', now()->toDateString())
+                        ->where('status', '!=', 'dibatalkan');
+                });
+                if ($visit->event_plan_id) {
+                    $q->orWhere('id', $visit->event_plan_id);
+                }
+            })
+            ->when($activeCampus, fn($q) => $q->forCampus($activeCampus->id))
+            ->orderBy('event_date', 'asc')
+            ->get();
+
+        return view('visits.edit', compact('visit', 'districts', 'schools', 'marketingUsers', 'upcomingEvents'));
     }
 
     /**
@@ -478,6 +506,7 @@ class SchoolVisitController extends Controller
         $rules = [
             'school_id' => ['required', 'exists:schools,id'],
             'user_id' => ['required', 'exists:users,id'],
+            'event_plan_id' => ['nullable', 'exists:event_plans,id'],
             'visit_date' => ['required', 'date'],
             'headmaster_name' => ['nullable', 'string', 'max:150'],
             'recipient_name' => ['required', 'string', 'max:150'],
@@ -523,6 +552,12 @@ class SchoolVisitController extends Controller
         }
 
         if ($hasUndangan) {
+            if ($request->filled('event_plan_id') && empty($request->input('event_name'))) {
+                $eventPlan = \App\Models\EventPlan::find($request->input('event_plan_id'));
+                if ($eventPlan) {
+                    $request->merge(['event_name' => $eventPlan->title]);
+                }
+            }
             $rules['event_name'] = ['required', 'string', 'max:255'];
             $rules['invitation_attendance_status'] = ['required', 'string', 'in:akan_hadir,minta_ijin_dulu,tidak_bisa_hadir'];
         } else {
@@ -533,6 +568,9 @@ class SchoolVisitController extends Controller
         $validated = $request->validate($rules);
         $validated['agenda_category'] = $agendaCategoryString;
         $validated['status'] = $validated['status'] ?? 'berhasil';
+        if (!$hasUndangan) {
+            $validated['event_plan_id'] = null;
+        }
 
         if (empty($validated['purpose'])) {
             $purposes = [];

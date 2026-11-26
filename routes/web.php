@@ -267,6 +267,11 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware('role:Admin,Pimpinan,Koordinator Marketing,Koordinator Customer Service,Marketing')->group(function () {
         Route::post('/visit-plans/bulk-destroy', [VisitPlanController::class, 'bulkDestroy'])->name('visit-plans.bulk-destroy');
         Route::resource('visit-plans', VisitPlanController::class)->except(['show']);
+
+        // Master Rencana Event Kampus (TEMA, TGL, WAKTU, LOKASI)
+        Route::get('/event-plans/active-json', [\App\Http\Controllers\EventPlanController::class, 'getActiveEventsJson'])->name('event-plans.active-json');
+        Route::patch('/event-plans/{eventPlan}/toggle-status', [\App\Http\Controllers\EventPlanController::class, 'toggleStatus'])->name('event-plans.toggle-status');
+        Route::resource('event-plans', \App\Http\Controllers\EventPlanController::class)->except(['show', 'create', 'edit']);
         Route::get('/visits/export', [SchoolVisitController::class, 'export'])->name('visits.export');
         Route::resource('visits', SchoolVisitController::class)->except(['show']);
         Route::get('/socializations-completed', [FollowUpController::class, 'completedSocializations'])->name('socializations.completed.index');

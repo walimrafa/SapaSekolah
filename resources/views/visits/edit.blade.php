@@ -12,6 +12,21 @@
 
     @php
         $initAgendaCategories = old('agenda_categories', old('agenda_category') ? (is_array(old('agenda_category')) ? old('agenda_category') : explode(',', old('agenda_category'))) : (!empty($visit->agenda_categories) ? $visit->agenda_categories : ['penjadwalan_sosialisasi']));
+        $upcomingEventsJson = ($upcomingEvents ?? collect())->map(function($ev) {
+            return [
+                'id' => $ev->id,
+                'title' => $ev->title,
+                'event_date' => $ev->event_date?->format('Y-m-d'),
+                'event_date_formatted' => $ev->formatted_date,
+                'event_time' => $ev->event_time,
+                'location' => $ev->location ?? 'Kampus UBSI',
+                'target_audience' => $ev->target_audience,
+                'quota' => $ev->quota,
+                'description' => $ev->description,
+                'days_remaining' => $ev->days_remaining,
+                'is_today' => $ev->is_today,
+            ];
+        })->values();
     @endphp
 
     <script>
@@ -21,6 +36,9 @@
                 allSchools: @json($schools),
                 agendaCategories: @json($initAgendaCategories),
                 invitationStatus: '{{ old('invitation_attendance_status', $visit->invitation_attendance_status ?? 'akan_hadir') }}',
+                upcomingEvents: @json($upcomingEventsJson),
+                selectedEventPlanId: '{{ old('event_plan_id', $visit->event_plan_id ?? ($visit->event_name ? 'manual' : '')) }}',
+                eventName: '{{ old('event_name', $visit->event_name ?? '') }}',
                 selectedDistrictId: '{{ old('district_id', $visit->school->district_id ?? '') }}',
                 selectedSchoolId: '{{ old('school_id', $visit->school_id) }}',
                 selectedMethod: '{{ old('socialization_method', $visit->socialization_method) }}',
@@ -72,7 +90,37 @@
                     return this.agendaCategories.map(c => labels[c] || c).join(' + ');
                 },
 
+                onEventPlanSelect(event) {
+                    const val = event.target.value;
+                    this.selectedEventPlanId = val;
+                    if (val && val !== 'manual') {
+                        const found = this.upcomingEvents.find(e => String(e.id) === String(val));
+                        if (found) {
+                            this.eventName = found.title;
+                        }
+                    } else if (val === 'manual') {
+                        if (this.upcomingEvents.some(e => e.title === this.eventName)) {
+                            this.eventName = '';
+                        }
+                    }
+                    this.$nextTick(() => {
+                        if (window.lucide) window.lucide.createIcons();
+                    });
+                },
+
+                get selectedEventDetail() {
+                    if (!this.selectedEventPlanId || this.selectedEventPlanId === 'manual') return null;
+                    return this.upcomingEvents.find(e => String(e.id) === String(this.selectedEventPlanId)) || null;
+                },
+
                 init() {
+                    if (this.selectedEventPlanId && this.selectedEventPlanId !== 'manual') {
+                        const found = this.upcomingEvents.find(e => String(e.id) === String(this.selectedEventPlanId));
+                        if (found && !this.eventName) {
+                            this.eventName = found.title;
+                        }
+                    }
+
                     this.$watch('agendaCategories', () => {
                         this.$nextTick(() => {
                             if (window.lucide) window.lucide.createIcons();
@@ -511,17 +559,134 @@
                 </div>
 
                 <!-- Bagian Konfirmasi Kehadiran Khusus Undangan (Opsi 2) -->
-                <div x-show="hasCat('mengantar_undangan')" x-transition class="pt-4 border-t border-slate-100 space-y-3">
+                <div x-show="hasCat('mengantar_undangan')" x-transition class="pt-4 border-t border-slate-100 space-y-4">
+                    <!-- Header Sub-Section -->
+                    <div class="flex items-center justify-between pb-1">
+                        <div class="flex items-center space-x-2">
+                            <span class="p-1.5 rounded-lg bg-amber-100 text-amber-700">
+                                <i data-lucide="ticket" class="w-4 h-4"></i>
+                            </span>
+                            <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Detail Undangan Event Kampus</span>
+                        </div>
+                        <span class="text-[11px] font-semibold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
+                            Agenda Mengantar Undangan
+                        </span>
+                    </div>
+
+                    <!-- Pemilihan Event dari Master (Otomatis & Kadaluarsa Hilang Otomatis) -->
+                    <div>
+                        <label class="block font-bold text-slate-800 text-xs mb-1.5 flex items-center justify-between">
+                            <span>Rencana Event Kampus (Master Acara) <span class="text-red-500" x-show="hasCat('mengantar_undangan')">*</span></span>
+                            <template x-if="upcomingEvents.length > 0">
+                                <span class="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+                                    <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                                    Otomatis dari Master Event (<span x-text="upcomingEvents.length"></span> Tersedia)
+                                </span>
+                            </template>
+                        </label>
+
+                        <template x-if="upcomingEvents.length > 0">
+                            <div>
+                                <select name="event_plan_id" 
+                                    @change="onEventPlanSelect($event)" 
+                                    x-model="selectedEventPlanId"
+                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-semibold text-slate-800 focus:border-amber-500 text-xs bg-white shadow-2xs">
+                                    <option value="">-- Pilih Rencana Event Aktif --</option>
+                                    <template x-for="ev in upcomingEvents" :key="ev.id">
+                                        <option :value="ev.id" x-text="'[' + ev.event_date_formatted + '] ' + ev.title + (ev.location ? ' @ ' + ev.location : '')"></option>
+                                    </template>
+                                    <option value="manual">✏️ + Input Nama Event Manual / Acara Lainnya</option>
+                                </select>
+                                <p class="text-[11px] text-slate-500 mt-1 italic flex items-center gap-1">
+                                    <i data-lucide="info" class="w-3 h-3 text-slate-400"></i>
+                                    Event yang sudah kadaluarsa (lewat tanggal) otomatis tidak muncul pada daftar di atas.
+                                </p>
+                            </div>
+                        </template>
+
+                        <template x-if="upcomingEvents.length === 0">
+                            <div class="p-3 rounded-xl bg-amber-50/80 border border-amber-200/80 text-amber-800 text-xs mb-2 flex items-center justify-between">
+                                <div class="flex items-center space-x-2">
+                                    <i data-lucide="calendar-x" class="w-4 h-4 text-amber-600 shrink-0"></i>
+                                    <span>Belum ada rencana event mendatang di Master Event. Silakan ketik nama event secara manual.</span>
+                                </div>
+                                <input type="hidden" name="event_plan_id" value="">
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Preview Card Rencana Event Terpilih (Tema, Tgl, Waktu, Lokasi) -->
+                    <template x-if="selectedEventDetail">
+                        <div class="p-4 rounded-2xl bg-gradient-to-br from-amber-50/90 to-amber-100/40 border border-amber-200/80 space-y-3 shadow-2xs">
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="flex items-center space-x-2">
+                                    <span class="p-1 rounded-md bg-amber-500 text-white shadow-2xs">
+                                        <i data-lucide="award" class="w-4 h-4"></i>
+                                    </span>
+                                    <div>
+                                        <span class="text-[10px] font-extrabold uppercase tracking-wider text-amber-800">Event Terpilih:</span>
+                                        <h4 class="text-sm font-extrabold text-slate-900" x-text="selectedEventDetail.title"></h4>
+                                    </div>
+                                </div>
+                                <span class="px-2.5 py-1 rounded-full text-[11px] font-bold border shrink-0"
+                                    :class="selectedEventDetail.is_today ? 'bg-amber-500 text-white border-amber-600' : 'bg-emerald-100 text-emerald-800 border-emerald-200'"
+                                    x-text="selectedEventDetail.is_today ? '🔥 Hari Ini' : (selectedEventDetail.days_remaining + ' Hari Lagi')">
+                                </span>
+                            </div>
+
+                            <!-- Detail Grid: Tema, Tgl, Waktu, Lokasi -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 text-xs pt-1">
+                                <div class="bg-white/80 backdrop-blur-xs p-2.5 rounded-xl border border-amber-200/60">
+                                    <span class="text-[10px] font-bold text-slate-500 block mb-0.5">TANGGAL PELAKSANAAN</span>
+                                    <span class="font-extrabold text-slate-800 flex items-center gap-1.5" x-text="selectedEventDetail.event_date_formatted"></span>
+                                </div>
+                                <div class="bg-white/80 backdrop-blur-xs p-2.5 rounded-xl border border-amber-200/60">
+                                    <span class="text-[10px] font-bold text-slate-500 block mb-0.5">WAKTU ACARA</span>
+                                    <span class="font-extrabold text-slate-800" x-text="selectedEventDetail.event_time || 'Sesuai Jadwal'"></span>
+                                </div>
+                                <div class="bg-white/80 backdrop-blur-xs p-2.5 rounded-xl border border-amber-200/60">
+                                    <span class="text-[10px] font-bold text-slate-500 block mb-0.5">LOKASI KEGIATAN</span>
+                                    <span class="font-extrabold text-slate-800 truncate block" x-text="selectedEventDetail.location || 'Kampus UBSI'"></span>
+                                </div>
+                                <div class="bg-white/80 backdrop-blur-xs p-2.5 rounded-xl border border-amber-200/60">
+                                    <span class="text-[10px] font-bold text-slate-500 block mb-0.5">TARGET & KUOTA</span>
+                                    <span class="font-extrabold text-slate-800 block truncate" x-text="(selectedEventDetail.target_audience || 'SLTA') + (selectedEventDetail.quota ? ' (' + selectedEventDetail.quota + ' org)' : '')"></span>
+                                </div>
+                            </div>
+
+                            <template x-if="selectedEventDetail.description">
+                                <p class="text-xs text-slate-600 bg-white/60 p-2.5 rounded-xl border border-amber-100 italic" x-text="selectedEventDetail.description"></p>
+                            </template>
+                        </div>
+                    </template>
+
+                    <!-- Input Nama Event (Otomatis Terisi dari Event Terpilih atau Input Manual) -->
                     <div>
                         <label class="block font-bold text-slate-800 text-xs mb-1">
                             Nama Event / Acara Kampus yang Diundang <span class="text-red-500" x-show="hasCat('mengantar_undangan')">*</span>
                         </label>
-                        <input type="text" name="event_name" value="{{ old('event_name', $visit->event_name) }}"
-                            placeholder="Contoh: BSI Flash 2026 / Workshop Guru BK / Seminar Nasional / Lomba..."
-                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-semibold text-slate-800 focus:border-amber-500 text-xs"
-                            :required="hasCat('mengantar_undangan')">
+                        <div class="relative">
+                            <input type="text" name="event_name" x-model="eventName"
+                                :readonly="selectedEventPlanId && selectedEventPlanId !== 'manual'"
+                                placeholder="Contoh: BSI Flash 2026 / Workshop Guru BK / Seminar Nasional / Lomba..."
+                                class="w-full px-3.5 py-2.5 rounded-xl border font-semibold text-xs transition"
+                                :class="selectedEventPlanId && selectedEventPlanId !== 'manual' 
+                                    ? 'border-emerald-300 bg-emerald-50/50 text-slate-900 cursor-not-allowed' 
+                                    : 'border-slate-300 text-slate-800 focus:border-amber-500 bg-white'"
+                                :required="hasCat('mengantar_undangan')">
+                            <template x-if="selectedEventPlanId && selectedEventPlanId !== 'manual'">
+                                <button type="button" @click="selectedEventPlanId = 'manual'" 
+                                    class="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-[11px] font-bold text-amber-700 shadow-2xs">
+                                    Ubah Manual
+                                </button>
+                            </template>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-1" x-show="selectedEventPlanId && selectedEventPlanId !== 'manual'">
+                            Nama event terisi & terkunci otomatis dari rencana event master terpilih.
+                        </p>
                     </div>
 
+                    <!-- Konfirmasi Kehadiran Undangan Acara -->
                     <div>
                         <label class="block font-bold text-slate-800 text-xs mb-1">
                             Konfirmasi Kehadiran Undangan Acara <span class="text-red-500">*</span>

@@ -82,7 +82,11 @@ class PublicVisitController extends Controller
         }
         $marketingUsers = $marketingUsersQuery->orderBy('name')->get();
 
-        return view('public-visit', compact('districts', 'schools', 'marketingUsers', 'campuses', 'activeCampus', 'isCampusLocked'));
+        $upcomingEvents = \App\Models\EventPlan::upcoming()
+            ->when($activeCampus, fn($q) => $q->forCampus($activeCampus->id))
+            ->get();
+
+        return view('public-visit', compact('districts', 'schools', 'marketingUsers', 'campuses', 'activeCampus', 'isCampusLocked', 'upcomingEvents'));
     }
 
     /**
@@ -119,6 +123,7 @@ class PublicVisitController extends Controller
         $rules = [
             'school_id' => ['required', 'exists:schools,id'],
             'user_id' => ['required', 'exists:users,id'],
+            'event_plan_id' => ['nullable', 'exists:event_plans,id'],
             'visit_date' => ['required', 'date'],
             'headmaster_name' => ['nullable', 'string', 'max:150'],
             'recipient_name' => ['required', 'string', 'max:150'],
@@ -163,6 +168,12 @@ class PublicVisitController extends Controller
         }
 
         if ($hasUndangan) {
+            if ($request->filled('event_plan_id') && empty($request->input('event_name'))) {
+                $eventPlan = \App\Models\EventPlan::find($request->input('event_plan_id'));
+                if ($eventPlan) {
+                    $request->merge(['event_name' => $eventPlan->title]);
+                }
+            }
             $rules['event_name'] = ['required', 'string', 'max:255'];
             $rules['invitation_attendance_status'] = ['required', 'string', 'in:akan_hadir,minta_ijin_dulu,tidak_bisa_hadir'];
         } else {

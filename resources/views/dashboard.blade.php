@@ -290,7 +290,7 @@
                     x-transition:leave-start="opacity-100 translate-y-0"
                     x-transition:leave-end="opacity-0 -translate-y-1"
                     class="px-5 pb-5 pt-3 border-t border-slate-100" style="display: none;">
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 text-xs">
                         <a href="{{ route('master-data.index', ['tab' => 'campuses']) }}"
                             class="flex flex-col gap-2 p-3.5 rounded-xl bg-slate-50 hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 border border-slate-100 hover:border-emerald-200 font-semibold transition">
                             <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
@@ -321,6 +321,17 @@
                             <div>
                                 <div class="font-bold">{{ $lbl('submenu_master_data', 'Master Wilayah') }}</div>
                                 <div class="text-[10px] text-slate-400 mt-0.5">Jenjang &amp; bobot skor</div>
+                            </div>
+                        </a>
+
+                        <a href="{{ route('event-plans.index') }}"
+                            class="flex flex-col gap-2 p-3.5 rounded-xl bg-slate-50 hover:bg-purple-50 text-slate-700 hover:text-purple-800 border border-slate-100 hover:border-purple-200 font-semibold transition">
+                            <div class="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
+                                <i data-lucide="sparkles" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold">{{ $lbl('submenu_event_plans', 'Rencana Event') }}</div>
+                                <div class="text-[10px] text-slate-400 mt-0.5">Tema, tgl &amp; sebar undangan</div>
                             </div>
                         </a>
                     </div>

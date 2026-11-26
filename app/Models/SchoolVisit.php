@@ -62,6 +62,7 @@ class SchoolVisit extends Model
         'user_id',
         'visit_plan_id',
         'agenda_category',
+        'event_plan_id',
         'event_name',
         'invitation_attendance_status',
         'visit_date',
@@ -201,6 +202,14 @@ class SchoolVisit extends Model
     public function academicPeriod(): BelongsTo
     {
         return $this->belongsTo(AcademicPeriod::class);
+    }
+
+    /**
+     * SchoolVisit belongsTo EventPlan (Rencana Event Kampus).
+     */
+    public function eventPlan(): BelongsTo
+    {
+        return $this->belongsTo(EventPlan::class, 'event_plan_id');
     }
 
     /**

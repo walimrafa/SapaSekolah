@@ -66,6 +66,7 @@ class FollowUp extends Model
         'academic_period_id',
         'visit_id',
         'agenda_category',
+        'event_plan_id',
         'event_name',
         'invitation_attendance_status',
         'user_id',
@@ -254,6 +255,14 @@ class FollowUp extends Model
     public function academicPeriod(): BelongsTo
     {
         return $this->belongsTo(AcademicPeriod::class);
+    }
+
+    /**
+     * FollowUp belongsTo EventPlan (Rencana Event Kampus).
+     */
+    public function eventPlan(): BelongsTo
+    {
+        return $this->belongsTo(EventPlan::class, 'event_plan_id');
     }
 
     /**

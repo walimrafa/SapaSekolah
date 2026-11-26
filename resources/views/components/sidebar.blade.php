@@ -8,7 +8,7 @@
     
     // Check active states for auto-expanding current menu
     $isSchoolActive = request()->routeIs('map.*', 'schools.*', 'priorities.*');
-    $isFieldActive = request()->routeIs('visit-plans.*', 'visits.*', 'follow-ups.*', 'socializations.completed.*', 'invitations.completed.*', 'other-visits.completed.*', 'marketing-routes.*', 'activities.*');
+    $isFieldActive = request()->routeIs('visit-plans.*', 'event-plans.*', 'visits.*', 'follow-ups.*', 'socializations.completed.*', 'invitations.completed.*', 'other-visits.completed.*', 'marketing-routes.*', 'activities.*');
     $isCrmActive = request()->routeIs('prospects.*', 'new-students.*', 'student-questionnaires.*', 'student-follow-ups.*', 'cs-progress.*', 'study-programs.*');
     $isKolActive = request()->routeIs('kol-recommendations.*');
     $isEventActive = request()->routeIs('event-proposals.*', 'school-events.*', 'event-students.*');
@@ -180,9 +180,24 @@
                 class="pl-4 ml-4 border-l border-slate-800 space-y-1 pt-1" style="display: none;">
                 
                 <a href="{{ route('visit-plans.index') }}"
-                    class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('visit-plans.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('visit-plans.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30 font-bold' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
                     <span>{{ $lbl('submenu_visit_plans', 'Rencana') }}</span>
+                </a>
+
+                <a href="{{ route('event-plans.index') }}"
+                    class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition duration-150 {{ request()->routeIs('event-plans.*') ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30 font-bold' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}"
+                    title="Master Rencana Event Kampus (Tema, Tgl, Jam, Lokasi)">
+                    <div class="flex items-center space-x-2.5">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i>
+                        <span>{{ $lbl('submenu_event_plans', 'Rencana Event') }}</span>
+                    </div>
+                    @php
+                        $upcomingEventsSidebarCount = \App\Models\EventPlan::upcoming()->when($sidebarCampus, fn($q) => $q->forCampus($sidebarCampus->id))->count();
+                    @endphp
+                    @if($upcomingEventsSidebarCount > 0)
+                        <span class="px-1.5 py-0.2 text-[9px] font-bold bg-amber-400 text-slate-900 rounded-full">{{ $upcomingEventsSidebarCount }}</span>
+                    @endif
                 </a>
 
                 <a href="{{ route('visits.index') }}"

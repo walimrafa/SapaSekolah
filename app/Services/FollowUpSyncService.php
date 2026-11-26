@@ -80,6 +80,7 @@ class FollowUpSyncService
             'school_id' => $visit->school_id,
             'visit_id' => $visit->id,
             'agenda_category' => $agendaCategory,
+            'event_plan_id' => $visit->event_plan_id,
             'event_name' => $visit->event_name,
             'invitation_attendance_status' => $visit->invitation_attendance_status,
             'campus_id' => $campusId,
@@ -104,6 +105,9 @@ class FollowUpSyncService
             $data['agenda_category'] = $agendaCategory;
             if ($visit->invitation_attendance_status) {
                 $data['invitation_attendance_status'] = $visit->invitation_attendance_status;
+            }
+            if ($visit->event_plan_id) {
+                $data['event_plan_id'] = $visit->event_plan_id;
             }
             if ($visit->event_name) {
                 $data['event_name'] = $visit->event_name;

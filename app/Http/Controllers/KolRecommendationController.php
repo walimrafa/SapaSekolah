@@ -45,7 +45,7 @@ class KolRecommendationController extends Controller
 
         $userCampusId = $user->campus_id ?? \App\Services\AppContextService::getActiveCampus()?->id;
         $sqCampusId = $sq->campus_id ?: ($sq->school?->campus_id);
-        if ($sqCampusId && $userCampusId && (int)$sqCampusId !== (int)$userCampusId) {
+        if ($sqCampusId && $userCampusId && (int) $sqCampusId !== (int) $userCampusId) {
             abort(403, 'Akses ditolak. Rekomendasi KOL ini berada di luar wilayah kampus penugasan Anda.');
         }
     }
@@ -815,9 +815,9 @@ class KolRecommendationController extends Controller
                 $q->where('instagram_followers', '>=', $newMin)
                     ->orWhere('tiktok_followers', '>=', $newMin);
             })->where('is_kol', false)->update([
-                'is_kol' => true,
-                'kol_status' => StudentQuestionnaire::KOL_STATUS_KANDIDAT,
-            ]);
+                        'is_kol' => true,
+                        'kol_status' => StudentQuestionnaire::KOL_STATUS_KANDIDAT,
+                    ]);
         }
 
         $formattedMin = number_format($newMin, 0, ',', '.');
