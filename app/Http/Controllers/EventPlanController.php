@@ -135,11 +135,13 @@ class EventPlanController extends Controller
             'created_by' => auth()->id(),
         ]);
 
+        $formattedDate = Carbon::parse($eventPlan->event_date)->format('d/m/Y');
+
         ActivityLogService::log(
             'CREATE',
             'event_plan',
             $eventPlan->id,
-            "Membuat Master Rencana Event baru: {$eventPlan->title} (Tgl: {$eventPlan->event_date->format('d/m/Y')}, Lokasi: {$eventPlan->location})."
+            "Membuat Master Rencana Event baru: {$eventPlan->title} (Tgl: {$formattedDate}, Lokasi: {$eventPlan->location})."
         );
 
         return back()->with('toast', [

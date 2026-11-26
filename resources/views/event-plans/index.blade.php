@@ -303,7 +303,7 @@
                                         <button type="button" @click="openEditModal({{ json_encode([
                                             'id' => $event->id,
                                             'title' => $event->title,
-                                            'event_date' => $event->event_date->format('Y-m-d'),
+                                            'event_date' => \Carbon\Carbon::parse($event->event_date)->format('Y-m-d'),
                                             'event_time' => $event->event_time,
                                             'location' => $event->location,
                                             'target_audience' => $event->target_audience ?? '',

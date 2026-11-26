@@ -9,6 +9,37 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * App\Models\EventPlan
+ *
+ * @property int $id
+ * @property int|null $campus_id
+ * @property int|null $academic_period_id
+ * @property string $title
+ * @property \Carbon\Carbon $event_date
+ * @property string $event_time
+ * @property string $location
+ * @property string|null $target_audience
+ * @property int|null $quota
+ * @property string|null $description
+ * @property string $status
+ * @property bool $is_active
+ * @property int|null $created_by
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property \Carbon\Carbon|null $deleted_at
+ * @property-read bool $is_expired
+ * @property-read bool $is_today
+ * @property-read string $days_remaining
+ * @property-read string $formatted_date
+ * @property-read array $status_badge
+ * @property-read int $invitations_distributed_count
+ * @property-read \App\Models\Campus|null $campus
+ * @property-read \App\Models\AcademicPeriod|null $academicPeriod
+ * @property-read \App\Models\User|null $creator
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\SchoolVisit[] $schoolVisits
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\FollowUp[] $followUps
+ */
 class EventPlan extends Model
 {
     use HasFactory, SoftDeletes;
