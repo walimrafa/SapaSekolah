@@ -1,5 +1,6 @@
 @php
     $appSettings = \App\Services\AppSettingService::all();
+    $errors = $errors ?? new \Illuminate\Support\ViewErrorBag;
 @endphp
 <!DOCTYPE html>
 <html lang="id">
@@ -64,7 +65,7 @@
             </div>
         @endif
 
-        @if ($errors->any())
+        @if (isset($errors) && $errors->any())
             <div class="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold">
                 <p class="font-bold mb-1">Perhatian Form:</p>
                 <ul class="list-disc pl-5 space-y-0.5">

@@ -113,6 +113,13 @@ class EventPlanController extends Controller
         $activeCampus = AppContextService::getActiveCampus();
         $activePeriod = AppContextService::getActivePeriod();
 
+        // Enforce campus isolation jika user tidak berhak switch kampus
+        $user = auth()->user();
+        $targetCampusId = $validated['campus_id'] ?? $activeCampus?->id;
+        if ($user && !AppContextService::canSwitchCampus($user)) {
+            $targetCampusId = $user->campus_id ?? $activeCampus?->id;
+        }
+
         $eventPlan = EventPlan::create([
             'title' => $validated['title'],
             'event_date' => $validated['event_date'],
@@ -121,7 +128,7 @@ class EventPlanController extends Controller
             'target_audience' => $validated['target_audience'] ?? null,
             'quota' => $validated['quota'] ?? null,
             'description' => $validated['description'] ?? null,
-            'campus_id' => $validated['campus_id'] ?? $activeCampus?->id,
+            'campus_id' => $targetCampusId,
             'academic_period_id' => $validated['academic_period_id'] ?? $activePeriod?->id,
             'status' => EventPlan::STATUS_AKTIF,
             'is_active' => true,
@@ -146,6 +153,8 @@ class EventPlanController extends Controller
      */
     public function update(Request $request, EventPlan $eventPlan): RedirectResponse
     {
+        $this->authorizeCampusAccess($eventPlan);
+
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'event_date' => ['required', 'date'],
@@ -157,6 +166,11 @@ class EventPlanController extends Controller
             'status' => ['required', 'string', 'in:aktif,selesai,dibatalkan'],
             'campus_id' => ['nullable', 'exists:campuses,id'],
         ]);
+
+        $user = auth()->user();
+        if ($user && !AppContextService::canSwitchCampus($user)) {
+            $validated['campus_id'] = $eventPlan->campus_id;
+        }
 
         $oldData = $eventPlan->toArray();
 
@@ -193,6 +207,8 @@ class EventPlanController extends Controller
      */
     public function destroy(EventPlan $eventPlan): RedirectResponse
     {
+        $this->authorizeCampusAccess($eventPlan);
+
         $title = $eventPlan->title;
         $id = $eventPlan->id;
 
@@ -216,6 +232,8 @@ class EventPlanController extends Controller
      */
     public function toggleStatus(Request $request, EventPlan $eventPlan): RedirectResponse|JsonResponse
     {
+        $this->authorizeCampusAccess($eventPlan);
+
         $newStatus = $request->input('status');
         if (!in_array($newStatus, [EventPlan::STATUS_AKTIF, EventPlan::STATUS_SELESAI, EventPlan::STATUS_DIBATALKAN])) {
             $newStatus = $eventPlan->status === EventPlan::STATUS_AKTIF ? EventPlan::STATUS_SELESAI : EventPlan::STATUS_AKTIF;
@@ -245,6 +263,21 @@ class EventPlanController extends Controller
             'type' => 'success',
             'message' => "Status event '{$eventPlan->title}' berhasil diubah menjadi {$newStatus}.",
         ]);
+    }
+
+    /**
+     * Pastikan pengguna memiliki hak akses terhadap rencana event berdasarkan isolasi kampus.
+     */
+    protected function authorizeCampusAccess(EventPlan $eventPlan): void
+    {
+        $user = auth()->user();
+        if ($user && !AppContextService::canSwitchCampus($user)) {
+            $userCampusId = $user->campus_id ?? AppContextService::getActiveCampus()?->id;
+            $eventCampusId = $eventPlan->campus_id;
+            if ($eventCampusId && $userCampusId && (int) $eventCampusId !== (int) $userCampusId) {
+                abort(403, 'Akses ditolak. Rencana event ini berada di luar wilayah kampus penugasan Anda.');
+            }
+        }
     }
 
     /**
